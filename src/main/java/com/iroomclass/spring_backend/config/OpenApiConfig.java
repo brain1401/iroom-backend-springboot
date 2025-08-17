@@ -31,8 +31,8 @@ public class OpenApiConfig {
         return new OpenAPI()
                 .info(apiInfo())
                 .servers(List.of(
-                        new Server().url("http://localhost:3055").description("개발 서버"),
-                        new Server().url("https://api.example.com").description("운영 서버")))
+                        new Server().url("http://localhost:3055/api").description("개발 서버"),
+                        new Server().url("https://api.example.com/api").description("운영 서버")))
                 .components(new Components()
                         .addSecuritySchemes("bearerAuth",
                                 new SecurityScheme()
