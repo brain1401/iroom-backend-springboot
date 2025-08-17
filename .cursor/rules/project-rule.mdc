@@ -2,5 +2,5 @@
 alwaysApply: true
 ---
 
-# Context 7 주소
-- Spring Boot 3.5.4 -> "websites/spring_io-spring-boot"
+# Context 7 주소 (아래 주소로 get-library-docs 사용할 것)
+- Spring Boot 3.5.4 -> "/websites/spring_io-spring-boot"
