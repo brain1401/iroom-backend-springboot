@@ -2,6 +2,9 @@
 server:
   port: 3055
 
+  servlet:
+    context-path: /api
+
 spring:
   application:
     name: spring-backend

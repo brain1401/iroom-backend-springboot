@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
  */
 @Tag(name = "시스템 API", description = "시스템 모니터링 및 테스트용 API")
 @RestController
-@RequestMapping(value = "/api/system", produces = MediaType.APPLICATION_JSON_VALUE)
+@RequestMapping(value = "/system", produces = MediaType.APPLICATION_JSON_VALUE)
 @RequiredArgsConstructor
 public class GreetingController {
 
