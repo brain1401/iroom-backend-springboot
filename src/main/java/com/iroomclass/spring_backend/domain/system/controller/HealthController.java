@@ -25,7 +25,10 @@ public class HealthController {
     /**
      * 헬스 체크 엔드포인트
      */
-    @Operation(summary = "헬스 체크", description = "서버 상태 확인용 엔드포인트")
+    @Operation(
+            summary = "종합 시스템 헬스체크", 
+            description = "Spring Boot 애플리케이션, 데이터베이스, AI 서버의 상태를 종합적으로 확인합니다."
+    )
     @GetMapping("/health")
     public ApiResponse<SystemHealthDto> healthCheck() {
         SystemHealthDto healthStatus = systemService.checkHealth();
