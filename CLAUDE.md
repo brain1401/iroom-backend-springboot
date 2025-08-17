@@ -53,6 +53,40 @@ java -jar build/libs/spring-backend-0.0.1-SNAPSHOT.jar
 
 ## Architecture & Development Guidelines
 
+### Core Architectural Principles
+
+#### 1. SOLID Principles
+
+**Single Responsibility Principle (SRP)**
+- Each class, function, or module has one reason to change
+- Example: UserService handles only user management, EmailService handles only email operations
+
+**Open/Closed Principle (OCP)**
+- Software entities should be open for extension but closed for modification
+- Use interfaces for payment processors, notification services, etc.
+
+**Liskov Substitution Principle (LSP)**
+- Derived classes must be substitutable for their base classes
+- Ensure interface implementations maintain expected behavior
+
+**Interface Segregation Principle (ISP)**
+- Clients should not be forced to depend on interfaces they don't use
+- Create specific, focused interfaces rather than large, monolithic ones
+
+**Dependency Inversion Principle (DIP)**
+- Depend on abstractions, not concretions
+- Use constructor injection with interfaces
+
+#### 2. Clean Architecture Principles
+
+**Dependency Direction**: Controllers → Services → Repositories → Entities
+
+**Layer Responsibilities**:
+- **Controller**: HTTP request/response handling, authentication/authorization
+- **Service**: Business logic, transaction boundaries
+- **Repository**: Data access, query execution
+- **Entity**: Domain model, business rules
+
 ### Package Structure (Domain-Driven Organization)
 
 **Base package**: `com.iroomclass.spring_backend`
@@ -62,7 +96,7 @@ java -jar build/libs/spring-backend-0.0.1-SNAPSHOT.jar
 #### Recommended Structure
 
 ```
-com.iroomclass.spring_backend
+com.iroomclass.spring_backend/
 ├── SpringBackendApplication.java       # Main application class
 │
 ├── user/                              # User domain module
@@ -110,23 +144,17 @@ Each domain module should contain:
 - **Repository**: Data access layer for this domain  
 - **dto/**: All DTOs related to this domain (request/response/internal)
 
-#### Benefits of Domain-Driven Structure
+#### Domain Interaction Guidelines
 
-1. **High Cohesion**: Related functionality grouped together
-2. **Loose Coupling**: Clear boundaries between domains
-3. **Team Scalability**: Teams can work on different domains independently
-4. **Maintainability**: Easier to locate and modify domain-specific code
-5. **Spring Modulith Ready**: Compatible with Spring Modulith for modular monoliths
-6. **Bounded Context**: Aligns with Domain-Driven Design principles
+**Cross-Domain Communication Patterns**:
+1. **Service-to-Service Communication**: Use DTOs for cross-domain communication
+2. **Avoid Direct Entity Access**: Don't inject cross-domain repositories
+3. **Domain Event Pattern**: Use Spring's @EventListener for complex interactions
 
-#### Migration from Layer-Based Structure
-
-If migrating from traditional layer-based structure:
-1. Identify business domains/bounded contexts
-2. Create domain packages (e.g., `user/`, `order/`, `product/`)
-3. Move related Controller, Service, Repository, Entity, and DTOs into domain packages
-4. Keep truly cross-cutting concerns in `common/` and `config/`
-5. Update import statements and ensure no circular dependencies between domains
+**Domain Dependency Rules**:
+- **Allowed Dependencies**: `common/`, `config/`, other domain services (via DTOs only)
+- **Forbidden Dependencies**: Other domains' entities, repositories, or internal classes
+- **Circular Dependencies**: Strictly prohibited between domains
 
 ### Core Architecture Principles
 
@@ -151,55 +179,6 @@ If migrating from traditional layer-based structure:
    - Use `Pageable`/`Page<T>` for pagination
    - Return responses wrapped in DTO (record) format
 
-### Domain Interaction Guidelines
-
-#### Cross-Domain Communication Patterns
-
-1. **Service-to-Service Communication**:
-   ```java
-   // ✅ Correct: Use DTOs for cross-domain communication
-   @Service
-   public class OrderService {
-       private final UserService userService;
-       
-       public OrderDto createOrder(OrderCreateDto dto) {
-           UserDto user = userService.findById(dto.userId()); // DTO exchange
-           // ... business logic
-       }
-   }
-   ```
-
-2. **Avoid Direct Entity Access**:
-   ```java
-   // ❌ Wrong: Direct access to other domain's entity
-   private final UserRepository userRepository; // Don't inject cross-domain repositories
-   
-   // ✅ Correct: Use domain service
-   private final UserService userService; // Inject service instead
-   ```
-
-3. **Domain Event Pattern** (for complex interactions):
-   ```java
-   // Consider using Spring's @EventListener for loose coupling
-   @EventListener
-   public void handleOrderCreated(OrderCreatedEvent event) {
-       // Update inventory, send notifications, etc.
-   }
-   ```
-
-#### Domain Dependency Management
-
-- **Allowed Dependencies**: `common/`, `config/`, other domain services (via DTOs only)
-- **Forbidden Dependencies**: Other domains' entities, repositories, or internal classes
-- **Circular Dependencies**: Strictly prohibited between domains
-- **Shared Logic**: Extract to `common/` package if used by multiple domains
-
-#### Testing Domain Boundaries
-
-- **Unit Tests**: Test each domain in isolation
-- **Integration Tests**: Test cross-domain interactions through service interfaces
-- **Architecture Tests**: Use ArchUnit to enforce domain boundary rules
-
 ### Entity Guidelines
 
 1. **Basic Configuration**:
@@ -222,9 +201,65 @@ If migrating from traditional layer-based structure:
 4. **Relationships**:
    - Clearly define the owning side of bidirectional relationships
    - Use convenience methods to maintain consistency
+   - Default to LAZY loading, use @EntityGraph to solve N+1 problems
 
 5. **Auditing**:
    - For time auditing: `@EntityListeners(AuditingEntityListener.class)` + `@CreatedDate`, `@LastModifiedDate`
+
+#### Entity Implementation Pattern
+```java
+/**
+ * 사용자 엔티티
+ */
+@Entity
+@Getter  // @Data 사용 금지 (equals/hashCode 순환 참조 위험)
+@NoArgsConstructor(access = AccessLevel.PROTECTED)  // JPA 요구사항
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
+@Builder
+@EntityListeners(AuditingEntityListener.class)  // 감사 기능
+public class User {
+    
+    /**
+     * 사용자 고유 식별자
+     */
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+    
+    /**
+     * 사용자명 (로그인용)
+     */
+    @Column(nullable = false, unique = true, length = 50)
+    private String username;
+    
+    /**
+     * 이메일 (중복 불가)
+     */
+    @Column(nullable = false, unique = true, length = 100)
+    private String email;
+    
+    /**
+     * 생성 시간
+     */
+    @CreatedDate
+    @Column(updatable = false)
+    private LocalDateTime createdAt;
+    
+    /**
+     * 수정 시간
+     */
+    @LastModifiedDate
+    private LocalDateTime updatedAt;
+    
+    // 비즈니스 메서드
+    public void changePassword(String newPassword, PasswordEncoder encoder) {
+        if (newPassword == null || newPassword.length() < 8) {
+            throw new IllegalArgumentException("비밀번호는 8자 이상이어야 합니다");
+        }
+        this.password = encoder.encode(newPassword);
+    }
+}
+```
 
 ### Repository Guidelines
 
@@ -234,6 +269,27 @@ If migrating from traditional layer-based structure:
 4. Avoid N+1 problems: use `@EntityGraph(attributePaths = {"relation"})` where needed
 5. For multiple joins and partial queries: use **DTO (record) projections** (avoid loading entire entities)
 6. Return `Page<T>` for pagination, delegate sorting to `Sort` or `Pageable`
+
+#### Repository Implementation Pattern
+```java
+@Repository
+public interface UserRepository extends JpaRepository<User, Long> {
+    
+    Optional<User> findByUsername(String username);
+    
+    @Query("SELECT u FROM User u WHERE u.email = :email AND u.active = true")
+    Optional<User> findActiveUserByEmail(@Param("email") String email);
+    
+    @EntityGraph(attributePaths = {"profile", "roles"})
+    Optional<User> findWithProfileAndRolesById(Long id);
+    
+    Page<User> findByActiveTrue(Pageable pageable);
+    
+    // N+1 문제 해결
+    @Query("SELECT u FROM User u LEFT JOIN FETCH u.orders WHERE u.id = :id")
+    Optional<User> findWithOrdersById(@Param("id") Long id);
+}
+```
 
 ### Service Layer Guidelines
 
@@ -245,6 +301,58 @@ If migrating from traditional layer-based structure:
    - `@Transactional` for writes (create/update/delete)
    - `@Transactional(readOnly = true)` for reads
 6. Separate mapping logic (Entity ↔ DTO) into dedicated mappers (static factories/methods/MapStruct)
+
+#### Service Implementation Pattern
+```java
+@Service
+@RequiredArgsConstructor
+@Transactional(readOnly = true)
+public class UserService {
+    
+    private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final EmailService emailService;
+    
+    /**
+     * 사용자 ID로 조회
+     * 
+     * @param id 사용자 고유 식별자
+     * @return 사용자 DTO
+     * @throws UserNotFoundException 사용자 미존재 시
+     */
+    public UserDto findById(Long id) {
+        return userRepository.findById(id)
+            .map(UserDto::from)
+            .orElseThrow(() -> new UserNotFoundException("사용자를 찾을 수 없습니다: " + id));
+    }
+    
+    /**
+     * 사용자 생성
+     */
+    @Transactional
+    public UserDto createUser(CreateUserRequest request) {
+        // 1. 비즈니스 규칙 검증
+        validateUserCreation(request);
+        
+        // 2. 도메인 객체 생성
+        User user = User.builder()
+            .username(request.username())
+            .email(request.email())
+            .password(passwordEncoder.encode(request.password()))
+            .active(true)
+            .build();
+        
+        // 3. 데이터 저장
+        User savedUser = userRepository.save(user);
+        
+        // 4. 부가 작업 (이벤트 발행, 알림 등)
+        emailService.sendWelcomeEmail(savedUser);
+        
+        // 5. DTO 변환 후 반환
+        return UserDto.from(savedUser);
+    }
+}
+```
 
 ### DTO Guidelines
 
@@ -267,6 +375,35 @@ If migrating from traditional layer-based structure:
 
 4. Design page response DTOs as records containing metadata (total, page, size) and data collection
 
+#### DTO Implementation Pattern
+```java
+/**
+ * 사용자 생성 요청 DTO
+ */
+public record CreateUserRequest(
+    @NotBlank(message = "이름은 필수입니다")
+    @Size(max = 50, message = "이름은 50자 이하여야 합니다")
+    @Schema(description = "사용자명", example = "홍길동") 
+    String name,
+    
+    @NotBlank(message = "이메일은 필수입니다")
+    @Email(message = "올바른 이메일 형식이 아닙니다")
+    @Schema(description = "이메일", example = "hong@example.com")
+    String email,
+    
+    @NotBlank(message = "비밀번호는 필수입니다")
+    @Size(min = 8, max = 20, message = "비밀번호는 8-20자여야 합니다")
+    @Schema(description = "비밀번호", example = "Password123!")
+    String password
+) {
+    public CreateUserRequest {
+        Objects.requireNonNull(name, "name must not be null");
+        Objects.requireNonNull(email, "email must not be null");
+        Objects.requireNonNull(password, "password must not be null");
+    }
+}
+```
+
 ### Controller Guidelines
 
 1. **Class structure**:
@@ -287,20 +424,179 @@ If migrating from traditional layer-based structure:
 
 8. Accept input as DTOs (records), never bind entities directly
 
+#### Controller Implementation Pattern
+```java
+@RestController
+@RequestMapping("/api/users")
+@RequiredArgsConstructor
+@Tag(name = "사용자 API", description = "사용자 관리 관련 API")
+public class UserController {
+    
+    private final UserService userService;
+    
+    @Operation(
+        summary = "사용자 정보 조회",
+        description = "사용자 ID로 사용자 정보 조회",
+        responses = {
+            @ApiResponse(responseCode = "200", description = "조회 성공"),
+            @ApiResponse(responseCode = "404", description = "사용자 없음")
+        }
+    )
+    @GetMapping("/{id}")
+    public ApiResponse<UserDto> getUser(
+        @Parameter(description = "사용자 ID", example = "1") 
+        @PathVariable Long id) {
+        UserDto user = userService.findById(id);
+        return ApiResponse.success("사용자 조회 성공", user);
+    }
+    
+    @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
+    @ResponseStatus(HttpStatus.CREATED)
+    public ApiResponse<UserDto> createUser(@Valid @RequestBody CreateUserRequest request) {
+        UserDto user = userService.createUser(request);
+        return ApiResponse.success("사용자 생성 성공", user);
+    }
+}
+```
+
+### API Design Guidelines
+
+#### RESTful API Principles
+
+1. **Resource-Oriented Design**:
+   ```http
+   GET    /api/users           # List users
+   GET    /api/users/123       # Get specific user
+   POST   /api/users           # Create user
+   PUT    /api/users/123       # Update user
+   DELETE /api/users/123       # Delete user
+   ```
+
+2. **HTTP Status Codes**:
+   - **200 OK**: GET, PUT, PATCH success
+   - **201 Created**: POST success
+   - **204 No Content**: DELETE success
+   - **400 Bad Request**: Validation failures
+   - **401 Unauthorized**: Authentication required
+   - **403 Forbidden**: Access denied
+   - **404 Not Found**: Resource not found
+   - **409 Conflict**: Resource conflicts
+   - **422 Unprocessable Entity**: Business logic violations
+
+3. **Pagination and Sorting**:
+   ```java
+   @GetMapping("/users")
+   public ApiResponse<Page<UserDto>> getUsers(
+       @RequestParam(defaultValue = "0") int page,
+       @RequestParam(defaultValue = "20") int size,
+       @RequestParam(defaultValue = "id") String sort,
+       @RequestParam(defaultValue = "asc") String direction
+   ) {
+       Sort sortOrder = Sort.by(Sort.Direction.fromString(direction), sort);
+       Pageable pageable = PageRequest.of(page, size, sortOrder);
+       Page<UserDto> users = userService.findAll(pageable);
+       return ApiResponse.success("사용자 목록 조회 성공", users);
+   }
+   ```
+
 ### Security & OWASP Best Practices
 
-1. Separate authentication from authorization
-2. **Never log sensitive information** (passwords, tokens)
-3. Handle validation failures/binding errors with standardized error responses
-4. Hide sensitive fields during serialization
-5. **Never expose detailed stack traces** to clients
-6. Configure CORS/CSRF/security headers (HSTS, X-Content-Type-Options) according to environment
+#### 1. Authentication and Authorization
 
-### Caching with Redis
+**JWT-based Authentication**:
+```java
+@Configuration
+@EnableWebSecurity
+public class SecurityConfig {
+    
+    @Bean
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        http
+            .csrf(AbstractHttpConfigurer::disable)
+            .sessionManagement(session -> 
+                session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            .authorizeHttpRequests(auth -> auth
+                .requestMatchers("/api/auth/**").permitAll()
+                .requestMatchers("/api/public/**").permitAll()
+                .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                .anyRequest().authenticated())
+            .oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()));
+        
+        return http.build();
+    }
+}
+```
 
-1. Use `@Cacheable` for high-read, low-change queries
-2. Use `@CacheEvict`/`@CachePut` on update paths
-3. Define consistent cache key rules and set TTL
+**Method-level Security**:
+```java
+@PreAuthorize("hasRole('ADMIN') or #id == authentication.principal.id")
+public UserDto findById(Long id) {
+    // 관리자이거나 본인만 조회 가능
+}
+```
+
+#### 2. Input Validation and Security
+
+- **Never log sensitive information** (passwords, tokens)
+- Handle validation failures/binding errors with standardized error responses
+- Hide sensitive fields during serialization
+- **Never expose detailed stack traces** to clients
+- Configure CORS/CSRF/security headers (HSTS, X-Content-Type-Options) according to environment
+- Use parameterized queries to prevent SQL injection
+- Validate and sanitize all input data
+
+### Performance Optimization
+
+#### 1. Database Optimization
+
+**N+1 Problem Solutions**:
+```java
+// Use @EntityGraph
+@EntityGraph(attributePaths = {"orders", "profile"})
+List<User> findAllWithOrdersAndProfile();
+
+// Use Fetch Join
+@Query("SELECT u FROM User u LEFT JOIN FETCH u.orders")
+List<User> findAllWithOrders();
+
+// Batch Size Configuration
+spring:
+  jpa:
+    properties:
+      hibernate:
+        default_batch_fetch_size: 20
+```
+
+**Pagination for Large Datasets**:
+```java
+// Use Slice for better performance (no count query)
+public Slice<UserDto> findAllSlice(Pageable pageable) {
+    return userRepository.findAll(pageable).map(UserDto::from);
+}
+```
+
+#### 2. Caching with Redis
+
+```java
+@Service
+public class UserService {
+    
+    // Cache frequently accessed data
+    @Cacheable(value = "users", key = "#id", unless = "#result == null")
+    public UserDto findById(Long id) {
+        return userRepository.findById(id)
+            .map(UserDto::from)
+            .orElseThrow(() -> new UserNotFoundException("User not found"));
+    }
+    
+    // Evict cache on updates
+    @CacheEvict(value = "users", key = "#id")
+    public UserDto updateUser(Long id, UpdateUserRequest request) {
+        // Update logic
+    }
+}
+```
 
 ### Logging & Observability
 
@@ -308,64 +604,114 @@ If migrating from traditional layer-based structure:
 2. Bind request-response correlation ID (e.g., `X-Request-Id`) with MDC
 3. Log exceptions in global exception handler, include only summary messages in responses
 
-### Code Documentation & Comments
+#### Structured Logging Pattern
+```java
+@Service
+@Slf4j
+public class UserService {
+    
+    public UserDto createUser(CreateUserRequest request) {
+        log.info("Creating user: username={}, email={}", 
+                request.username(), request.email());
+        
+        try {
+            UserDto user = // creation logic
+            
+            log.info("User created successfully: id={}, username={}", 
+                    user.id(), user.username());
+            
+            return user;
+        } catch (Exception e) {
+            log.error("Failed to create user: username={}, error={}", 
+                     request.username(), e.getMessage(), e);
+            throw e;
+        }
+    }
+}
+```
 
-1. **JavaDoc 사용 규칙**:
-   - 모든 public 클래스, 메서드에 JavaDoc 작성
-   - 간결하고 명료한 한국어 명사형 주석 사용
-   - 존댓말 사용 금지, 간단한 명사형 표현 사용
+## Code Documentation & Comments
 
-2. **주석 작성 스타일**:
-   ```java
-   /**
-    * 사용자 정보 조회
-    * @param id 사용자 ID
-    * @return 사용자 DTO
-    * @throws UserNotFoundException 사용자 미존재 시
-    */
-   public UserDto findUser(Long id) { ... }
-   
-   /**
-    * 게시글 목록 페이징 조회
-    * @param pageable 페이징 정보
-    * @return 게시글 페이지 응답
-    */
-   @Transactional(readOnly = true)
-   public Page<PostDto> findPosts(Pageable pageable) { ... }
-   ```
+### 1. JavaDoc 사용 규칙
 
-3. **인라인 주석 규칙**:
-   - 복잡한 비즈니스 로직에만 필요시 간단히 작성
-   - 명사형 표현 사용: `// 중복 검증`, `// 권한 확인`, `// 캐시 갱신`
-   - 자명한 코드에는 주석 작성 금지
+**주석**:
+- **존댓말 사용 금지**, 간단한 명사형 표현 사용
+- JavaDoc 작성 시 불렛 포인트 사용.
+- 일반 주석 작성 시, 간결하고 명료한 **한국어 명사형** 주석 사용.
+- 주석 작성 시 주석 내용을 최대한 간결하게 작성.
 
-4. **Entity 주석 예시**:
-   ```java
-   /**
-    * 사용자 엔티티
-    */
-   @Entity
-   public class User {
-       /**
-        * 사용자 고유 식별자
-        */
-       @Id
-       @GeneratedValue(strategy = GenerationType.IDENTITY)
-       private Long id;
-       
-       /**
-        * 사용자명 (로그인용)
-        */
-       @Column(unique = true, nullable = false)
-       private String username;
-   }
-   ```
+#### JavaDoc 작성 스타일
+```java
+/**
+ * 사용자 정보 조회
+ * @param id 사용자 ID
+ * @return 사용자 DTO
+ * @throws UserNotFoundException 사용자 미존재 시
+ */
+public UserDto findUser(Long id) { ... }
 
-5. **주석 품질 기준**:
-   - 한 줄에 핵심 내용 요약
-   - 매개변수/반환값 명확히 설명
-   - 예외 상황 명시
-   - 비즈니스 규칙이나 제약사항 설명
+/**
+ * 게시글 목록 페이징 조회
+ * @param pageable 페이징 정보
+ * @return 게시글 페이지 응답
+ */
+@Transactional(readOnly = true)
+public Page<PostDto> findPosts(Pageable pageable) { ... }
+
+/**
+ * 사용자 권한 검증 및 인증
+ * • JWT 토큰 유효성 확인
+ * • 사용자 권한 레벨 체크
+ * • 접근 가능 리소스 검증
+ * @param token JWT 토큰
+ * @param resource 접근 리소스
+ * @return 인증 결과
+ */
+public AuthResult validateAccess(String token, String resource) { ... }
+```
+
+#### Entity 주석 예시
+```java
+/**
+ * 사용자 엔티티
+ */
+@Entity
+public class User {
+    /**
+     * 사용자 고유 식별자
+     */
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+    
+    /**
+     * 사용자명 (로그인용)
+     */
+    @Column(unique = true, nullable = false)
+    private String username;
+}
+```
+
+### 2. 인라인 주석 규칙
+
+- 복잡한 비즈니스 로직에만 필요시 간단히 작성
+- **명사형 표현** 사용: `// 중복 검증`, `// 권한 확인`, `// 캐시 갱신`
+- 자명한 코드에는 주석 작성 금지
+- **복잡한 로직의 경우 불렛 포인트 사용**:
+  ```java
+  // 사용자 인증 처리 과정:
+  // • 토큰 유효성 검증
+  // • 사용자 권한 확인
+  // • 세션 갱신
+  // • 로그 기록
+  ```
+
+### 3. 주석 품질 기준
+
+- 한 줄에 핵심 내용 요약
+- 매개변수/반환값 명확히 설명
+- 예외 상황 명시
+- 비즈니스 규칙이나 제약사항 설명
 
 ## Configuration
 
@@ -403,6 +749,44 @@ spring:
     port: 6379
 ```
 
+### Environment-Specific Configuration
+
+#### Development Environment
+```yaml
+# application-dev.yml
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:3306/spring_backend_dev
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+logging:
+  level:
+    "[com.iroomclass.spring_backend]": DEBUG
+```
+
+#### Production Environment
+```yaml
+# application-prod.yml
+spring:
+  datasource:
+    url: ${DB_URL:jdbc:mysql://prod-db:3306/spring_backend}
+    username: ${DB_USERNAME:prod_user}
+    password: ${DB_PASSWORD}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+logging:
+  level:
+    "[com.iroomclass.spring_backend]": INFO
+    root: WARN
+```
+
 ## Standard Response Wrapper
 
 **Location**: `com.iroomclass.spring_backend.common.ApiResponse`
@@ -433,6 +817,82 @@ public record ApiResponse<T>(String result, String message, T data) {
 }
 ```
 
+## Development Workflow
+
+### Feature Development Process
+
+1. **Issue Creation**: Create detailed issue with acceptance criteria
+2. **Branch Creation**: `feature/기능명` or `bugfix/버그명`
+3. **Domain Package Creation**: Set up domain-driven structure
+4. **DTO Design & Implementation**: Design request/response DTOs
+5. **Controller Implementation**: REST endpoints with validation
+6. **Service Implementation**: Business logic with transactions
+7. **Repository Implementation**: Data access layer
+8. **Test Creation**: Unit and integration tests
+9. **API Documentation**: Swagger/OpenAPI documentation
+10. **Code Review**: Team review following standards
+11. **Merge**: Integration into main branch
+
+### Code Review Checklist
+
+#### Architecture & Design
+- [ ] Domain-Driven Package structure used
+- [ ] Proper layer separation (Controller-Service-Repository)
+- [ ] Single responsibility principle adherence
+
+#### Coding Style
+- [ ] Java 21 Record usage for DTOs
+- [ ] Constructor injection pattern used
+- [ ] Korean JavaDoc documentation
+
+#### API Design
+- [ ] RESTful principles applied
+- [ ] Standard response format (ApiResponse) used
+- [ ] Appropriate HTTP status codes
+
+#### Security & Validation
+- [ ] Input data validation
+- [ ] Authorization checks (@PreAuthorize)
+- [ ] SQL Injection prevention
+- [ ] No sensitive information logging
+
+#### Performance & Quality
+- [ ] N+1 problem prevention
+- [ ] Appropriate transaction scope
+- [ ] Test coverage verification
+
+## Team Collaboration Guidelines
+
+### Git Branch Strategy
+- **main**: Production-ready code
+- **develop**: Integration branch for features
+- **feature/{기능명}**: New features
+- **bugfix/{버그명}**: Bug fixes
+- **hotfix/{수정명}**: Critical production fixes
+
+### Commit Message Convention
+```
+{타입}: {제목}
+
+{본문}
+
+{푸터}
+```
+
+**Types**: `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`
+
+**Example**:
+```
+feat: 사용자 관리 API 구현
+
+- 사용자 조회, 생성, 수정, 삭제 API 추가
+- UserDto, CreateUserRequest, UpdateUserRequest 구현
+- 입력 검증 및 에러 처리 로직 추가
+- Swagger API 문서화 완료
+
+Resolves: #123
+```
+
 ## Important Notes
 
 - The original package name `com.iroomclass.spring-backend` was invalid; the project uses `com.iroomclass.spring_backend` instead
@@ -442,3 +902,45 @@ public record ApiResponse<T>(String result, String message, T data) {
 - Always use records for DTOs to leverage Java 21 features
 - Follow the layering rules strictly to maintain clean architecture
 - Prioritize code quality and security over rapid development
+
+## Troubleshooting
+
+### Common Issues
+
+#### 1. Lombok Not Working
+**Solution**: Install Lombok plugin and enable annotation processing in IDE
+
+#### 2. Java 21 Not Recognized
+**Solution**: Set JAVA_HOME environment variable correctly
+
+#### 3. Port Conflicts
+**Solution**: Check running processes on port 3055 or change port in configuration
+
+#### 4. Database Connection Failed
+**Solution**: Verify MySQL service is running and connection parameters are correct
+
+#### 5. N+1 Query Problems
+**Solution**: Use @EntityGraph or fetch joins in repository methods
+
+### Performance Issues
+
+#### Memory Leaks
+**Solution**: Use pagination for large datasets, implement streaming for batch processing
+
+#### Slow Queries
+**Solution**: Add appropriate database indexes, use query optimization techniques
+
+## Related Documentation
+
+- **[Team Collaboration Guide](docs/TEAM_COLLABORATION_GUIDE.md)** - Workflow and processes
+- **[Setup Guide](docs/SETUP_GUIDE.md)** - Development environment setup
+- **[Coding Standards](docs/CODING_STANDARDS.md)** - Java 21 and Spring Boot conventions
+- **[API Guidelines](docs/API_GUIDELINES.md)** - RESTful API design rules
+- **[Architecture Document](docs/ARCHITECTURE.md)** - System design principles
+- **[Troubleshooting Guide](docs/TROUBLESHOOTING.md)** - FAQ and solutions
+
+# important-instruction-reminders
+Do what has been asked; nothing more, nothing less.
+NEVER create files unless they're absolutely necessary for achieving your goal.
+ALWAYS prefer editing an existing file to creating a new one.
+NEVER proactively create documentation files (*.md) or README files. Only create documentation files if explicitly requested by the User.
