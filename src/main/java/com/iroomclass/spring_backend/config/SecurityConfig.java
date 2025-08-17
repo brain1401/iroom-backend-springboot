@@ -1,5 +1,6 @@
 package com.iroomclass.spring_backend.config;
 
+import org.springframework.http.HttpMethod;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.Customizer;
@@ -40,13 +41,21 @@ public class SecurityConfig {
 
                 // URL별 접근 권한 설정
                 .authorizeHttpRequests(auth -> auth
+                        // CORS preflight 사전요청 허용
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         // Swagger UI 관련 경로 허용
                         .requestMatchers(
                                 "/swagger-ui/**",
                                 "/swagger-ui.html",
                                 "/v3/api-docs/**",
                                 "/swagger-resources/**",
-                                "/webjars/**")
+                                "/webjars/**",
+                                // context-path 적용 경로 추가 허용
+                                "/api/swagger-ui/**",
+                                "/api/swagger-ui.html",
+                                "/api/v3/api-docs/**",
+                                "/api/swagger-resources/**",
+                                "/api/webjars/**")
                         .permitAll()
 
                         // 정적 리소스 허용
