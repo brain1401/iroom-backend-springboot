@@ -63,9 +63,11 @@ public class SecurityConfig {
 
                         // 공개 API 경로 (필요 시 추가)
                         .requestMatchers("/api/public/**", "/api/test/**").permitAll()
+                        .requestMatchers("/public/**", "/test/**").permitAll()
 
                         // 시스템 API 공개 허용
                         .requestMatchers("/api/system/**").permitAll()
+                        .requestMatchers("/system/**").permitAll()
 
                         // 나머지 모든 요청은 인증 필요
                         .anyRequest().authenticated());
