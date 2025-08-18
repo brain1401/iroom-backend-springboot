@@ -15,6 +15,7 @@
 | 문서 | 용도 | 대상 |
 |------|------|------|
 | [**환경 설정 가이드**](SETUP_GUIDE.md) | 개발 환경 설정 및 프로젝트 실행 | 신규 개발자 |
+| [**설정 관리 가이드**](CONFIGURATION.md) | 애플리케이션 설정, DB/Redis 연결 | 개발자, DevOps |
 | [**아키텍처 문서**](ARCHITECTURE.md) | 시스템 아키텍처 및 설계 원칙 | 시니어 개발자, 아키텍트 |
 | [**문제 해결 가이드**](TROUBLESHOOTING.md) | 자주 발생하는 문제와 해결 방법 | 모든 개발자 |
 
@@ -22,9 +23,10 @@
 
 ### 신규 개발자라면
 1. **[환경 설정 가이드](SETUP_GUIDE.md)** - 개발 환경 구축
-2. **[아키텍처 문서](ARCHITECTURE.md)** - 프로젝트 이해
-3. **[코딩 표준](CODING_STANDARDS.md)** - 코딩 규칙 숙지
-4. **[팀 협업 가이드](TEAM_COLLABORATION_GUIDE.md)** - 협업 프로세스 학습
+2. **[설정 관리 가이드](CONFIGURATION.md)** - 애플리케이션 설정
+3. **[아키텍처 문서](ARCHITECTURE.md)** - 프로젝트 이해
+4. **[코딩 표준](CODING_STANDARDS.md)** - 코딩 규칙 숙지
+5. **[팀 협업 가이드](TEAM_COLLABORATION_GUIDE.md)** - 협업 프로세스 학습
 
 ### 기능 개발 시
 1. **[API 가이드라인](API_GUIDELINES.md)** - API 설계 규칙
