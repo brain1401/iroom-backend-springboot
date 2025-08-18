@@ -1,4 +1,4 @@
-package com.iroomclass.spring_backend.domain.system.dto;
+package com.iroomclass.springbackend.domain.system.dto;
 
 import java.time.LocalDateTime;
 import java.util.Objects;

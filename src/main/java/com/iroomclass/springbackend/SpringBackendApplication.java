@@ -1,4 +1,4 @@
-package com.iroomclass.spring_backend;
+package com.iroomclass.springbackend;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

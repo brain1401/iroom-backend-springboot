@@ -1,4 +1,4 @@
-package com.iroomclass.spring_backend.domain.system.dto;
+package com.iroomclass.springbackend.domain.system.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import io.swagger.v3.oas.annotations.media.Schema;

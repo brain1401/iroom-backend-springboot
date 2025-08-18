@@ -1,4 +1,4 @@
-package com.iroomclass.spring_backend.config;
+package com.iroomclass.springbackend.config;
 
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;

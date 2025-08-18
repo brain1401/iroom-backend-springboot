@@ -1,8 +1,8 @@
-package com.iroomclass.spring_backend.domain.system.controller;
+package com.iroomclass.springbackend.domain.system.controller;
 
-import com.iroomclass.spring_backend.common.ApiResponse;
-import com.iroomclass.spring_backend.domain.system.dto.SystemHealthDto;
-import com.iroomclass.spring_backend.domain.system.service.SystemService;
+import com.iroomclass.springbackend.common.ApiResponse;
+import com.iroomclass.springbackend.domain.system.dto.SystemHealthDto;
+import com.iroomclass.springbackend.domain.system.service.SystemService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;

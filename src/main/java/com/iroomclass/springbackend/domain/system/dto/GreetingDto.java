@@ -1,4 +1,4 @@
-package com.iroomclass.spring_backend.domain.system.dto;
+package com.iroomclass.springbackend.domain.system.dto;
 
 import java.util.Objects;
 import io.swagger.v3.oas.annotations.media.Schema;

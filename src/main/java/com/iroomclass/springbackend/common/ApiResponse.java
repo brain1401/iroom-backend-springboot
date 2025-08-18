@@ -1,4 +1,4 @@
-package com.iroomclass.spring_backend.common;
+package com.iroomclass.springbackend.common;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 

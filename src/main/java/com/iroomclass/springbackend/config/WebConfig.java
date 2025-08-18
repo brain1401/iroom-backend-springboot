@@ -1,4 +1,4 @@
-package com.iroomclass.spring_backend.config;
+package com.iroomclass.springbackend.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

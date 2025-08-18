@@ -1,13 +1,13 @@
-package com.iroomclass.spring_backend.domain.system.service;
+package com.iroomclass.springbackend.domain.system.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
-import com.iroomclass.spring_backend.domain.system.dto.EchoDto;
-import com.iroomclass.spring_backend.domain.system.dto.GreetingDto;
-import com.iroomclass.spring_backend.domain.system.dto.SystemHealthDto;
+import com.iroomclass.springbackend.domain.system.dto.EchoDto;
+import com.iroomclass.springbackend.domain.system.dto.GreetingDto;
+import com.iroomclass.springbackend.domain.system.dto.SystemHealthDto;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
