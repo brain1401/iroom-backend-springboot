@@ -1,0 +1,171 @@
+# =============================================================================
+# Docker Compose for Spring Boot 3.5.4 Development Environment
+# =============================================================================
+# Provides a complete development stack including:
+# - Spring Boot application
+# - MySQL database
+# - Redis cache
+# - Adminer for database management
+# - Nginx as reverse proxy (optional)
+
+version: '3.8'
+
+services:
+  # -----------------------------------------------------------------------------
+  # Spring Boot Application
+  # -----------------------------------------------------------------------------
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: iroom-backend
+    environment:
+      # Spring profiles
+      - SPRING_PROFILES_ACTIVE=docker
+      
+      # Database configuration
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_NAME=iroom_backend_db
+      - DB_USERNAME=iroom_user
+      - DB_PASSWORD=iroom_password
+      
+      # Redis configuration
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      
+      # JVM options
+      - JAVA_OPTS=-Xms256m -Xmx512m -XX:+UseG1GC
+    ports:
+      - "3055:3055"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - iroom-network
+    volumes:
+      # Application logs
+      - app-logs:/application/logs
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3055/api/system/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  # -----------------------------------------------------------------------------
+  # MySQL Database
+  # -----------------------------------------------------------------------------
+  mysql:
+    image: mysql:8.0
+    container_name: iroom-mysql
+    environment:
+      - MYSQL_ROOT_PASSWORD=root_password
+      - MYSQL_DATABASE=iroom_backend_db
+      - MYSQL_USER=iroom_user
+      - MYSQL_PASSWORD=iroom_password
+      - MYSQL_CHARACTER_SET_SERVER=utf8mb4
+      - MYSQL_COLLATION_SERVER=utf8mb4_unicode_ci
+    ports:
+      - "3306:3306"
+    volumes:
+      # Persistent data storage
+      - mysql-data:/var/lib/mysql
+      # MySQL configuration
+      - ./docker/mysql/conf.d:/etc/mysql/conf.d:ro
+      # Initialization scripts
+      - ./docker/mysql/init:/docker-entrypoint-initdb.d:ro
+    networks:
+      - iroom-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "$$MYSQL_USER", "-p$$MYSQL_PASSWORD"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # -----------------------------------------------------------------------------
+  # Redis Cache
+  # -----------------------------------------------------------------------------
+  redis:
+    image: redis:7-alpine
+    container_name: iroom-redis
+    command: redis-server --appendonly yes --requirepass redis_password
+    ports:
+      - "6379:6379"
+    volumes:
+      # Persistent data storage
+      - redis-data:/data
+      # Redis configuration
+      - ./docker/redis/redis.conf:/etc/redis/redis.conf:ro
+    networks:
+      - iroom-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "redis_password", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # -----------------------------------------------------------------------------
+  # Adminer (Database Management)
+  # -----------------------------------------------------------------------------
+  adminer:
+    image: adminer:4.8.1
+    container_name: iroom-adminer
+    environment:
+      - ADMINER_DEFAULT_SERVER=mysql
+      - ADMINER_DESIGN=lucas
+    ports:
+      - "8080:8080"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - iroom-network
+    restart: unless-stopped
+
+  # -----------------------------------------------------------------------------
+  # Nginx Reverse Proxy (Optional)
+  # -----------------------------------------------------------------------------
+  nginx:
+    image: nginx:alpine
+    container_name: iroom-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./docker/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./docker/nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./docker/nginx/ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - app
+    networks:
+      - iroom-network
+    restart: unless-stopped
+    profiles:
+      - nginx
+
+# =============================================================================
+# Networks
+# =============================================================================
+networks:
+  iroom-network:
+    driver: bridge
+    name: iroom-backend-network
+
+# =============================================================================
+# Volumes
+# =============================================================================
+volumes:
+  mysql-data:
+    name: iroom-mysql-data
+  redis-data:
+    name: iroom-redis-data
+  app-logs:
+    name: iroom-app-logs
