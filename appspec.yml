@@ -1,0 +1,58 @@
+# =============================================================================
+# AWS CodeDeploy Application Specification File
+# =============================================================================
+# 이 파일은 CodeDeploy가 애플리케이션을 배포할 때 실행할 작업들을 정의합니다
+# - Docker 이미지 풀링 및 배포
+# - Blue-Green 스위칭
+# - 헬스체크 및 검증
+# - 롤백 지원
+# =============================================================================
+
+version: 0.0
+os: linux
+
+files:
+  - source: /
+    destination: /opt/applications/iroom-backend
+    overwrite: yes
+
+permissions:
+  - object: /opt/applications/iroom-backend
+    owner: ubuntu
+    group: ubuntu
+    mode: 755
+  - object: /opt/applications/iroom-backend/scripts
+    owner: ubuntu
+    group: ubuntu
+    mode: 755
+
+hooks:
+  # 배포 전 단계: 사전 검증 및 준비
+  BeforeInstall:
+    - location: scripts/codedeploy/before_install.sh
+      timeout: 300
+      runas: root
+  
+  # 설치 후 단계: 환경 설정
+  AfterInstall:
+    - location: scripts/codedeploy/after_install.sh
+      timeout: 300
+      runas: ubuntu
+  
+  # 애플리케이션 시작 전: 서비스 준비
+  ApplicationStart:
+    - location: scripts/codedeploy/application_start.sh
+      timeout: 600
+      runas: ubuntu
+  
+  # 애플리케이션 시작 후: 헬스체크 및 검증
+  ApplicationStop:
+    - location: scripts/codedeploy/application_stop.sh
+      timeout: 300
+      runas: ubuntu
+  
+  # 배포 완료 후: 최종 검증 및 정리
+  ValidateService:
+    - location: scripts/codedeploy/validate_service.sh
+      timeout: 300
+      runas: ubuntu

@@ -1,0 +1,128 @@
+# =============================================================================
+# Manual Rollback Workflow
+# =============================================================================
+# 응급 상황에서 수동으로 이전 버전으로 롤백하는 워크플로우
+# - Blue-Green 환경 간 즉시 전환
+# - 헬스체크 및 검증
+# - 슬랙 알림
+# =============================================================================
+
+name: Manual Rollback
+
+on:
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: '롤백 사유'
+        required: true
+        default: '응급 롤백'
+      skip_health_check:
+        description: '헬스체크 건너뛰기'
+        required: false
+        default: 'false'
+        type: boolean
+
+jobs:
+  rollback:
+    name: 🔄 Execute Rollback
+    runs-on: [self-hosted, production]
+    
+    steps:
+      - name: 📋 Rollback 정보 출력
+        run: |
+          echo "🔄 롤백 실행 정보:"
+          echo "  • 사유: ${{ github.event.inputs.reason }}"
+          echo "  • 실행자: ${{ github.actor }}"
+          echo "  • 시간: $(date)"
+          echo "  • 헬스체크 건너뛰기: ${{ github.event.inputs.skip_health_check }}"
+
+      - name: 📊 현재 배포 상태 확인
+        run: |
+          echo "=== 현재 배포 상태 ==="
+          /opt/scripts/blue-green-deploy.sh status
+
+      - name: 🔄 롤백 실행
+        id: rollback
+        run: |
+          cd /opt/scripts
+          if ./blue-green-deploy.sh rollback; then
+            echo "rollback-status=success" >> $GITHUB_OUTPUT
+          else
+            echo "rollback-status=failed" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+
+      - name: 🔍 롤백 검증
+        if: github.event.inputs.skip_health_check != 'true'
+        run: |
+          echo "롤백 검증 시작..."
+          sleep 15
+          
+          # 헬스체크 실행
+          for i in {1..10}; do
+            if curl -f -s http://localhost/api/system/health > /dev/null; then
+              echo "✅ 헬스체크 성공 (시도: $i/10)"
+              break
+            fi
+            
+            if [ $i -eq 10 ]; then
+              echo "❌ 헬스체크 실패 - 수동 확인 필요"
+              exit 1
+            fi
+            
+            echo "⏳ 헬스체크 재시도 중... ($i/10)"
+            sleep 10
+          done
+
+      - name: 📊 롤백 후 상태 확인
+        run: |
+          echo "=== 롤백 후 배포 상태 ==="
+          /opt/scripts/blue-green-deploy.sh status
+          
+          echo
+          echo "=== 시스템 헬스체크 ==="
+          /opt/scripts/health-check.sh
+
+  notify:
+    name: 📢 Send Notification
+    runs-on: ubuntu-24.04
+    needs: rollback
+    if: always()
+    
+    steps:
+      - name: 📢 Slack 알림 - 롤백 성공
+        if: needs.rollback.result == 'success'
+        uses: 8398a7/action-slack@v3
+        with:
+          status: success
+          channel: '#deployments'
+          text: |
+            🔄 *Rollback Completed Successfully*
+            
+            📦 Repository: ${{ github.repository }}
+            👤 Executed by: ${{ github.actor }}
+            📝 Reason: ${{ github.event.inputs.reason }}
+            ⏰ Time: $(date)
+            
+            ✅ Previous version is now active
+            🔍 Please verify the application functionality
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+      - name: 📢 Slack 알림 - 롤백 실패
+        if: needs.rollback.result == 'failure'
+        uses: 8398a7/action-slack@v3
+        with:
+          status: failure
+          channel: '#deployments'
+          text: |
+            🚨 *Rollback Failed*
+            
+            📦 Repository: ${{ github.repository }}
+            👤 Executed by: ${{ github.actor }}
+            📝 Reason: ${{ github.event.inputs.reason }}
+            
+            ❌ Rollback failed - Manual intervention required
+            📞 Please contact the DevOps team immediately
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

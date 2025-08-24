@@ -1,0 +1,107 @@
+# =============================================================================
+# Ubuntu 24.04 기반 CI/CD 지원 베이스 이미지
+# =============================================================================
+# 이 이미지는 EC2에서 실행되어 완전한 CI/CD 환경을 제공합니다
+# - GitHub Actions Self-hosted Runner
+# - AWS CLI & CodeDeploy Agent
+# - Docker Engine & Docker Compose
+# - Nginx & 무중단 배포 스크립트
+# - 모니터링 도구들
+# =============================================================================
+
+FROM ubuntu:24.04
+
+LABEL maintainer="iroom-devops-team"
+LABEL description="Ubuntu 24.04 CI/CD Base Image for Spring Boot Applications"
+LABEL version="1.0.0"
+
+# 환경 변수 설정
+ENV DEBIAN_FRONTEND=noninteractive
+ENV TZ=Asia/Seoul
+ENV LANG=C.UTF-8
+ENV LC_ALL=C.UTF-8
+
+# 기본 시스템 업데이트 및 필수 패키지 설치
+RUN apt-get update && apt-get install -y \
+    apt-transport-https \
+    ca-certificates \
+    curl \
+    gnupg \
+    lsb-release \
+    software-properties-common \
+    wget \
+    unzip \
+    git \
+    jq \
+    vim \
+    htop \
+    net-tools \
+    telnet \
+    build-essential \
+    python3 \
+    python3-pip \
+    ruby-full \
+    nodejs \
+    npm \
+    supervisor \
+    systemd \
+    && rm -rf /var/lib/apt/lists/*
+
+# 시간대 설정
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+
+# Docker Engine 설치
+RUN curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+RUN echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
+RUN apt-get update && apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+
+# Java 21 설치 (Bellsoft Liberica JDK)
+RUN wget -q -O - https://download.bell-sw.com/pki/GPG-KEY-bellsoft | apt-key add -
+RUN echo "deb [arch=amd64] https://apt.bell-sw.com/ stable main" | tee /etc/apt/sources.list.d/bellsoft.list
+RUN apt-get update && apt-get install -y bellsoft-java21-full
+
+# AWS CLI v2 설치
+RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" \
+    && unzip awscliv2.zip \
+    && ./aws/install \
+    && rm -rf aws awscliv2.zip
+
+# CodeDeploy Agent 설치
+RUN cd /home && \
+    wget https://aws-codedeploy-ap-northeast-2.s3.ap-northeast-2.amazonaws.com/latest/install \
+    && chmod +x ./install \
+    && ./install auto
+
+# Nginx 설치 및 기본 설정
+RUN apt-get update && apt-get install -y nginx
+COPY nginx/nginx.conf /etc/nginx/nginx.conf
+COPY nginx/conf.d/ /etc/nginx/conf.d/
+
+# 모니터링 도구 설치
+# Prometheus Node Exporter
+RUN wget https://github.com/prometheus/node_exporter/releases/download/v1.8.2/node_exporter-1.8.2.linux-amd64.tar.gz \
+    && tar xvfz node_exporter-1.8.2.linux-amd64.tar.gz \
+    && mv node_exporter-1.8.2.linux-amd64/node_exporter /usr/local/bin/ \
+    && rm -rf node_exporter-1.8.2.linux-amd64*
+
+# GitHub Actions Runner 설치 스크립트 (실행 시 설정)
+COPY scripts/install-github-runner.sh /opt/scripts/
+COPY scripts/setup-deployment.sh /opt/scripts/
+COPY scripts/health-check.sh /opt/scripts/
+COPY scripts/blue-green-deploy.sh /opt/scripts/
+RUN chmod +x /opt/scripts/*.sh
+
+# 작업 디렉토리 생성
+RUN mkdir -p /opt/applications /opt/logs /opt/backups /opt/monitoring
+
+# Supervisor 설정 (서비스 관리)
+COPY supervisor/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+
+# 포트 노출
+EXPOSE 80 443 3055 8080 8081 9090 9100
+
+# 시작 스크립트
+COPY scripts/entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+ENTRYPOINT ["/entrypoint.sh"]

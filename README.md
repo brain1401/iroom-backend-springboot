@@ -154,22 +154,74 @@ src/main/java/com/iroomclass/spring_backend/
 
 ## 🐳 Docker 배포
 
-### Docker 이미지 빌드
-```bash
-# JAR 파일 빌드
-./gradlew bootJar
-
-# Docker 이미지 빌드
-docker build -t spring-backend:latest .
-```
-
-### Docker Compose 실행
+### 로컬 개발용 Docker 실행
 ```bash
 # 전체 스택 실행 (애플리케이션 + MySQL + Redis)
 docker-compose up -d
 
 # 로그 확인
 docker-compose logs -f app
+```
+
+### Docker 이미지 빌드
+```bash
+# 편리한 빌드 스크립트 사용
+./docker-build.sh build          # 표준 이미지 빌드
+./docker-build.sh build-cds      # CDS 최적화 이미지 빌드
+./docker-build.sh run            # Docker Compose로 실행
+```
+
+## 🚀 CI/CD 자동 배포
+
+### 완전 자동화된 CI/CD 인프라 구축
+
+**"git push만으로 AWS EC2에 자동 배포되는 완전한 CI/CD 환경"**
+
+```bash
+# 한 번의 명령어로 전체 CI/CD 인프라 구축
+chmod +x deploy-full-cicd.sh
+./deploy-full-cicd.sh
+```
+
+### CI/CD 구성 요소
+- ☁️ **AWS 인프라**: EC2 (Ubuntu 24.04) + ECR + CodeDeploy 자동 생성
+- 🔄 **GitHub Actions**: 빌드, 테스트, 배포 파이프라인
+- 🐳 **Docker 최적화**: CDS 지원 멀티스테이지 빌드
+- ⚡ **무중단 배포**: Blue-Green 포트 스위칭 전략
+- 📊 **모니터링**: 헬스체크, 로그 수집, 메트릭
+
+### 배포 플로우
+```mermaid
+graph LR
+    A[git push] --> B[GitHub Actions]
+    B --> C[Build & Test]
+    C --> D[Docker Image]
+    D --> E[ECR Push]
+    E --> F[CodeDeploy]
+    F --> G[Blue-Green Deploy]
+    G --> H[Health Check]
+    H --> I[Traffic Switch]
+```
+
+### 주요 특징
+- **🏗️ Infrastructure as Code**: Terraform으로 AWS 인프라 자동 생성
+- **⚡ 빠른 시작**: CDS(Class Data Sharing) 지원으로 애플리케이션 시작 시간 단축
+- **🔄 무중단 배포**: Nginx 포트 스위칭을 통한 Zero-downtime 배포
+- **📋 자동 롤백**: 배포 실패 시 자동 롤백 지원
+- **📊 모니터링**: Prometheus, Node Exporter 기본 제공
+- **🔐 보안**: IAM 역할 기반 권한 관리, 방화벽 설정
+
+### 배포 후 관리
+```bash
+# 배포 상태 확인
+ssh -i ~/.ssh/your-key.pem ubuntu@YOUR_EC2_IP
+/opt/scripts/blue-green-deploy.sh status
+
+# 수동 롤백
+/opt/scripts/blue-green-deploy.sh rollback
+
+# 시스템 헬스체크
+/opt/scripts/health-check.sh
 ```
 
 ## 🧪 테스트
