@@ -13,6 +13,12 @@ import lombok.*;
  * @author 이룸클래스
  * @since 2025
  */
+@Entity
+@Table(name = "exam_selected_unit")
+@Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
+@Builder
 public class ExamSelectedUnit {
     
     /**
