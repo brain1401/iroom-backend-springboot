@@ -38,4 +38,15 @@ public interface ExamDocumentRepository extends JpaRepository<ExamDocument, Long
      * @return 해당 조건의 문서
      */
     ExamDocument findByExamDraftIdAndDocumentType(Long examDraftId, ExamDocument.DocumentType documentType);
+    
+    /**
+     * 시험지 초안 ID로 모든 문서 조회
+     * 
+     * 사용처: 시험지 초안의 모든 문서 목록 조회
+     * 예시: "1학년 중간고사" → 답안지, 문제지, 답안 모두 조회
+     * 
+     * @param examDraftId 시험지 초안 ID
+     * @return 해당 시험지 초안의 모든 문서 목록
+     */
+    List<ExamDocument> findByExamDraftId(Long examDraftId);
 }

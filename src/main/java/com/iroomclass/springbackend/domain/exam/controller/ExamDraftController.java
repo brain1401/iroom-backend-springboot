@@ -155,32 +155,4 @@ public class ExamDraftController {
         
         return ResponseEntity.ok(response);
     }
-    
-    /**
-     * 시험지 초안 삭제
-     * 
-     * @param examDraftId 시험지 초안 ID
-     * @return 삭제 성공 여부
-     */
-    @DeleteMapping("/{examDraftId}")
-    @Operation(
-        summary = "시험지 초안 삭제",
-        description = "시험지 초안을 삭제합니다. 연관된 모든 데이터(선택된 단원, 문제)도 함께 삭제됩니다."
-    )
-    @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "삭제 성공"),
-        @ApiResponse(responseCode = "400", description = "잘못된 시험지 초안 ID"),
-        @ApiResponse(responseCode = "404", description = "존재하지 않는 시험지 초안")
-    })
-    public ResponseEntity<String> deleteExamDraft(
-            @Parameter(description = "시험지 초안 ID", example = "1") 
-            @PathVariable Long examDraftId) {
-        log.info("시험지 초안 {} 삭제 요청", examDraftId);
-        
-        examDraftService.deleteExamDraft(examDraftId);
-        
-        log.info("시험지 초안 {} 삭제 성공", examDraftId);
-        
-        return ResponseEntity.ok("삭제 성공");
-    }
 }

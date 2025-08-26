@@ -254,25 +254,6 @@ public class ExamDraftService {
     }
     
     /**
-     * 시험지 초안 삭제
-     * 
-     * @param examDraftId 시험지 초안 ID
-     */
-    @Transactional
-    public void deleteExamDraft(Long examDraftId) {
-        log.info("시험지 초안 {} 삭제 요청", examDraftId);
-        
-        // 1단계: 시험지 초안 존재 확인
-        ExamDraft examDraft = examDraftRepository.findById(examDraftId)
-            .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 시험지 초안입니다: " + examDraftId));
-        
-        // 2단계: 연관된 데이터 삭제 (CASCADE로 자동 삭제됨)
-        examDraftRepository.delete(examDraft);
-        
-        log.info("시험지 초안 {} 삭제 완료", examDraftId);
-    }
-    
-    /**
      * 입력값 검증
      */
     private void validateCreateRequest(ExamDraftCreateRequest request) {
