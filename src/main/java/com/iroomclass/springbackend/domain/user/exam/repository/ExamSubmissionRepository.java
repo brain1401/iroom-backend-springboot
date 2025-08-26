@@ -65,6 +65,30 @@ public interface ExamSubmissionRepository extends JpaRepository<ExamSubmission, 
     List<ExamSubmission> findByStudentNameAndStudentPhone(String studentName, String studentPhone);
     
     /**
+     * 학생 이름과 전화번호로 제출 조회 (최신순)
+     * 
+     * 사용처: 학생 로그인 및 결과 조회
+     * 예시: "김철수" + "010-1234-5678" → 해당 학생의 제출 기록 조회 (최신순)
+     * 
+     * @param studentName 학생 이름
+     * @param studentPhone 학생 전화번호
+     * @return 해당 학생의 제출 목록 (최신순)
+     */
+    List<ExamSubmission> findByStudentNameAndStudentPhoneOrderBySubmittedAtDesc(String studentName, String studentPhone);
+    
+    /**
+     * 학생 이름과 전화번호로 제출 수 조회
+     * 
+     * 사용처: 학생 로그인 시 존재 여부 확인
+     * 예시: "김철수" + "010-1234-5678" → 해당 학생의 제출 기록 수 조회
+     * 
+     * @param studentName 학생 이름
+     * @param studentPhone 학생 전화번호
+     * @return 해당 학생의 제출 기록 수
+     */
+    long countByStudentNameAndStudentPhone(String studentName, String studentPhone);
+    
+    /**
      * 특정 시험에서 학생 제출 여부 확인
      * 
      * 사용처: 중복 제출 방지
