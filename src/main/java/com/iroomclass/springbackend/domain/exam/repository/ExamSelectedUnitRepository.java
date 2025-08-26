@@ -39,4 +39,15 @@ public interface ExamSelectedUnitRepository extends JpaRepository<ExamSelectedUn
      * @return 해당 시험지에 선택된 단원 목록
      */
     List<ExamSelectedUnit> findByExamDraftId(Long examDraftId);
+    
+    /**
+     * 시험지 초안 ID로 선택된 단원 수 카운트
+     * 
+     * 사용처: 시험지 목록에서 선택된 단원 수 표시
+     * 예시: "1학년 중간고사" → "3개 단원 선택" 표시
+     * 
+     * @param examDraftId 시험지 초안 ID
+     * @return 해당 시험지에 선택된 단원 수
+     */
+    long countByExamDraftId(Long examDraftId);
 }

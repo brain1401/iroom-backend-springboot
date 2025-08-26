@@ -85,4 +85,15 @@ public interface QuestionRepository extends JpaRepository<Question, Long> {
      * @return 키워드가 포함된 문제 목록
      */
     List<Question> findByStemContaining(String keyword);
+    
+    /**
+     * 다중 단원별 문제 수 카운트
+     * 
+     * 사용처: 시험지 초안 생성 시 선택된 단원들의 총 문제 수 확인
+     * 예시: "정수의 덧셈", "정수의 뺄셈" 단원 선택 → 총 50문제 확인
+     * 
+     * @param unitIds 단원 ID 목록
+     * @return 해당 단원들에 속한 문제의 총 개수
+     */
+    long countByUnitIdIn(List<Long> unitIds);
 }

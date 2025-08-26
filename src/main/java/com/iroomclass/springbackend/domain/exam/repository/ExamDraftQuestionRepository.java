@@ -36,4 +36,16 @@ public interface ExamDraftQuestionRepository extends JpaRepository<ExamDraftQues
      * @return 해당 시험지 초안의 문제 개수
      */
     long countByExamDraftId(Long examDraftId);
+    
+    /**
+     * 특정 시험지 초안의 특정 문제 조회
+     * 
+     * 사용처: 문제 교체 시 특정 문제 번호의 문제 조회
+     * 예시: 1학년 중간고사 5번 문제 교체 → 5번 문제 정보 조회
+     * 
+     * @param examDraftId 시험지 초안 ID
+     * @param seqNo 문제 번호
+     * @return 해당 문제 정보
+     */
+    java.util.Optional<ExamDraftQuestion> findByExamDraftIdAndSeqNo(Long examDraftId, int seqNo);
 }
