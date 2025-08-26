@@ -38,7 +38,7 @@ import lombok.extern.slf4j.Slf4j;
 @RequestMapping("/exam-draft")
 @RequiredArgsConstructor
 @Slf4j
-@Tag(name = "시험지 초안 관리", description = "시험지 초안 생성, 조회, 수정, 삭제 API")
+@Tag(name = "관리자 - 시험지 초안 관리", description = "시험지 초안 생성, 조회, 수정, 삭제 API")
 public class ExamDraftController {
     
     private final ExamDraftService examDraftService;

@@ -33,7 +33,7 @@ import lombok.extern.slf4j.Slf4j;
 @RequestMapping("/exam")
 @RequiredArgsConstructor
 @Slf4j
-@Tag(name = "실제 시험 관리", description = "실제 시험 등록, 조회, 수정, 삭제 API")
+@Tag(name = "관리자 - 실제 시험 관리", description = "실제 시험 등록, 조회, 수정, 삭제 API")
 public class ExamController {
     
     private final ExamService examService;

@@ -34,7 +34,7 @@ import lombok.extern.slf4j.Slf4j;
 @RequestMapping("/question")
 @RequiredArgsConstructor
 @Slf4j
-@Tag(name = "문제 관리", description = "문제 목록 조회, 상세 조회, 통계, 검색 API")
+@Tag(name = "관리자 - 문제 관리", description = "문제 목록 조회, 상세 조회, 통계, 검색 API")
 public class QuestionController {
     
     private final QuestionService questionService;

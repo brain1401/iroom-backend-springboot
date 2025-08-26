@@ -36,7 +36,7 @@ import lombok.extern.slf4j.Slf4j;
 @RequestMapping("/exam-document")
 @RequiredArgsConstructor
 @Slf4j
-@Tag(name = "시험지 문서 관리", description = "시험지 문서 생성, 조회 API")
+@Tag(name = "관리자 - 시험지 문서 관리", description = "시험지 문서 생성, 조회 API")
 public class ExamDocumentController {
     
     private final ExamDocumentService examDocumentService;
