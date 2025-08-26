@@ -1,6 +1,7 @@
 package com.iroomclass.springbackend.domain.user.exam.controller;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -11,6 +12,7 @@ import com.iroomclass.springbackend.domain.user.exam.dto.ExamSubmissionCreateRes
 import com.iroomclass.springbackend.domain.user.exam.service.ExamSubmissionService;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -30,7 +32,7 @@ import lombok.extern.slf4j.Slf4j;
 @RequestMapping("/user/exam-submission")
 @RequiredArgsConstructor
 @Slf4j
-@Tag(name = "학생 시험 제출", description = "학생 시험 제출 생성 API")
+@Tag(name = "학생 시험 제출", description = "학생 시험 제출 생성, 최종 제출 API")
 public class ExamSubmissionController {
     
     private final ExamSubmissionService examSubmissionService;
@@ -63,11 +65,32 @@ public class ExamSubmissionController {
         return ResponseEntity.ok(response);
     }
     
-
-    
-
-    
-
-    
-
+    /**
+     * 시험 최종 제출
+     * 
+     * @param submissionId 시험 제출 ID
+     * @return 최종 제출 완료 정보
+     */
+    @PostMapping("/{submissionId}/final-submit")
+    @Operation(
+        summary = "시험 최종 제출",
+        description = "모든 답안이 완료된 후 시험을 최종 제출합니다."
+    )
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "최종 제출 성공"),
+        @ApiResponse(responseCode = "400", description = "답안이 완료되지 않음"),
+        @ApiResponse(responseCode = "404", description = "존재하지 않는 시험 제출")
+    })
+    public ResponseEntity<ExamSubmissionCreateResponse> finalSubmitExam(
+            @Parameter(description = "시험 제출 ID", example = "1") 
+            @PathVariable Long submissionId) {
+        log.info("시험 최종 제출 요청: 제출 ID={}", submissionId);
+        
+        ExamSubmissionCreateResponse response = examSubmissionService.finalSubmitExam(submissionId);
+        
+        log.info("시험 최종 제출 성공: 제출 ID={}, 학생={}", 
+            response.getSubmissionId(), response.getStudentName());
+        
+        return ResponseEntity.ok(response);
+    }
 }

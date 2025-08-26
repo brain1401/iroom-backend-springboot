@@ -93,4 +93,12 @@ public class ExamSubmission {
     protected void onCreate() {
         submittedAt = LocalDateTime.now();
     }
+    
+    /**
+     * 최종 제출일시 업데이트
+     * 답안 작성 완료 후 최종 제출 시 호출됩니다.
+     */
+    public void updateSubmittedAt() {
+        this.submittedAt = LocalDateTime.now();
+    }
 }

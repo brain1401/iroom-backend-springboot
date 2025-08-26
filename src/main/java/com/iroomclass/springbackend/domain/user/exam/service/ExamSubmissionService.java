@@ -9,6 +9,7 @@ import com.iroomclass.springbackend.domain.user.exam.entity.ExamSubmission;
 import com.iroomclass.springbackend.domain.user.exam.repository.ExamSubmissionRepository;
 import com.iroomclass.springbackend.domain.admin.exam.entity.Exam;
 import com.iroomclass.springbackend.domain.admin.exam.repository.ExamRepository;
+import com.iroomclass.springbackend.domain.user.exam.answer.repository.ExamAnswerRepository;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -29,6 +30,7 @@ public class ExamSubmissionService {
     
     private final ExamSubmissionRepository examSubmissionRepository;
     private final ExamRepository examRepository;
+    private final ExamAnswerRepository examAnswerRepository;
     
     /**
      * 시험 제출 생성
@@ -74,5 +76,41 @@ public class ExamSubmissionService {
             .build();
     }
     
-
+    /**
+     * 시험 최종 제출
+     * 
+     * @param submissionId 시험 제출 ID
+     * @return 최종 제출 완료 정보
+     */
+    @Transactional
+    public ExamSubmissionCreateResponse finalSubmitExam(Long submissionId) {
+        log.info("시험 최종 제출 요청: 제출 ID={}", submissionId);
+        
+        // 1단계: 시험 제출 존재 확인
+        ExamSubmission submission = examSubmissionRepository.findById(submissionId)
+            .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 시험 제출입니다: " + submissionId));
+        
+        // 2단계: 답안 완료 여부 확인
+        long answerCount = examAnswerRepository.countByExamSubmissionId(submissionId);
+        if (answerCount == 0) {
+            throw new IllegalArgumentException("답안이 완료되지 않았습니다. 답안을 먼저 작성해주세요.");
+        }
+        
+        // 3단계: 최종 제출 처리 (submittedAt 업데이트)
+        submission.updateSubmittedAt();
+        submission = examSubmissionRepository.save(submission);
+        
+        log.info("시험 최종 제출 완료: 제출 ID={}, 학생={}, 답안 수={}", 
+            submission.getId(), submission.getStudentName(), answerCount);
+        
+        return ExamSubmissionCreateResponse.builder()
+            .submissionId(submission.getId())
+            .examId(submission.getExam().getId())
+            .examName(submission.getExam().getExamName())
+            .studentName(submission.getStudentName())
+            .studentPhone(submission.getStudentPhone())
+            .submittedAt(submission.getSubmittedAt())
+            .qrCodeUrl(submission.getExam().getQrCodeUrl())
+            .build();
+    }
 }
