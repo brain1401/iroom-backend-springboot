@@ -21,7 +21,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class ExamDraftListResponse {
     
-    private int grade;              // 학년
+    private Integer grade;              // 학년 (전체 목록일 경우 null)
     private List<ExamDraftInfo> examDrafts;  // 시험지 초안 목록
     private int totalCount;         // 총 개수
     

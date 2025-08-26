@@ -71,6 +71,29 @@ public class ExamDraftController {
     }
     
     /**
+     * 전체 시험지 초안 목록 조회
+     * 
+     * @return 모든 시험지 초안 목록 (최신순)
+     */
+    @GetMapping
+    @Operation(
+        summary = "전체 시험지 초안 목록 조회",
+        description = "모든 학년의 시험지 초안 목록을 최신순으로 조회합니다."
+    )
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "조회 성공")
+    })
+    public ResponseEntity<ExamDraftListResponse> getAllExamDrafts() {
+        log.info("전체 시험지 초안 목록 조회 요청");
+        
+        ExamDraftListResponse response = examDraftService.getAllExamDrafts();
+        
+        log.info("전체 시험지 초안 목록 조회 성공: {}개", response.getTotalCount());
+        
+        return ResponseEntity.ok(response);
+    }
+    
+    /**
      * 학년별 시험지 초안 목록 조회
      * 
      * @param grade 학년 (1, 2, 3)

@@ -87,6 +87,10 @@ public class SecurityConfig {
                         .requestMatchers("/exam-document/**").permitAll()
                         .requestMatchers("/api/exam-document/**").permitAll()
 
+                        // 실제 시험 API 공개 허용
+                        .requestMatchers("/exam/**").permitAll()
+                        .requestMatchers("/api/exam/**").permitAll()
+
                         // (추가) 관리자 API 경로 설정
                         .requestMatchers("/admin/login").permitAll() // 로그인은 누구나 접근 가능
                         .requestMatchers("/admin/academy-name").permitAll() // 학원명 조회도 공개로 설정

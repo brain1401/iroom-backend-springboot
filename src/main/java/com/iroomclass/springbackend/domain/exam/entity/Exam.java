@@ -72,6 +72,14 @@ public class Exam {
     private Integer studentCount;
     
     /**
+     * QR 코드 URL
+     * 학생 접속용 QR 코드 URL
+     * 최대 255자
+     */
+    @Column(length = 255)
+    private String qrCodeUrl;
+    
+    /**
      * 등록일시
      * 시험이 등록된 날짜와 시간
      * 자동으로 현재 시간이 설정됩니다.
@@ -86,5 +94,18 @@ public class Exam {
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
+    }
+    
+    /**
+     * 시험 정보 수정
+     * 
+     * @param examName 수정할 시험명
+     * @param content 수정할 시험 내용
+     * @param studentCount 수정할 학생 수
+     */
+    public void updateExamInfo(String examName, String content, Integer studentCount) {
+        this.examName = examName;
+        this.content = content;
+        this.studentCount = studentCount;
     }
 }

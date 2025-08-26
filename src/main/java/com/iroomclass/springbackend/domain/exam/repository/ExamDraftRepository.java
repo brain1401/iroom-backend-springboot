@@ -27,4 +27,14 @@ public interface ExamDraftRepository extends JpaRepository<ExamDraft, Long> {
      * @return 해당 학년의 시험지 초안 목록 (최신순)
      */
     List<ExamDraft> findByGradeOrderByIdDesc(Integer grade);
+    
+    /**
+     * 전체 시험지 초안 조회 (최신순)
+     * 
+     * 사용처: 시험지 초안 관리에서 전체 목록 조회
+     * 예시: 모든 학년의 시험지 초안을 최신순으로 표시
+     * 
+     * @return 전체 시험지 초안 목록 (최신순)
+     */
+    List<ExamDraft> findAllByOrderByIdDesc();
 }

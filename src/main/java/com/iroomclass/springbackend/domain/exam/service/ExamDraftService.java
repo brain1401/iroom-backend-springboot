@@ -121,6 +121,41 @@ public class ExamDraftService {
     }
     
     /**
+     * 전체 시험지 초안 목록 조회
+     * 
+     * @return 모든 시험지 초안 목록 (최신순)
+     */
+    public ExamDraftListResponse getAllExamDrafts() {
+        log.info("전체 시험지 초안 목록 조회 요청");
+        
+        List<ExamDraft> examDrafts = examDraftRepository.findAllByOrderByIdDesc();
+        
+        List<ExamDraftListResponse.ExamDraftInfo> examDraftInfos = new ArrayList<>();
+        for (ExamDraft examDraft : examDrafts) {
+            // 선택된 단원 수 조회
+            long selectedUnitCount = examSelectedUnitRepository.countByExamDraftId(examDraft.getId());
+            
+            ExamDraftListResponse.ExamDraftInfo examDraftInfo = ExamDraftListResponse.ExamDraftInfo.builder()
+                .examDraftId(examDraft.getId())
+                .examName(examDraft.getExamName())
+                .grade(examDraft.getGrade())
+                .totalQuestions(examDraft.getTotalQuestions())
+                .selectedUnitCount((int) selectedUnitCount)
+                .build();
+            
+            examDraftInfos.add(examDraftInfo);
+        }
+        
+        log.info("전체 시험지 초안 목록 조회 완료: {}개", examDraftInfos.size());
+        
+        return ExamDraftListResponse.builder()
+            .grade(null) // 전체 목록이므로 학년 정보 없음
+            .examDrafts(examDraftInfos)
+            .totalCount(examDraftInfos.size())
+            .build();
+    }
+    
+    /**
      * 학년별 시험지 초안 목록 조회
      * 
      * @param grade 학년 (1, 2, 3)
