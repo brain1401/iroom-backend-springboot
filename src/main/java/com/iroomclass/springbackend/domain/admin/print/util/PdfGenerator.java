@@ -1,10 +1,12 @@
 package com.iroomclass.springbackend.domain.admin.print.util;
 
+import com.openhtmltopdf.pdfboxout.PdfRendererBuilder;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.util.List;
 
 /**
@@ -30,15 +32,14 @@ public class PdfGenerator {
         try {
             log.info("PDF 생성 시작: documentType={}", documentType);
             
-            // TODO: 실제 PDF 생성 라이브러리 구현
-            // 현재는 Mock PDF 데이터 반환
+            // HTML을 PDF용으로 향상
             String enhancedHtml = enhanceHtmlForPdf(htmlContent, documentType);
             
-            // Mock PDF 데이터 (실제로는 HTML → PDF 변환)
-            byte[] mockPdf = createMockPdf(enhancedHtml);
+            // 실제 HTML → PDF 변환
+            byte[] pdfContent = convertHtmlToPdf(enhancedHtml);
             
-            log.info("PDF 생성 완료: documentType={}, size={} bytes", documentType, mockPdf.length);
-            return mockPdf;
+            log.info("PDF 생성 완료: documentType={}, size={} bytes", documentType, pdfContent.length);
+            return pdfContent;
             
         } catch (Exception e) {
             log.error("PDF 생성 실패: documentType={}", documentType, e);
@@ -56,12 +57,11 @@ public class PdfGenerator {
         try {
             log.info("문서 합치기 시작: documentCount={}", documents.size());
             
-            // TODO: 실제 PDF 합치기 라이브러리 구현
-            // 현재는 첫 번째 문서만 반환
             if (documents.isEmpty()) {
                 throw new IllegalArgumentException("합칠 문서가 없습니다");
             }
             
+            // 현재는 첫 번째 문서만 반환 (나중에 PDF 합치기 기능 추가)
             DocumentInfo firstDoc = documents.get(0);
             byte[] mergedPdf = generatePdfFromHtml(firstDoc.htmlContent, firstDoc.documentType);
             
@@ -76,6 +76,26 @@ public class PdfGenerator {
     }
 
     /**
+     * HTML을 PDF로 변환
+     */
+    private byte[] convertHtmlToPdf(String htmlContent) throws IOException {
+        try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+            PdfRendererBuilder builder = new PdfRendererBuilder();
+            
+            // HTML 내용 설정
+            builder.withHtmlContent(htmlContent, null);
+            
+            // 출력 스트림 설정
+            builder.toStream(baos);
+            
+            // PDF 생성
+            builder.run();
+            
+            return baos.toByteArray();
+        }
+    }
+
+    /**
      * HTML을 PDF용으로 향상
      */
     private String enhanceHtmlForPdf(String htmlContent, String documentType) {
@@ -86,11 +106,14 @@ public class PdfGenerator {
         enhancedHtml.append("<meta charset='UTF-8'>");
         enhancedHtml.append("<title>").append(getDocumentTypeName(documentType)).append("</title>");
         enhancedHtml.append("<style>");
-        enhancedHtml.append("body { font-family: 'Malgun Gothic', sans-serif; margin: 20px; }");
-        enhancedHtml.append(".header { text-align: center; margin-bottom: 30px; }");
-        enhancedHtml.append(".content { line-height: 1.6; }");
-        enhancedHtml.append(".qr-code { text-align: center; margin: 20px 0; }");
-        enhancedHtml.append("@media print { body { margin: 0; } }");
+        enhancedHtml.append("body { font-family: 'Malgun Gothic', 'Arial', sans-serif; margin: 20px; font-size: 12px; }");
+        enhancedHtml.append(".header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #333; padding-bottom: 10px; }");
+        enhancedHtml.append(".header h1 { margin: 0; color: #333; font-size: 24px; }");
+        enhancedHtml.append(".content { line-height: 1.6; margin-top: 20px; }");
+        enhancedHtml.append(".qr-code { text-align: center; margin: 20px 0; padding: 10px; border: 1px solid #ddd; }");
+        enhancedHtml.append(".qr-code img { border: 1px solid #ccc; }");
+        enhancedHtml.append(".page-break { page-break-before: always; }");
+        enhancedHtml.append("@media print { body { margin: 15px; } }");
         enhancedHtml.append("</style>");
         enhancedHtml.append("</head>");
         enhancedHtml.append("<body>");
@@ -103,6 +126,7 @@ public class PdfGenerator {
         // QR 코드 추가 (답안지인 경우)
         if ("ANSWER_SHEET".equals(documentType)) {
             enhancedHtml.append("<div class='qr-code'>");
+            enhancedHtml.append("<p><strong>QR 코드를 스캔하여 답안지를 제출하세요</strong></p>");
             enhancedHtml.append("<img src='data:image/png;base64,")
                 .append(qrCodeGenerator.generateQrCodeBase64("ANSWER_SHEET"))
                 .append("' alt='QR Code' style='width: 100px; height: 100px;'>");
@@ -132,15 +156,6 @@ public class PdfGenerator {
             default:
                 return "문서";
         }
-    }
-
-    /**
-     * Mock PDF 생성
-     */
-    private byte[] createMockPdf(String htmlContent) {
-        // 실제로는 HTML → PDF 변환 라이브러리 사용
-        // 현재는 Mock 데이터 반환
-        return ("Mock PDF content for: " + htmlContent.substring(0, Math.min(50, htmlContent.length()))).getBytes();
     }
 
     /**

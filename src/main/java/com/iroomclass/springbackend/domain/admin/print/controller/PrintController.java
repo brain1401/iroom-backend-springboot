@@ -22,7 +22,7 @@ import jakarta.validation.Valid;
 @RestController
 @RequestMapping("/admin/print")
 @RequiredArgsConstructor
-@Tag(name = "관리자 인쇄", description = "관리자 인쇄 관련 API")
+@Tag(name = "관리자 - 인쇄", description = "관리자 인쇄 관련 API")
 public class PrintController {
 
     private final PrintService printService;
@@ -95,15 +95,20 @@ public class PrintController {
         
         log.info("PDF 다운로드 요청: printJobId={}", printJobId);
         
-        // TODO: 실제 PDF 파일 다운로드 구현
-        // 현재는 Mock 데이터 반환
-        byte[] mockPdf = "Mock PDF content for print job: ".concat(printJobId).getBytes();
+        // 실제 PDF 파일 조회
+        byte[] pdfContent = printService.getPdfFile(printJobId);
         
-        log.info("PDF 다운로드 성공: printJobId={}, fileSize={}", printJobId, mockPdf.length);
+        if (pdfContent == null) {
+            log.warn("PDF 파일을 찾을 수 없습니다: printJobId={}", printJobId);
+            return ResponseEntity.notFound().build();
+        }
+        
+        log.info("PDF 다운로드 성공: printJobId={}, fileSize={}", printJobId, pdfContent.length);
         
         return ResponseEntity.ok()
             .header("Content-Disposition", "attachment; filename=\"" + printJobId + ".pdf\"")
             .header("Content-Type", "application/pdf")
-            .body(mockPdf);
+            .header("Content-Length", String.valueOf(pdfContent.length))
+            .body(pdfContent);
     }
 }

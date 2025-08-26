@@ -19,6 +19,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -31,6 +32,9 @@ public class PrintService {
     private final ExamDocumentRepository examDocumentRepository;
     private final PdfGenerator pdfGenerator;
     private final QrCodeGenerator qrCodeGenerator;
+
+    // PDF 파일 저장소 (실제로는 Redis나 파일 시스템 사용 권장)
+    private final ConcurrentHashMap<String, byte[]> pdfStorage = new ConcurrentHashMap<>();
 
     /**
      * 인쇄 가능한 문서 목록 조회
@@ -103,7 +107,10 @@ public class PrintService {
         // 4단계: 인쇄 작업 ID 생성
         String printJobId = generatePrintJobId();
         
-        // 5단계: 파일명 생성
+        // 5단계: PDF 파일 저장
+        savePdfFile(printJobId, pdfContent);
+        
+        // 6단계: 파일명 생성
         String fileName = generateFileName(exam.getExamName(), request.getFileName());
         
         log.info("문서 인쇄 요청 처리 완료: examId={}, printJobId={}, fileName={}, fileSize={}", 
@@ -117,6 +124,47 @@ public class PrintService {
             .status("COMPLETED")
             .message("PDF 생성이 완료되었습니다")
             .build();
+    }
+
+    /**
+     * PDF 파일 저장
+     * 
+     * @param printJobId 인쇄 작업 ID
+     * @param pdfContent PDF 바이트 배열
+     */
+    public void savePdfFile(String printJobId, byte[] pdfContent) {
+        pdfStorage.put(printJobId, pdfContent);
+        log.info("PDF 파일 저장 완료: printJobId={}, fileSize={}", printJobId, pdfContent.length);
+    }
+
+    /**
+     * PDF 파일 조회
+     * 
+     * @param printJobId 인쇄 작업 ID
+     * @return PDF 바이트 배열 (없으면 null)
+     */
+    public byte[] getPdfFile(String printJobId) {
+        byte[] pdfContent = pdfStorage.get(printJobId);
+        if (pdfContent != null) {
+            log.info("PDF 파일 조회 성공: printJobId={}, fileSize={}", printJobId, pdfContent.length);
+        } else {
+            log.warn("PDF 파일을 찾을 수 없습니다: printJobId={}", printJobId);
+        }
+        return pdfContent;
+    }
+
+    /**
+     * PDF 파일 삭제
+     * 
+     * @param printJobId 인쇄 작업 ID
+     */
+    public void deletePdfFile(String printJobId) {
+        byte[] removed = pdfStorage.remove(printJobId);
+        if (removed != null) {
+            log.info("PDF 파일 삭제 완료: printJobId={}", printJobId);
+        } else {
+            log.warn("삭제할 PDF 파일을 찾을 수 없습니다: printJobId={}", printJobId);
+        }
     }
 
     /**
