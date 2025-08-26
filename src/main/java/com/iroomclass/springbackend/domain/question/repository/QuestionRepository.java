@@ -1,11 +1,11 @@
 package com.iroomclass.springbackend.domain.question.repository;
 
-import com.iroomclass.springbackend.domain.question.entity.Question;
-import com.iroomclass.springbackend.domain.unit.entity.Unit;
+import java.util.List;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-import java.util.List;
+import com.iroomclass.springbackend.domain.question.entity.Question;
 
 /**
  * 문제 Repository
@@ -19,13 +19,24 @@ import java.util.List;
 public interface QuestionRepository extends JpaRepository<Question, Long> {
     
     /**
-     * 상세단원별 문제 조회
+     * 단원별 문제 목록 조회
      * 
-     * 사용처: 시험지 등록에서 단원 선택 후 해당 단원의 문제들 조회
-     * 예시: "정수의 덧셈" 단원 선택 → 해당 단원의 모든 문제들 표시 (난이도 랜덤)
+     * 사용처: 시험지 생성 시 특정 단원의 문제들을 랜덤으로 선택
+     * 예시: "정수의 덧셈" 단원 선택 → 해당 단원의 30개 문제 중에서 랜덤 선택
      * 
-     * @param unit 상세단원
-     * @return 해당 상세단원의 문제 목록
+     * @param unitIds 단원 ID 목록
+     * @return 해당 단원들에 속한 문제 목록
      */
-    List<Question> findByUnit(Unit unit);
+    List<Question> findByUnitIdIn(List<Long> unitIds);
+    
+    /**
+     * 단원별 문제 수 카운트
+     * 
+     * 사용처: 단원별 문제 수 통계, 시험지 생성 시 문항 수 제한 확인
+     * 예시: "정수의 덧셈" 단원에 몇 개의 문제가 있는지 확인
+     * 
+     * @param unitId 단원 ID
+     * @return 해당 단원에 속한 문제의 총 개수
+     */
+    long countByUnitId(Long unitId);
 }

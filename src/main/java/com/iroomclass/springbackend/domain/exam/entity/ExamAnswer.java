@@ -76,35 +76,4 @@ public class ExamAnswer {
      */
     @Column
     private Integer score;
-    
-    /**
-     * 단원명
-     * 표시용 단원명 (예: 정수, 유리수, 일차방정식)
-     * 최대 100자
-     */
-    @Column(length = 100)
-    private String unitName;
-    
-    /**
-     * 난이도
-     * 문제의 난이도 (하, 중, 상)
-     */
-    @Enumerated(EnumType.STRING)
-    @Column
-    private Difficulty difficulty;
-    
-    /**
-     * 정답
-     * 문제의 정답 (표시용)
-     * TEXT 타입으로 긴 정답 가능
-     */
-    @Column(columnDefinition = "TEXT")
-    private String correctAnswer;
-    
-    /**
-     * 문제 난이도 열거형
-     */
-    public enum Difficulty {
-        하, 중, 상
-    }
 }

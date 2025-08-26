@@ -2,8 +2,22 @@ package com.iroomclass.springbackend.domain.question.entity;
 
 import com.iroomclass.springbackend.domain.unit.entity.Unit;
 
-import jakarta.persistence.*;
-import lombok.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 /**
  * 문제 정보 Entity
@@ -49,17 +63,17 @@ public class Question {
 
     /**
      * 문제 내용
-     * React Editor에서 작성된 HTML 형태의 문제 내용
-     * 이미지 포함 가능
+     * 주관식 문제 내용 (HTML 형태, 텍스트 + 이미지 포함 가능)
+     * 예시: "x + 3 = 7일 때, x의 값은?" 또는 "다음 그래프를 보고 답하세요. <img src='graph.png'> f(x) = 2x + 1일 때, f(3)의 값은?"
      */
-    @Column(columnDefinition = "TEXT", nullable = false)
+    @Column(columnDefinition = "LONGTEXT", nullable = false)
     private String stem;
 
     /**
      * 문제 정답
      * 문제의 정답을 저장
      */
-    @Column(columnDefinition = "TEXT", nullable = false)
+    @Column(columnDefinition = "LONGTEXT", nullable = false)
     private String answerKey;
 
     /**

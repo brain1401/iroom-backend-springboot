@@ -31,4 +31,11 @@ public interface AdminRepository extends JpaRepository<Admin, Long> {
      * @return 존재 여부
      */
     boolean existsByUsername(String username);
+
+    /**
+     * ID가 가장 작은(첫 번째) 관리자 조회
+     * 
+     * @return 첫 번째 관리자 정보 (Optional)
+     */
+    Optional<Admin> findFirstByOrderByIdAsc();
 }

@@ -1,9 +1,22 @@
 package com.iroomclass.springbackend.domain.exam.entity;
 
-import jakarta.persistence.*;
-import lombok.*;
-
 import java.time.LocalDateTime;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.Table;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 /**
  * 시험 제출 Entity
@@ -59,7 +72,7 @@ public class ExamSubmission {
      * 제출일시
      * 시험 답안이 제출된 날짜와 시간
      */
-    @Column
+    @Column(nullable = false)
     private LocalDateTime submittedAt;
     
     /**
@@ -68,4 +81,13 @@ public class ExamSubmission {
      */
     @Column
     private Integer totalScore;
+    
+    /**
+     * Entity 저장 전 실행되는 메서드
+     * 제출일시를 자동으로 설정합니다.
+     */
+    @PrePersist
+    protected void onCreate() {
+        submittedAt = LocalDateTime.now();
+    }
 }

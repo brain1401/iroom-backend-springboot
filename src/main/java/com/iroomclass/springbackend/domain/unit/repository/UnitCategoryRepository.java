@@ -1,8 +1,9 @@
 package com.iroomclass.springbackend.domain.unit.repository;
 
-import com.iroomclass.springbackend.domain.unit.entity.UnitCategory;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
+
+import com.iroomclass.springbackend.domain.unit.entity.UnitCategory;
 
 /**
  * 단원 대분류 Repository
@@ -14,7 +15,7 @@ import org.springframework.stereotype.Repository;
  */
 @Repository
 public interface UnitCategoryRepository extends JpaRepository<UnitCategory, Long> {
-    // 기본 CRUD만 사용
-    // 현재 UI에서는 학년 선택 후 바로 세부단원 선택하므로 
-    // 별도 조회 메서드 불필요
+
+    // UnitCategory는 대분류이므로 학년 정보가 없습니다.
+    // 학년별 조회는 Unit 엔티티에서 처리합니다.
 }

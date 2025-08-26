@@ -71,9 +71,14 @@ public class SecurityConfig {
                         .requestMatchers("/api/system/**").permitAll()
                         .requestMatchers("/system/**").permitAll()
 
+                        // 단원 API 공개 허용
+                        .requestMatchers("/unit/**").permitAll()
+                        .requestMatchers("/api/unit/**").permitAll()
+
                         // (추가) 관리자 API 경로 설정
-                        .requestMatchers("/api/admin/login").permitAll() // 로그인은 누구나 접근 가능
-                        .requestMatchers("/api/admin/**").authenticated() // 다른 관리자 기능은 로그인 필요
+                        .requestMatchers("/admin/login").permitAll() // 로그인은 누구나 접근 가능
+                        .requestMatchers("/admin/academy-name").permitAll() // 학원명 조회도 공개로 설정
+                        .requestMatchers("/admin/**").authenticated() // 다른 관리자 기능은 로그인 필요
 
                         // 나머지 모든 요청은 인증 필요
                         .anyRequest().authenticated());
@@ -81,7 +86,7 @@ public class SecurityConfig {
         return http.build();
     }
 
-    // �� 추가해야 할 Bean 메서드 (클래스 맨 아래에 추가)
+    // 추가해야 할 Bean 메서드 (클래스 맨 아래에 추가)
     /**
      * 비밀번호 암호화 도구
      * 

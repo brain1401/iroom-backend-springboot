@@ -9,7 +9,7 @@ import java.time.LocalDateTime;
  * 시험 Entity
  * 
  * 시험지 초안을 실제 시험으로 발행하여 관리합니다.
- * 학생 수, QR코드, 시험 내용 등을 포함합니다.
+ * 학생 수, 시험 내용 등을 포함합니다.
  * 
  * @author 이룸클래스
  * @since 2025
@@ -70,14 +70,6 @@ public class Exam {
      */
     @Column(nullable = false)
     private Integer studentCount;
-    
-    /**
-     * QR코드 URL
-     * 학생이 접속하는 QR코드 링크
-     * 최대 255자
-     */
-    @Column(length = 255)
-    private String qrCodeUrl;
     
     /**
      * 등록일시

@@ -48,28 +48,4 @@ public interface ExamAnswerRepository extends JpaRepository<ExamAnswer, Long> {
      * @return 해당 조건의 답안 목록
      */
     List<ExamAnswer> findBySubmissionIdAndIsCorrect(Long submissionId, Boolean isCorrect);
-
-    /**
-     * 단원별 답안 조회
-     * 
-     * 사용처: 단원별 성적 분석
-     * 예시: "정수의 덧셈" 단원에서 "김철수"가 맞춘 문제들 조회
-     * 
-     * @param submissionId 시험 제출 ID
-     * @param unitName 단원명
-     * @return 해당 단원의 답안 목록
-     */
-    List<ExamAnswer> findBySubmissionIdAndUnitName(Long submissionId, String unitName);
-
-    /**
-     * 난이도별 답안 조회
-     * 
-     * 사용처: 난이도별 성적 분석
-     * 예시: "중" 난이도에서 "김철수"가 맞춘 문제들 조회
-     * 
-     * @param submissionId 시험 제출 ID
-     * @param difficulty 난이도 (하, 중, 상)
-     * @return 해당 난이도의 답안 목록
-     */
-    List<ExamAnswer> findBySubmissionIdAndDifficulty(Long submissionId, ExamAnswer.Difficulty difficulty);
 }

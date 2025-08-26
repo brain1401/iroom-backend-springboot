@@ -1,9 +1,10 @@
 package com.iroomclass.springbackend.domain.exam.repository;
 
+import java.util.List;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import com.iroomclass.springbackend.domain.exam.entity.Exam;
-import java.util.List;
 import com.iroomclass.springbackend.domain.exam.entity.ExamDraft;
 
 /**
@@ -37,15 +38,4 @@ public interface ExamRepository extends JpaRepository<Exam, Long> {
      * @return 해당 학년의 시험 목록 (최신순)
      */
     List<Exam> findByGradeOrderByCreatedAtDesc(Integer grade);
-
-    /**
-     * QR코드 URL로 시험 조회
-     * 
-     * 사용처: 학생이 시험지 종이의 QR코드를 찍어서 시험 제출 화면으로 이동
-     * 예시: QR코드 스캔 → 해당 시험의 제출 화면으로 이동
-     * 
-     * @param qrCodeUrl QR코드 URL
-     * @return 해당 QR코드의 시험 정보
-     */
-    Exam findByQrCodeUrl(String qrCodeUrl);
 }
