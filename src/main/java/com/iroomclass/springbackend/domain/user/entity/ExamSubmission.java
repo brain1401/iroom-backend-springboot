@@ -1,4 +1,4 @@
-package com.iroomclass.springbackend.domain.exam.entity;
+package com.iroomclass.springbackend.domain.user.entity;
 
 import java.time.LocalDateTime;
 
@@ -12,11 +12,14 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
+
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+
+import com.iroomclass.springbackend.domain.exam.entity.Exam;
 
 /**
  * 시험 제출 Entity

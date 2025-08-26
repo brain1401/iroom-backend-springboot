@@ -1,6 +1,6 @@
-package com.iroomclass.springbackend.domain.exam.repository;
+package com.iroomclass.springbackend.domain.user.repository;
 
-import com.iroomclass.springbackend.domain.exam.entity.ExamSubmission;
+import com.iroomclass.springbackend.domain.user.entity.ExamSubmission;
 import com.iroomclass.springbackend.domain.exam.entity.Exam;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;

@@ -1,9 +1,11 @@
 package com.iroomclass.springbackend.domain.exam.repository;
 
-import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+
 import com.iroomclass.springbackend.domain.exam.entity.ExamAnswer;
-import com.iroomclass.springbackend.domain.exam.entity.ExamSubmission;
+import com.iroomclass.springbackend.domain.user.entity.ExamSubmission;
 
 /**
  * 시험 답안 Repository

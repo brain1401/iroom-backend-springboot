@@ -1,6 +1,7 @@
 package com.iroomclass.springbackend.domain.exam.entity;
 
 import com.iroomclass.springbackend.domain.question.entity.Question;
+import com.iroomclass.springbackend.domain.user.entity.ExamSubmission;
 import jakarta.persistence.*;
 import lombok.*;
 
