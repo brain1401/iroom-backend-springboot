@@ -111,4 +111,15 @@ public interface ExamSubmissionRepository extends JpaRepository<ExamSubmission, 
      * @return 해당 학년의 시험 제출 목록
      */
     List<ExamSubmission> findByExamGrade(Integer grade);
+    
+    /**
+     * 시험 ID로 제출 목록 조회 (순서 무관)
+     * 
+     * 사용처: 통계에서 시험별 평균 점수 계산
+     * 예시: 시험 ID로 해당 시험의 모든 제출 조회
+     * 
+     * @param examId 시험 ID
+     * @return 해당 시험의 제출 목록
+     */
+    List<ExamSubmission> findByExamId(Long examId);
 }

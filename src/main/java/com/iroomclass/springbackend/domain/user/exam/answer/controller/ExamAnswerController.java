@@ -38,7 +38,7 @@ import lombok.extern.slf4j.Slf4j;
 @RequestMapping("/user/exam-answer")
 @RequiredArgsConstructor
 @Slf4j
-@Tag(name = "시험 답안 관리", description = "시험 답안 생성, 수정, 조회 API")
+@Tag(name = "학생 시험 답안 관리", description = "시험 답안 생성, 수정, 조회 API")
 public class ExamAnswerController {
     
     private final ExamAnswerService examAnswerService;
