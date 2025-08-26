@@ -31,7 +31,7 @@ import lombok.extern.slf4j.Slf4j;
 @RequestMapping("/unit")
 @RequiredArgsConstructor
 @Slf4j
-@Tag(name = "관리자 - 단원 관리", description = "학년별 단원 목록 조회, 통계 API")
+@Tag(name = "단원 관리", description = "학년별 단원 목록 조회, 통계 API")
 public class UnitController {
     
     private final UnitService unitService;
