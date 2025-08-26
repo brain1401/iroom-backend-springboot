@@ -100,4 +100,15 @@ public interface ExamSubmissionRepository extends JpaRepository<ExamSubmission, 
      * @return 제출 여부 (true: 제출됨, false: 제출 안됨)
      */
     boolean existsByExamIdAndStudentNameAndStudentPhone(Long examId, String studentName, String studentPhone);
+    
+    /**
+     * 학년별 시험 제출 조회
+     * 
+     * 사용처: 대시보드에서 학년별 성적 분포도 조회
+     * 예시: "중1" 선택 → 1학년 시험 제출 기록들 조회
+     * 
+     * @param grade 학년 (1, 2, 3)
+     * @return 해당 학년의 시험 제출 목록
+     */
+    List<ExamSubmission> findByExamGrade(Integer grade);
 }

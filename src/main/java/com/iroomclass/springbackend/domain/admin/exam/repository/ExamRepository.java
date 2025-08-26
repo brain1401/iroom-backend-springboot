@@ -40,6 +40,16 @@ public interface ExamRepository extends JpaRepository<Exam, Long> {
     List<Exam> findByGradeOrderByCreatedAtDesc(Integer grade);
     
     /**
+     * 학년별 시험 조회 (순서 무관)
+     * 
+     * 사용처: 대시보드에서 학년별 시험 조회
+     * 
+     * @param grade 학년 (1, 2, 3)
+     * @return 해당 학년의 시험 목록
+     */
+    List<Exam> findByGrade(Integer grade);
+    
+    /**
      * 전체 시험 조회 (최신순)
      * 
      * 사용처: 시험 관리에서 전체 시험 목록 조회
