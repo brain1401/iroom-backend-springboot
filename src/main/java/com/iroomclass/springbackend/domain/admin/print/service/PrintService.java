@@ -4,6 +4,8 @@ import com.iroomclass.springbackend.domain.admin.exam.entity.Exam;
 import com.iroomclass.springbackend.domain.admin.exam.entity.ExamDocument;
 import com.iroomclass.springbackend.domain.admin.exam.repository.ExamDocumentRepository;
 import com.iroomclass.springbackend.domain.admin.exam.repository.ExamRepository;
+import com.iroomclass.springbackend.domain.admin.question.entity.Question;
+import com.iroomclass.springbackend.domain.admin.question.repository.QuestionRepository;
 import com.iroomclass.springbackend.domain.admin.print.dto.PrintRequest;
 import com.iroomclass.springbackend.domain.admin.print.dto.PrintResponse;
 import com.iroomclass.springbackend.domain.admin.print.dto.PrintableDocumentResponse;
@@ -21,6 +23,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
+import com.iroomclass.springbackend.domain.admin.exam.repository.ExamDraftQuestionRepository;
 
 @Slf4j
 @Service
@@ -30,6 +33,8 @@ public class PrintService {
 
     private final ExamRepository examRepository;
     private final ExamDocumentRepository examDocumentRepository;
+    private final QuestionRepository questionRepository;
+    private final ExamDraftQuestionRepository examDraftQuestionRepository;
     private final PdfGenerator pdfGenerator;
     private final QrCodeGenerator qrCodeGenerator;
 
@@ -93,14 +98,39 @@ public class PrintService {
             throw new IllegalArgumentException("인쇄할 문서를 찾을 수 없습니다");
         }
         
-        // 3단계: PDF 생성
-        List<PdfGenerator.DocumentInfo> pdfDocuments = documents.stream()
-            .map(doc -> new PdfGenerator.DocumentInfo(
-                doc.getDocumentContent(),
-                doc.getDocumentType().name(),
-                generateDocumentName(exam.getExamName(), doc.getDocumentType().name())
-            ))
-            .collect(Collectors.toList());
+        // 3단계: 시험 문제 목록 조회
+        List<Question> questions = getExamQuestions(exam);
+        
+        // 4단계: 동적 HTML 생성 및 PDF 변환
+        List<PdfGenerator.DocumentInfo> pdfDocuments = new ArrayList<>();
+        
+        for (ExamDocument.DocumentType documentType : documentTypes) {
+            String htmlContent;
+            String documentName;
+            
+            switch (documentType) {
+                case QUESTION_PAPER:
+                    htmlContent = generateQuestionPaperHtml(exam, questions);
+                    documentName = exam.getExamName() + " 문제지";
+                    break;
+                case ANSWER_KEY:
+                    htmlContent = generateAnswerKeyHtml(exam, questions);
+                    documentName = exam.getExamName() + " 답안지";
+                    break;
+                case ANSWER_SHEET:
+                    htmlContent = generateAnswerSheetHtml(exam);
+                    documentName = exam.getExamName() + " 학생 답안지";
+                    break;
+                default:
+                    throw new IllegalArgumentException("지원하지 않는 문서 타입입니다: " + documentType);
+            }
+            
+            pdfDocuments.add(new PdfGenerator.DocumentInfo(
+                htmlContent,
+                documentType.name(),
+                documentName
+            ));
+        }
         
         byte[] pdfContent = pdfGenerator.mergeDocumentsToPdf(pdfDocuments);
         
@@ -229,5 +259,195 @@ public class PrintService {
      */
     private String generateDownloadUrl(String printJobId) {
         return "/api/admin/print/download/" + printJobId;
+    }
+
+    /**
+     * 시험 문제 목록 조회
+     */
+    private List<Question> getExamQuestions(Exam exam) {
+        // 1단계: 시험 문제 목록을 가져오기 위해 ExamDraftQuestionRepository를 사용
+        List<Long> questionIds = examDraftQuestionRepository.findByExamDraftIdOrderBySeqNo(exam.getExamDraft().getId())
+            .stream()
+            .map(examDraftQuestion -> examDraftQuestion.getQuestion().getId())
+            .collect(Collectors.toList());
+
+        // 2단계: 문제 ID 목록을 사용하여 QuestionRepository에서 문제 목록을 조회
+        List<Question> questions = questionRepository.findAllById(questionIds);
+
+        if (questions.isEmpty()) {
+            throw new IllegalArgumentException("시험에 포함된 문제를 찾을 수 없습니다.");
+        }
+
+        log.info("시험 문제 목록 조회 완료: examId={}, questionCount={}", exam.getId(), questions.size());
+        return questions;
+    }
+
+    /**
+     * 시험 문제지 HTML 생성
+     */
+    private String generateQuestionPaperHtml(Exam exam, List<Question> questions) {
+        StringBuilder html = new StringBuilder();
+        html.append("<!DOCTYPE html>");
+        html.append("<html>");
+        html.append("<head>");
+        html.append("<meta charset='UTF-8'>");
+        html.append("<title>").append(exam.getExamName()).append("</title>");
+        html.append("<style>");
+        html.append("body { font-family: 'Malgun Gothic', 'Arial', sans-serif; margin: 20px; font-size: 12px; }");
+        html.append(".header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #333; padding-bottom: 10px; }");
+        html.append(".header h1 { margin: 0; color: #333; font-size: 24px; }");
+        html.append(".problem { margin-bottom: 30px; page-break-inside: avoid; }");
+        html.append(".problem-number { font-weight: bold; font-size: 16px; color: #333; margin-bottom: 10px; }");
+        html.append(".problem-content { margin: 10px 0; line-height: 1.6; }");
+        html.append(".problem-image { text-align: center; margin: 15px 0; }");
+        html.append(".problem-image img { max-width: 100%; height: auto; border: 1px solid #ddd; }");
+        html.append(".page-break { page-break-before: always; }");
+        html.append("@media print { body { margin: 15px; } }");
+        html.append("</style>");
+        html.append("</head>");
+        html.append("<body>");
+        
+        // 시험명 헤더
+        html.append("<div class='header'>");
+        html.append("<h1>").append(exam.getExamName()).append("</h1>");
+        html.append("</div>");
+        
+        // 문제들 동적 생성
+        for (int i = 0; i < questions.size(); i++) {
+            Question question = questions.get(i);
+            html.append("<div class='problem'>");
+            html.append("<div class='problem-number'>").append(i + 1).append(".</div>");
+            html.append("<div class='problem-content'>").append(question.getStem()).append("</div>");
+            
+            // 이미지가 있는 경우 (HTML 내용에 이미지 태그가 포함되어 있을 수 있음)
+            if (question.getStem().contains("<img")) {
+                html.append("<div class='problem-image'>");
+                html.append("<!-- 이미지는 HTML 내용에 포함되어 있음 -->");
+                html.append("</div>");
+            }
+            html.append("</div>");
+            
+            // 페이지 나누기 (10문제마다)
+            if ((i + 1) % 10 == 0 && i < questions.size() - 1) {
+                html.append("<div class='page-break'></div>");
+            }
+        }
+        
+        html.append("</body>");
+        html.append("</html>");
+        
+        return html.toString();
+    }
+
+    /**
+     * 시험 답안지 HTML 생성
+     */
+    private String generateAnswerKeyHtml(Exam exam, List<Question> questions) {
+        StringBuilder html = new StringBuilder();
+        html.append("<!DOCTYPE html>");
+        html.append("<html>");
+        html.append("<head>");
+        html.append("<meta charset='UTF-8'>");
+        html.append("<title>").append(exam.getExamName()).append(" 답안지</title>");
+        html.append("<style>");
+        html.append("body { font-family: 'Malgun Gothic', 'Arial', sans-serif; margin: 20px; font-size: 12px; }");
+        html.append(".header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #333; padding-bottom: 10px; }");
+        html.append(".header h1 { margin: 0; color: #333; font-size: 24px; }");
+        html.append(".answer-item { margin-bottom: 20px; padding: 10px; border-left: 3px solid #007bff; }");
+        html.append(".answer-number { font-weight: bold; font-size: 14px; color: #007bff; }");
+        html.append(".answer-content { margin-left: 20px; font-size: 14px; }");
+        html.append(".page-break { page-break-before: always; }");
+        html.append("@media print { body { margin: 15px; } }");
+        html.append("</style>");
+        html.append("</head>");
+        html.append("<body>");
+        
+        // 시험명 헤더
+        html.append("<div class='header'>");
+        html.append("<h1>").append(exam.getExamName()).append(" 답안지</h1>");
+        html.append("</div>");
+        
+        // 답안들 동적 생성
+        for (int i = 0; i < questions.size(); i++) {
+            Question question = questions.get(i);
+            html.append("<div class='answer-item'>");
+            html.append("<span class='answer-number'>").append(i + 1).append(".</span>");
+            html.append("<span class='answer-content'>").append(question.getAnswerKey()).append("</span>");
+            html.append("</div>");
+            
+            // 페이지 나누기 (15개 답안마다)
+            if ((i + 1) % 15 == 0 && i < questions.size() - 1) {
+                html.append("<div class='page-break'></div>");
+            }
+        }
+        
+        html.append("</body>");
+        html.append("</html>");
+        
+        return html.toString();
+    }
+
+    /**
+     * 학생 답안지 HTML 생성
+     */
+    private String generateAnswerSheetHtml(Exam exam) {
+        StringBuilder html = new StringBuilder();
+        html.append("<!DOCTYPE html>");
+        html.append("<html>");
+        html.append("<head>");
+        html.append("<meta charset='UTF-8'>");
+        html.append("<title>").append(exam.getExamName()).append(" 학생 답안지</title>");
+        html.append("<style>");
+        html.append("body { font-family: 'Malgun Gothic', 'Arial', sans-serif; margin: 20px; font-size: 12px; }");
+        html.append(".header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #333; padding-bottom: 10px; }");
+        html.append(".header h1 { margin: 0; color: #333; font-size: 24px; }");
+        html.append(".qr-code { position: absolute; top: 20px; left: 20px; text-align: center; }");
+        html.append(".qr-code img { width: 80px; height: 80px; border: 1px solid #ccc; }");
+        html.append(".qr-code p { font-size: 10px; margin: 5px 0; color: #666; }");
+        html.append(".answer-section { margin-bottom: 25px; }");
+        html.append(".answer-label { display: inline-block; width: 60px; background: #f0f0f0; padding: 12px 8px; text-align: center; font-weight: bold; border: 1px solid #ccc; }");
+        html.append(".answer-box { display: inline-block; width: 400px; height: 45px; border: 1px solid #ccc; margin-left: 10px; background: white; }");
+        html.append(".student-info { margin-bottom: 30px; padding: 15px; border: 2px solid #333; background: #f9f9f9; }");
+        html.append(".student-info table { width: 100%; border-collapse: collapse; }");
+        html.append(".student-info td { padding: 8px; border: 1px solid #ccc; }");
+        html.append(".student-info .label { background: #e9e9e9; font-weight: bold; width: 100px; }");
+        html.append("@media print { body { margin: 15px; } }");
+        html.append("</style>");
+        html.append("</head>");
+        html.append("<body>");
+        
+        // QR 코드 (왼쪽 상단)
+        html.append("<div class='qr-code'>");
+        html.append("<img src='data:image/png;base64,")
+            .append(qrCodeGenerator.generateQrCodeBase64("ANSWER_SHEET_" + exam.getId()))
+            .append("' alt='QR Code'>");
+        html.append("<p>QR 코드를 스캔하여<br>답안지를 제출하세요</p>");
+        html.append("</div>");
+        
+        // 시험명 헤더
+        html.append("<div class='header'>");
+        html.append("<h1>").append(exam.getExamName()).append("</h1>");
+        html.append("</div>");
+        
+        // 학생 정보 입력란
+        html.append("<div class='student-info'>");
+        html.append("<table>");
+        html.append("<tr><td class='label'>학생 이름</td><td style='width: 200px;'>&nbsp;</td><td class='label'>학년</td><td style='width: 100px;'>&nbsp;</td></tr>");
+        html.append("<tr><td class='label'>전화번호</td><td style='width: 200px;'>&nbsp;</td><td class='label'>시험일</td><td style='width: 100px;'>&nbsp;</td></tr>");
+        html.append("</table>");
+        html.append("</div>");
+        
+        // 답안 입력란 (문제 수만큼)
+        for (int i = 1; i <= 30; i++) { // 최대 30문제
+            html.append("<div class='answer-section'>");
+            html.append("<span class='answer-label'>주 ").append(i).append("</span>");
+            html.append("<div class='answer-box'></div>");
+            html.append("</div>");
+        }
+        
+        html.append("</body>");
+        html.append("</html>");
+        
+        return html.toString();
     }
 }

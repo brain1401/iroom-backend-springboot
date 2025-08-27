@@ -35,10 +35,13 @@ public class PrintController {
     @ApiResponses({
         @ApiResponse(
             responseCode = "200", 
-            description = "문서 목록 조회 성공",
+            description = "✅ 문서 목록 조회 성공",
             content = @Content(schema = @Schema(implementation = PrintableDocumentResponse.class))
         ),
-        @ApiResponse(responseCode = "404", description = "존재하지 않는 시험")
+        @ApiResponse(
+            responseCode = "404", 
+            description = "❌ 리소스 없음 - 존재하지 않는 시험"
+        )
     })
     public ResponseEntity<PrintableDocumentResponse> getPrintableDocuments(
             @Parameter(description = "시험 ID", example = "1") 
@@ -61,11 +64,17 @@ public class PrintController {
     @ApiResponses({
         @ApiResponse(
             responseCode = "200", 
-            description = "인쇄 요청 성공",
+            description = "✅ 인쇄 요청 성공 - PDF 생성 완료",
             content = @Content(schema = @Schema(implementation = PrintResponse.class))
         ),
-        @ApiResponse(responseCode = "400", description = "잘못된 요청"),
-        @ApiResponse(responseCode = "404", description = "존재하지 않는 시험 또는 문서")
+        @ApiResponse(
+            responseCode = "400", 
+            description = "❌ 잘못된 요청 - 문서 타입이 올바르지 않거나 필수 파라미터 누락"
+        ),
+        @ApiResponse(
+            responseCode = "404", 
+            description = "❌ 리소스 없음 - 존재하지 않는 시험이거나 시험에 포함된 문제가 없음"
+        )
     })
     public ResponseEntity<PrintResponse> printDocuments(
             @Valid @RequestBody PrintRequest request) {
@@ -86,8 +95,14 @@ public class PrintController {
         description = "생성된 PDF 파일을 다운로드합니다."
     )
     @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "PDF 다운로드 성공"),
-        @ApiResponse(responseCode = "404", description = "존재하지 않는 인쇄 작업")
+        @ApiResponse(
+            responseCode = "200", 
+            description = "✅ PDF 다운로드 성공 - 파일 다운로드 시작"
+        ),
+        @ApiResponse(
+            responseCode = "404", 
+            description = "❌ 리소스 없음 - 존재하지 않는 인쇄 작업 또는 PDF 파일"
+        )
     })
     public ResponseEntity<byte[]> downloadPdf(
             @Parameter(description = "인쇄 작업 ID", example = "print_123456") 
