@@ -26,7 +26,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.access.prepost.PreAuthorize;
 
 /**
  * 시험 답안 관리 컨트롤러
@@ -53,7 +52,6 @@ public class ExamAnswerController {
      * @return 생성된 답안 정보
      */
     @PostMapping
-    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "답안 생성", description = "답안 이미지를 업로드하고 AI 인식을 수행합니다.")
     @io.swagger.v3.oas.annotations.responses.ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "생성 성공"),
@@ -103,7 +101,6 @@ public class ExamAnswerController {
      * @return 수정된 답안 정보
      */
     @PutMapping("/update")
-    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "답안 텍스트 수정", description = "AI 인식 결과를 수정합니다.")
     @io.swagger.v3.oas.annotations.responses.ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "수정 성공"),
@@ -200,7 +197,6 @@ public class ExamAnswerController {
      * @return 처리 결과
      */
     @PostMapping("/sheet")
-    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "답안지 전체 촬영 처리", description = "학생이 답안지 전체를 촬영하여 AI가 모든 문제의 답안을 인식합니다.")
     @io.swagger.v3.oas.annotations.responses.ApiResponses(value = {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "답안지 처리 성공"),

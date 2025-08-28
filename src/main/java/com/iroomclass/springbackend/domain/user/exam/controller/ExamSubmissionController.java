@@ -21,7 +21,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.access.prepost.PreAuthorize;
 
 /**
  * 시험 제출 관리 컨트롤러 (학생용)
@@ -47,7 +46,6 @@ public class ExamSubmissionController {
      * @return 생성된 시험 제출 정보
      */
     @PostMapping
-    @PreAuthorize("isAuthenticated()")
     @Operation(
         summary = "시험 제출 생성",
         description = "학생이 시험을 제출할 때 사용됩니다. 중복 제출은 방지됩니다."
@@ -76,7 +74,6 @@ public class ExamSubmissionController {
      * @return 최종 제출 완료 정보
      */
     @PostMapping("/{submissionId}/final-submit")
-    @PreAuthorize("isAuthenticated()")
     @Operation(
         summary = "시험 최종 제출",
         description = "모든 답안이 완료된 후 시험을 최종 제출합니다."

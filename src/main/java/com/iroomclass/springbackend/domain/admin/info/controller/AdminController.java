@@ -24,7 +24,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.access.prepost.PreAuthorize;
 
 /**
  * 관리자 컨트롤러
@@ -74,7 +73,6 @@ public class AdminController {
      * @return 학원명
      */
     @GetMapping("/academy-name")
-    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "학원명 조회", description = "시스템에 등록된 학원명을 조회합니다.")
     @io.swagger.v3.oas.annotations.responses.ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "조회 성공", content = @Content(schema = @Schema(implementation = AcademyNameResponse.class))),

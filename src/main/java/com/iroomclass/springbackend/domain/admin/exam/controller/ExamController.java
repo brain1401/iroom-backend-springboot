@@ -18,7 +18,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.access.prepost.PreAuthorize;
 
 /**
  * 실제 시험 관리 컨트롤러
@@ -44,7 +43,6 @@ public class ExamController {
      * @return 생성된 시험 정보
      */
     @PostMapping
-    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "시험 등록", description = "시험지 초안을 기반으로 실제 시험을 등록합니다.")
     @io.swagger.v3.oas.annotations.responses.ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "등록 성공"),
@@ -67,7 +65,6 @@ public class ExamController {
      * @return 모든 시험 목록 (최신순)
      */
     @GetMapping
-    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "전체 시험 목록 조회", description = "모든 학년의 시험 목록을 최신순으로 조회합니다.")
     @io.swagger.v3.oas.annotations.responses.ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "조회 성공")
@@ -89,7 +86,6 @@ public class ExamController {
      * @return 해당 학년의 시험 목록
      */
     @GetMapping("/grade/{grade}")
-    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "학년별 시험 목록 조회", description = "특정 학년의 시험 목록을 조회합니다.")
     @io.swagger.v3.oas.annotations.responses.ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "조회 성공"),
@@ -113,7 +109,6 @@ public class ExamController {
      * @return 시험 상세 정보
      */
     @GetMapping("/{examId}")
-    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "시험 상세 조회", description = "특정 시험의 상세 정보를 조회합니다.")
     @io.swagger.v3.oas.annotations.responses.ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "조회 성공"),
@@ -139,7 +134,6 @@ public class ExamController {
      * @return 수정된 시험 정보
      */
     @PutMapping("/{examId}")
-    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "시험 수정", description = "시험 정보를 수정합니다.")
     @io.swagger.v3.oas.annotations.responses.ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "수정 성공"),
