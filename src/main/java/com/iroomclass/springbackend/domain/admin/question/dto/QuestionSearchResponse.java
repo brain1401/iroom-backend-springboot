@@ -1,11 +1,9 @@
 package com.iroomclass.springbackend.domain.admin.question.dto;
 
 import java.util.List;
+import java.util.Objects;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 /**
  * 문제 검색 응답 DTO
@@ -15,28 +13,48 @@ import lombok.NoArgsConstructor;
  * @author 이룸클래스
  * @since 2025
  */
-@Getter
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
-public class QuestionSearchResponse {
+@Schema(description = "문제 검색 응답")
+public record QuestionSearchResponse(
+    @Schema(description = "검색 키워드", example = "자연수")
+    String keyword,
     
-    private String keyword;
-    private List<QuestionInfo> questions;
-    private int totalResults;
+    @Schema(description = "검색된 문제 목록")
+    List<QuestionInfo> questions,
+    
+    @Schema(description = "전체 검색 결과 수", example = "15")
+    int totalResults
+) {
+    public QuestionSearchResponse {
+        Objects.requireNonNull(keyword, "keyword은 필수입니다");
+        Objects.requireNonNull(questions, "questions은 필수입니다");
+    }
     
     /**
      * 검색된 문제 정보
      */
-    @Getter
-    @Builder
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class QuestionInfo {
-        private Long questionId;
-        private Long unitId;
-        private String unitName;
-        private String difficulty;
-        private String stem;  // 문제 내용 (HTML)
+    @Schema(description = "검색된 문제 정보")
+    public record QuestionInfo(
+        @Schema(description = "문제 ID", example = "1")
+        Long questionId,
+        
+        @Schema(description = "단원 ID", example = "1")
+        Long unitId,
+        
+        @Schema(description = "단원명", example = "자연수와 0")
+        String unitName,
+        
+        @Schema(description = "난이도", example = "EASY", allowableValues = {"EASY", "MEDIUM", "HARD"})
+        String difficulty,
+        
+        @Schema(description = "문제 내용 (HTML)", example = "<p>다음 중 자연수는?</p>")
+        String stem
+    ) {
+        public QuestionInfo {
+            Objects.requireNonNull(questionId, "questionId은 필수입니다");
+            Objects.requireNonNull(unitId, "unitId은 필수입니다");
+            Objects.requireNonNull(unitName, "unitName는 필수입니다");
+            Objects.requireNonNull(difficulty, "difficulty은 필수입니다");
+            Objects.requireNonNull(stem, "stem은 필수입니다");
+        }
     }
 }

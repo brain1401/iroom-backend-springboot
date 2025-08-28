@@ -1,12 +1,8 @@
 package com.iroomclass.springbackend.domain.admin.unit.dto;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
-
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import java.util.Objects;
 
 /**
  * 단원 목록 응답 DTO
@@ -16,66 +12,52 @@ import lombok.Setter;
  * @author 이룸클래스
  * @since 2025
  */
-@Getter
-@Setter
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
-public class UnitListResponse {
+@Schema(description = "단원 목록 응답")
+public record UnitListResponse(
+    @Schema(description = "학년", example = "1")
+    Integer grade,
     
-    /**
-     * 학년
-     */
-    private Integer grade;
+    @Schema(description = "단원 목록")
+    List<UnitInfo> units,
     
-    /**
-     * 단원 목록
-     */
-    private List<UnitInfo> units;
+    @Schema(description = "전체 단원 수", example = "5")
+    Integer totalUnits,
     
-    /**
-     * 전체 단원 수
-     */
-    private Integer totalUnits;
-    
-    /**
-     * 전체 문제 수
-     */
-    private Integer totalQuestions;
+    @Schema(description = "전체 문제 수", example = "150")
+    Integer totalQuestions
+) {
+    public UnitListResponse {
+        Objects.requireNonNull(grade, "grade는 필수입니다");
+        Objects.requireNonNull(units, "units은 필수입니다");
+        Objects.requireNonNull(totalUnits, "totalUnits은 필수입니다");
+        Objects.requireNonNull(totalQuestions, "totalQuestions은 필수입니다");
+    }
     
     /**
      * 단원 정보
      */
-    @Getter
-    @Setter
-    @Builder
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class UnitInfo {
+    @Schema(description = "단원 정보")
+    public record UnitInfo(
+        @Schema(description = "단원 ID", example = "1")
+        Long unitId,
         
-        /**
-         * 단원 ID
-         */
-        private Long unitId;
+        @Schema(description = "단원명", example = "자연수와 0")
+        String unitName,
         
-        /**
-         * 단원명
-         */
-        private String unitName;
+        @Schema(description = "단원 설명", example = "자연수와 0에 대한 기본 개념")
+        String description,
         
-        /**
-         * 단원 설명
-         */
-        private String description;
+        @Schema(description = "표시 순서", example = "1")
+        Integer displayOrder,
         
-        /**
-         * 표시 순서
-         */
-        private Integer displayOrder;
-        
-        /**
-         * 해당 단원의 문제 수
-         */
-        private Integer questionCount;
+        @Schema(description = "해당 단원의 문제 수", example = "30")
+        Integer questionCount
+    ) {
+        public UnitInfo {
+            Objects.requireNonNull(unitId, "unitId은 필수입니다");
+            Objects.requireNonNull(unitName, "unitName는 필수입니다");
+            Objects.requireNonNull(displayOrder, "displayOrder은 필수입니다");
+            Objects.requireNonNull(questionCount, "questionCount은 필수입니다");
+        }
     }
 }

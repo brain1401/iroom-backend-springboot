@@ -1,12 +1,8 @@
 package com.iroomclass.springbackend.domain.admin.unit.dto;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
-
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import java.util.Objects;
 
 /**
  * 단원 통계 응답 DTO
@@ -16,108 +12,87 @@ import lombok.Setter;
  * @author 이룸클래스
  * @since 2025
  */
-@Getter
-@Setter
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
-public class UnitStatisticsResponse {
+@Schema(description = "단원 통계 응답")
+public record UnitStatisticsResponse(
+    @Schema(description = "학년", example = "1")
+    Integer grade,
     
-    /**
-     * 학년
-     */
-    private Integer grade;
+    @Schema(description = "단원별 통계 목록")
+    List<UnitStat> unitStats,
     
-    /**
-     * 단원별 통계 목록
-     */
-    private List<UnitStat> unitStats;
-    
-    /**
-     * 전체 통계
-     */
-    private TotalStat totalStat;
+    @Schema(description = "전체 통계")
+    TotalStat totalStat
+) {
+    public UnitStatisticsResponse {
+        Objects.requireNonNull(grade, "grade는 필수입니다");
+        Objects.requireNonNull(unitStats, "unitStats은 필수입니다");
+        Objects.requireNonNull(totalStat, "totalStat은 필수입니다");
+    }
     
     /**
      * 단원별 통계
      */
-    @Getter
-    @Setter
-    @Builder
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class UnitStat {
+    @Schema(description = "단원별 통계")
+    public record UnitStat(
+        @Schema(description = "단원 ID", example = "1")
+        Long unitId,
         
-        /**
-         * 단원 ID
-         */
-        private Long unitId;
+        @Schema(description = "단원명", example = "자연수와 0")
+        String unitName,
         
-        /**
-         * 단원명
-         */
-        private String unitName;
+        @Schema(description = "전체 문제 수", example = "30")
+        Integer totalQuestions,
         
-        /**
-         * 전체 문제 수
-         */
-        private Integer totalQuestions;
-        
-        /**
-         * 난이도별 문제 수
-         */
-        private DifficultyCount difficultyCount;
+        @Schema(description = "난이도별 문제 수")
+        DifficultyCount difficultyCount
+    ) {
+        public UnitStat {
+            Objects.requireNonNull(unitId, "unitId은 필수입니다");
+            Objects.requireNonNull(unitName, "unitName는 필수입니다");
+            Objects.requireNonNull(totalQuestions, "totalQuestions은 필수입니다");
+            Objects.requireNonNull(difficultyCount, "difficultyCount은 필수입니다");
+        }
     }
     
     /**
      * 난이도별 문제 수
      */
-    @Getter
-    @Setter
-    @Builder
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class DifficultyCount {
+    @Schema(description = "난이도별 문제 수")
+    public record DifficultyCount(
+        @Schema(description = "쉬움 문제 수", example = "10")
+        Integer easy,
         
-        /**
-         * 쉬움 문제 수
-         */
-        private Integer easy;
+        @Schema(description = "보통 문제 수", example = "15")
+        Integer medium,
         
-        /**
-         * 보통 문제 수
-         */
-        private Integer medium;
-        
-        /**
-         * 어려움 문제 수
-         */
-        private Integer hard;
+        @Schema(description = "어려움 문제 수", example = "5")
+        Integer hard
+    ) {
+        public DifficultyCount {
+            Objects.requireNonNull(easy, "easy은 필수입니다");
+            Objects.requireNonNull(medium, "medium은 필수입니다");
+            Objects.requireNonNull(hard, "hard은 필수입니다");
+        }
     }
     
     /**
      * 전체 통계
      */
-    @Getter
-    @Setter
-    @Builder
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class TotalStat {
+    @Schema(description = "전체 통계")
+    public record TotalStat(
+        @Schema(description = "전체 단원 수", example = "5")
+        Integer totalUnits,
         
-        /**
-         * 전체 단원 수
-         */
-        private Integer totalUnits;
+        @Schema(description = "전체 문제 수", example = "150")
+        Integer totalQuestions,
         
-        /**
-         * 전체 문제 수
-         */
-        private Integer totalQuestions;
-        
-        /**
-         * 전체 난이도별 문제 수
-         */
-        private DifficultyCount difficultyCount;
+        @Schema(description = "전체 난이도별 문제 수")
+        DifficultyCount difficultyCount
+    ) {
+        public TotalStat {
+            Objects.requireNonNull(totalUnits, "totalUnits은 필수입니다");
+            Objects.requireNonNull(totalQuestions, "totalQuestions은 필수입니다");
+            Objects.requireNonNull(difficultyCount, "difficultyCount은 필수입니다");
+        }
     }
 }

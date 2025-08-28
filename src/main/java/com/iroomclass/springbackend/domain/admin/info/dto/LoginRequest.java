@@ -23,7 +23,7 @@ public record LoginRequest(
      * Compact Constructor - 입력 검증 수행
      */
     public LoginRequest {
-        Objects.requireNonNull(username, "username must not be null");
-        Objects.requireNonNull(password, "password must not be null");
+        Objects.requireNonNull(username, "username은 필수입니다");
+        Objects.requireNonNull(password, "password는 필수입니다");
     }
 }

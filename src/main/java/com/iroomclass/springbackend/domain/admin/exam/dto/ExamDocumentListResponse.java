@@ -1,11 +1,9 @@
 package com.iroomclass.springbackend.domain.admin.exam.dto;
 
 import java.util.List;
+import java.util.Objects;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 /**
  * 시험지 문서 목록 조회 응답 DTO
@@ -15,29 +13,51 @@ import lombok.NoArgsConstructor;
  * @author 이룸클래스
  * @since 2025
  */
-@Getter
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
-public class ExamDocumentListResponse {
+@Schema(description = "시험지 문서 목록 조회 응답")
+public record ExamDocumentListResponse(
+    @Schema(description = "시험지 초안 ID", example = "1")
+    Long examDraftId,
     
-    private Long examDraftId;       // 시험지 초안 ID
-    private String examName;        // 시험지 이름
-    private int grade;              // 학년
-    private List<DocumentInfo> documents;  // 문서 목록
-    private int totalCount;         // 총 개수
+    @Schema(description = "시험지 이름", example = "1학년 중간고사")
+    String examName,
+    
+    @Schema(description = "학년", example = "1")
+    Integer grade,
+    
+    @Schema(description = "문서 목록")
+    List<DocumentInfo> documents,
+    
+    @Schema(description = "총 개수", example = "3")
+    int totalCount
+) {
+    public ExamDocumentListResponse {
+        Objects.requireNonNull(examDraftId, "examDraftId는 필수입니다");
+        Objects.requireNonNull(examName, "examName은 필수입니다");
+        Objects.requireNonNull(grade, "grade는 필수입니다");
+        Objects.requireNonNull(documents, "documents는 필수입니다");
+    }
     
     /**
      * 문서 정보
      */
-    @Getter
-    @Builder
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class DocumentInfo {
-        private Long documentId;        // 문서 ID
-        private String documentType;    // 문서 타입 (ANSWER_SHEET, QUESTION_PAPER, ANSWER_KEY)
-        private String documentTypeName; // 문서 타입 한글명 (답안지, 문제지, 답안)
-        private String qrCodeUrl;       // QR 코드 URL (답안지만 해당)
+    @Schema(description = "문서 정보")
+    public record DocumentInfo(
+        @Schema(description = "문서 ID", example = "1")
+        Long documentId,
+        
+        @Schema(description = "문서 타입", example = "QUESTION_PAPER", allowableValues = {"ANSWER_SHEET", "QUESTION_PAPER", "ANSWER_KEY"})
+        String documentType,
+        
+        @Schema(description = "문서 타입 한글명", example = "문제지")
+        String documentTypeName,
+        
+        @Schema(description = "QR 코드 URL (답안지만 해당)", example = "https://example.com/qr/123", nullable = true)
+        String qrCodeUrl
+    ) {
+        public DocumentInfo {
+            Objects.requireNonNull(documentId, "documentId는 필수입니다");
+            Objects.requireNonNull(documentType, "documentType은 필수입니다");
+            Objects.requireNonNull(documentTypeName, "documentTypeName은 필수입니다");
+        }
     }
 }

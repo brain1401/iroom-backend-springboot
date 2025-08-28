@@ -1,72 +1,98 @@
 package com.iroomclass.springbackend.domain.admin.statistics.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
-
 import java.util.List;
+import java.util.Objects;
 
-@Getter
-@Setter
-@Builder
+/**
+ * 학년별 통계 응답 DTO
+ * 
+ * @author 이룸클래스
+ * @since 2025
+ */
 @Schema(description = "학년별 통계 응답")
-public class GradeStatisticsResponse {
-
+public record GradeStatisticsResponse(
     @Schema(description = "학년", example = "1")
-    private Integer grade;
+    Integer grade,
 
     @Schema(description = "학년명", example = "중1")
-    private String gradeName;
+    String gradeName,
 
     @Schema(description = "최근 시험 평균 점수 목록")
-    private List<RecentExamAverage> recentExamAverages;
+    List<RecentExamAverage> recentExamAverages,
 
     @Schema(description = "오답률 높은 세부 단원 목록")
-    private List<HighErrorRateUnit> highErrorRateUnits;
-
-    @Getter
-    @Setter
-    @Builder
-    @Schema(description = "최근 시험 평균 점수")
-    public static class RecentExamAverage {
-        @Schema(description = "시험 ID", example = "1")
-        private Long examId;
-
-        @Schema(description = "시험명", example = "1학년 중간고사")
-        private String examName;
-
-        @Schema(description = "평균 점수", example = "85.5")
-        private double averageScore;
-
-        @Schema(description = "참여 학생 수", example = "25")
-        private int studentCount;
-
-        @Schema(description = "시험 일시", example = "2024-03-15")
-        private String examDate;
+    List<HighErrorRateUnit> highErrorRateUnits
+) {
+    /**
+     * Compact Constructor - 입력 검증 수행
+     */
+    public GradeStatisticsResponse {
+        Objects.requireNonNull(grade, "grade는 필수입니다");
+        Objects.requireNonNull(gradeName, "gradeName는 필수입니다");
+        Objects.requireNonNull(recentExamAverages, "recentExamAverages은 필수입니다");
+        Objects.requireNonNull(highErrorRateUnits, "highErrorRateUnits은 필수입니다");
     }
 
-    @Getter
-    @Setter
-    @Builder
+    /**
+     * 최근 시험 평균 점수
+     */
+    @Schema(description = "최근 시험 평균 점수")
+    public record RecentExamAverage(
+        @Schema(description = "시험 ID", example = "1")
+        Long examId,
+
+        @Schema(description = "시험명", example = "1학년 중간고사")
+        String examName,
+
+        @Schema(description = "평균 점수", example = "85.5")
+        double averageScore,
+
+        @Schema(description = "참여 학생 수", example = "25")
+        int studentCount,
+
+        @Schema(description = "시험 일시", example = "2024-03-15")
+        String examDate
+    ) {
+        /**
+         * Compact Constructor - 입력 검증 수행
+         */
+        public RecentExamAverage {
+            Objects.requireNonNull(examId, "examId은 필수입니다");
+            Objects.requireNonNull(examName, "examName는 필수입니다");
+            Objects.requireNonNull(examDate, "examDate는 필수입니다");
+        }
+    }
+
+    /**
+     * 오답률 높은 세부 단원
+     */
     @Schema(description = "오답률 높은 세부 단원")
-    public static class HighErrorRateUnit {
+    public record HighErrorRateUnit(
         @Schema(description = "세부 단원 ID", example = "1")
-        private Long unitId;
+        Long unitId,
 
         @Schema(description = "세부 단원명", example = "정수")
-        private String unitName;
+        String unitName,
 
         @Schema(description = "오답률", example = "35.2")
-        private double errorRate;
+        double errorRate,
 
         @Schema(description = "총 문제 수", example = "50")
-        private int totalQuestions;
+        int totalQuestions,
 
         @Schema(description = "오답 수", example = "18")
-        private int incorrectAnswers;
+        int incorrectAnswers,
 
         @Schema(description = "정답 수", example = "32")
-        private int correctAnswers;
+        int correctAnswers
+    ) {
+        /**
+         * Compact Constructor - 입력 검증 수행
+         */
+        public HighErrorRateUnit {
+            Objects.requireNonNull(unitId, "unitId은 필수입니다");
+            Objects.requireNonNull(unitName, "unitName는 필수입니다");
+        }
     }
 }

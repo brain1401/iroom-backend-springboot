@@ -1,9 +1,9 @@
 package com.iroomclass.springbackend.domain.admin.exam.dto;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import jakarta.validation.constraints.NotNull;
+import java.util.Objects;
+
+import io.swagger.v3.oas.annotations.media.Schema;
 
 /**
  * 시험지 문서 생성 요청 DTO
@@ -13,11 +13,13 @@ import lombok.NoArgsConstructor;
  * @author 이룸클래스
  * @since 2025
  */
-@Getter
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
-public class ExamDocumentCreateRequest {
-    
-    private Long examDraftId;  // 시험지 초안 ID
+@Schema(description = "시험지 문서 생성 요청")
+public record ExamDocumentCreateRequest(
+    @NotNull(message = "시험지 초안 ID는 필수입니다.")
+    @Schema(description = "시험지 초안 ID", example = "1", requiredMode = Schema.RequiredMode.REQUIRED)
+    Long examDraftId
+) {
+    public ExamDocumentCreateRequest {
+        Objects.requireNonNull(examDraftId, "examDraftId는 필수입니다");
+    }
 }

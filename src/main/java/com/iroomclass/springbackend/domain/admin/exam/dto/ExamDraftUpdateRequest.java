@@ -1,9 +1,10 @@
 package com.iroomclass.springbackend.domain.admin.exam.dto;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Min;
+import java.util.Objects;
+
+import io.swagger.v3.oas.annotations.media.Schema;
 
 /**
  * 시험지 초안 수정 요청 DTO
@@ -13,11 +14,14 @@ import lombok.NoArgsConstructor;
  * @author 이룸클래스
  * @since 2025
  */
-@Getter
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
-public class ExamDraftUpdateRequest {
-    
-    private int seqNo;  // 교체할 문제 번호
+@Schema(description = "시험지 초안 수정 요청")
+public record ExamDraftUpdateRequest(
+    @NotNull(message = "교체할 문제 번호는 필수입니다.")
+    @Min(value = 1, message = "문제 번호는 1 이상이어야 합니다.")
+    @Schema(description = "교체할 문제 번호", example = "3", requiredMode = Schema.RequiredMode.REQUIRED)
+    Integer seqNo
+) {
+    public ExamDraftUpdateRequest {
+        Objects.requireNonNull(seqNo, "seqNo는 필수입니다");
+    }
 }

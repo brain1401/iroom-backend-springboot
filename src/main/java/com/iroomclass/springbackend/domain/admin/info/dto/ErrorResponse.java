@@ -1,10 +1,7 @@
 package com.iroomclass.springbackend.domain.admin.info.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import java.util.Objects;
 
 /**
  * 에러 응답 DTO
@@ -14,16 +11,15 @@ import lombok.NoArgsConstructor;
  * @author 이룸클래스
  * @since 2025
  */
-@Data
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
 @Schema(description = "에러 응답 정보")
-public class ErrorResponse {
-
-    /**
-     * 에러 메시지
-     */
+public record ErrorResponse(
     @Schema(description = "에러 메시지", example = "존재하지 않는 관리자 아이디")
-    private String message;
+    String message
+) {
+    /**
+     * Compact Constructor - 입력 검증 수행
+     */
+    public ErrorResponse {
+        Objects.requireNonNull(message, "message는 필수입니다");
+    }
 }

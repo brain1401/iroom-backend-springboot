@@ -1,9 +1,8 @@
 package com.iroomclass.springbackend.domain.admin.question.dto;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import java.util.Objects;
+
+import io.swagger.v3.oas.annotations.media.Schema;
 
 /**
  * 문제 통계 조회 응답 DTO
@@ -13,16 +12,28 @@ import lombok.NoArgsConstructor;
  * @author 이룸클래스
  * @since 2025
  */
-@Getter
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
-public class QuestionStatisticsResponse {
+@Schema(description = "문제 통계 조회 응답")
+public record QuestionStatisticsResponse(
+    @Schema(description = "단원 ID", example = "1")
+    Long unitId,
     
-    private Long unitId;
-    private String unitName;
-    private int totalQuestions;
-    private int easyCount;
-    private int mediumCount;
-    private int hardCount;
+    @Schema(description = "단원명", example = "자연수와 0")
+    String unitName,
+    
+    @Schema(description = "전체 문제 수", example = "30")
+    int totalQuestions,
+    
+    @Schema(description = "쉬움 문제 수", example = "10")
+    int easyCount,
+    
+    @Schema(description = "보통 문제 수", example = "15")
+    int mediumCount,
+    
+    @Schema(description = "어려움 문제 수", example = "5")
+    int hardCount
+) {
+    public QuestionStatisticsResponse {
+        Objects.requireNonNull(unitId, "unitId은 필수입니다");
+        Objects.requireNonNull(unitName, "unitName는 필수입니다");
+    }
 }
