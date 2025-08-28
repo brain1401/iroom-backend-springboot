@@ -1,13 +1,15 @@
 package com.iroomclass.springbackend.config;
 
-import org.springframework.http.HttpMethod;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
@@ -69,10 +71,57 @@ public class SecurityConfig {
                         .requestMatchers("/api/system/**").permitAll()
                         .requestMatchers("/system/**").permitAll()
 
+                        // 단원 API 공개 허용
+                        .requestMatchers("/unit/**").permitAll()
+                        .requestMatchers("/api/unit/**").permitAll()
+
+                        // 문제 API 공개 허용
+                        .requestMatchers("/question/**").permitAll()
+                        .requestMatchers("/api/question/**").permitAll()
+
+                        // 시험지 초안 API 공개 허용
+                        .requestMatchers("/exam-draft/**").permitAll()
+                        .requestMatchers("/api/exam-draft/**").permitAll()
+
+                        // 시험지 문서 API 공개 허용
+                        .requestMatchers("/exam-document/**").permitAll()
+                        .requestMatchers("/api/exam-document/**").permitAll()
+
+                        // 실제 시험 API 공개 허용
+                        .requestMatchers("/exam/**").permitAll()
+                        .requestMatchers("/api/exam/**").permitAll()
+
+                        // 학생용 API 공개 허용
+                        .requestMatchers("/user/**", "/api/user/**").permitAll()
+
+                        // (추가) 관리자 API 경로 설정
+                        .requestMatchers("/admin/login").permitAll() // 로그인은 누구나 접근 가능
+                        .requestMatchers("/admin/academy-name").permitAll() // 학원명 조회도 공개로 설정
+                        .requestMatchers("/admin/print/**").permitAll() // 테스트용으로 print API 공개 설정
+                        .requestMatchers("/api/admin/print/**").permitAll() // context-path 포함 경로도 허용
+                        .requestMatchers("/admin/dashboard/**").permitAll() // 테스트용으로 대시보드 API 공개 설정
+                        .requestMatchers("/api/admin/dashboard/**").permitAll() // context-path 포함 경로도 허용
+                        .requestMatchers("/admin/statistics/**").permitAll() // 테스트용으로 통계 API 공개 설정
+                        .requestMatchers("/api/admin/statistics/**").permitAll() // context-path 포함 경로도 허용
+                        .requestMatchers("/admin/exam-submission/**").permitAll() // 테스트용으로 시험 제출 관리 API 공개 설정
+                        .requestMatchers("/api/admin/exam-submission/**").permitAll() // context-path 포함 경로도 허용
+                        .requestMatchers("/admin/**").authenticated() // 다른 관리자 기능은 로그인 필요
+
                         // 나머지 모든 요청은 인증 필요
                         .anyRequest().authenticated());
 
         return http.build();
+    }
+
+    // 추가해야 할 Bean 메서드 (클래스 맨 아래에 추가)
+    /**
+     * 비밀번호 암호화 도구
+     * 
+     * @return BCryptPasswordEncoder
+     */
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
     }
 
     @Bean
