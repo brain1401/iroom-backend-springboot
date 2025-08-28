@@ -2,8 +2,12 @@ package com.iroomclass.springbackend.domain.user.exam.answer.service;
 
 import java.util.List;
 import java.util.Map;
+import java.util.ArrayList;
+import java.util.Comparator;
 
 import org.springframework.stereotype.Service;
+
+import com.iroomclass.springbackend.domain.user.exam.answer.dto.RecognizedAnswer;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -51,30 +55,86 @@ public class AiImageRecognitionService {
     }
     
     /**
-     * 전체 답안지에서 각 문제별 답안 추출
+     * 답안지 전체에서 모든 문제의 답안을 인식
      * 
-     * @param answerSheetImageUrls 전체 답안지 이미지 URL 목록
-     * @param totalQuestions 총 문제 수
-     * @return 각 문제별 AI 인식 결과 (문제 번호 -> 인식 결과)
+     * @param answerSheetImageUrls 답안지 이미지 URL 목록
+     * @return 인식된 답안 목록 (문제 번호별)
      */
-    public Map<Integer, AiRecognitionResult> recognizeAnswersFromSheet(List<String> answerSheetImageUrls, int totalQuestions) {
-        log.info("전체 답안지 AI 인식 시작: 이미지 URL 개수={}, 총 문제 수={}", answerSheetImageUrls.size(), totalQuestions);
+    public List<RecognizedAnswer> recognizeAnswersFromSheet(List<String> answerSheetImageUrls) {
+        log.info("답안지 전체 인식 시작: 이미지 개수={}", answerSheetImageUrls.size());
         
-        try {
-            // TODO: 실제 AI 서비스 연동
-            // 실제 구현에서는 AI가 여러 이미지에서 각 문제별 답안을 자동으로 추출
+        List<RecognizedAnswer> allAnswers = new ArrayList<>();
+        
+        // 각 이미지에서 답안 인식
+        for (int imageIndex = 0; imageIndex < answerSheetImageUrls.size(); imageIndex++) {
+            String imageUrl = answerSheetImageUrls.get(imageIndex);
+            log.info("이미지 {} 처리 중: {}", imageIndex + 1, imageUrl);
             
-            // 현재는 모의 데이터로 구현
-            Map<Integer, AiRecognitionResult> results = simulateSheetRecognition(answerSheetImageUrls, totalQuestions);
-            
-            log.info("전체 답안지 AI 인식 완료: 처리된 문제 수={}", results.size());
-            
-            return results;
-                
-        } catch (Exception e) {
-            log.error("전체 답안지 AI 인식 실패: 이미지 URL 개수={}, 오류={}", answerSheetImageUrls.size(), e.getMessage());
-            throw new RuntimeException("전체 답안지 AI 인식에 실패했습니다: " + e.getMessage());
+            // 해당 이미지에서 인식된 답안들
+            List<RecognizedAnswer> imageAnswers = recognizeAnswersFromImage(imageUrl);
+            allAnswers.addAll(imageAnswers);
         }
+        
+        // 문제 번호별로 정렬
+        allAnswers.sort(Comparator.comparing(RecognizedAnswer::getQuestionNumber));
+        
+        log.info("답안지 전체 인식 완료: 총 {}개 답안 인식", allAnswers.size());
+        return allAnswers;
+    }
+
+    /**
+     * 단일 이미지에서 답안 인식 (시뮬레이션)
+     * 
+     * @param imageUrl 이미지 URL
+     * @return 인식된 답안 목록
+     */
+    private List<RecognizedAnswer> recognizeAnswersFromImage(String imageUrl) {
+        List<RecognizedAnswer> answers = new ArrayList<>();
+        
+        // 시뮬레이션: 이미지 URL에서 문제 번호를 추출하여 답안 생성
+        // 실제로는 AI 모델이 이미지를 분석하여 답안을 추출
+        int baseQuestionNumber = extractQuestionNumberFromImageUrl(imageUrl);
+        
+        // 각 이미지당 10개 문제씩 처리 (시뮬레이션)
+        for (int i = 0; i < 10; i++) {
+            int questionNumber = baseQuestionNumber + i;
+            if (questionNumber <= 20) { // 최대 20문제
+                String recognizedAnswer = generateRandomAnswer();
+                
+                RecognizedAnswer answer = RecognizedAnswer.builder()
+                    .questionNumber(questionNumber)
+                    .recognizedAnswer(recognizedAnswer)
+                    .confidenceScore(0.85 + (Math.random() * 0.15)) // 85-100% 신뢰도
+                    .build();
+                
+                answers.add(answer);
+            }
+        }
+        
+        return answers;
+    }
+
+    /**
+     * 이미지 URL에서 문제 번호 추출 (시뮬레이션)
+     */
+    private int extractQuestionNumberFromImageUrl(String imageUrl) {
+        // 실제로는 이미지 분석을 통해 문제 번호를 추출
+        // 여기서는 시뮬레이션을 위해 URL에서 숫자를 추출
+        if (imageUrl.contains("page1") || imageUrl.contains("1")) {
+            return 1;
+        } else if (imageUrl.contains("page2") || imageUrl.contains("2")) {
+            return 11;
+        } else {
+            return 1; // 기본값
+        }
+    }
+
+    /**
+     * 랜덤 답안 생성 (시뮬레이션)
+     */
+    private String generateRandomAnswer() {
+        String[] possibleAnswers = {"1", "2", "3", "4", "5", "6", "7", "8", "9", "10"};
+        return possibleAnswers[(int) (Math.random() * possibleAnswers.length)];
     }
     
     /**

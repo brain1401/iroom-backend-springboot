@@ -14,6 +14,8 @@ import com.iroomclass.springbackend.domain.user.exam.answer.dto.ExamAnswerCreate
 import com.iroomclass.springbackend.domain.user.exam.answer.dto.ExamAnswerListResponse;
 import com.iroomclass.springbackend.domain.user.exam.answer.dto.ExamAnswerResponse;
 import com.iroomclass.springbackend.domain.user.exam.answer.dto.ExamAnswerUpdateRequest;
+import com.iroomclass.springbackend.domain.user.exam.answer.dto.ExamAnswerSheetCreateRequest;
+import com.iroomclass.springbackend.domain.user.exam.answer.dto.ExamAnswerSheetProcessResponse;
 import com.iroomclass.springbackend.domain.user.exam.answer.service.ExamAnswerService;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -208,6 +210,28 @@ public class ExamAnswerController {
         
         log.info("답안 상태 확인 완료: 총 {}개, 정답 {}개", 
             response.getTotalCount(), response.getCorrectCount());
+        
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * 답안지 전체 촬영 처리
+     * 
+     * @param request 답안지 전체 촬영 요청
+     * @return 처리 결과
+     */
+    @PostMapping("/sheet")
+    @Operation(summary = "답안지 전체 촬영 처리", description = "학생이 답안지 전체를 촬영하여 AI가 모든 문제의 답안을 인식합니다.")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "답안지 처리 성공"),
+        @ApiResponse(responseCode = "400", description = "잘못된 요청"),
+        @ApiResponse(responseCode = "404", description = "시험 제출 정보를 찾을 수 없음")
+    })
+    public ResponseEntity<ExamAnswerSheetProcessResponse> processAnswerSheet(
+            @RequestBody ExamAnswerSheetCreateRequest request) {
+        log.info("답안지 전체 촬영 처리 요청: examSubmissionId={}", request.getExamSubmissionId());
+        
+        ExamAnswerSheetProcessResponse response = examAnswerService.processAnswerSheet(request);
         
         return ResponseEntity.ok(response);
     }

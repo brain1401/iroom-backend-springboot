@@ -1,6 +1,8 @@
 package com.iroomclass.springbackend.domain.user.exam.answer.service;
 
 import java.util.List;
+import java.util.ArrayList;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -9,6 +11,9 @@ import com.iroomclass.springbackend.domain.user.exam.answer.dto.ExamAnswerCreate
 import com.iroomclass.springbackend.domain.user.exam.answer.dto.ExamAnswerListResponse;
 import com.iroomclass.springbackend.domain.user.exam.answer.dto.ExamAnswerResponse;
 import com.iroomclass.springbackend.domain.user.exam.answer.dto.ExamAnswerUpdateRequest;
+import com.iroomclass.springbackend.domain.user.exam.answer.dto.ExamAnswerSheetCreateRequest;
+import com.iroomclass.springbackend.domain.user.exam.answer.dto.ExamAnswerSheetProcessResponse;
+import com.iroomclass.springbackend.domain.user.exam.answer.dto.RecognizedAnswer;
 import com.iroomclass.springbackend.domain.user.exam.answer.entity.ExamAnswer;
 import com.iroomclass.springbackend.domain.user.exam.answer.repository.ExamAnswerRepository;
 import com.iroomclass.springbackend.domain.user.exam.entity.ExamSubmission;
@@ -202,6 +207,74 @@ public class ExamAnswerService {
         log.info("답안 상태 확인 완료: 총 {}개, 정답 {}개", totalCount, correctCount);
         
         return summary;
+    }
+    
+    /**
+     * 답안지 전체 촬영 처리
+     * 
+     * @param request 답안지 전체 촬영 요청
+     * @return 처리 결과
+     */
+    @Transactional
+    public ExamAnswerSheetProcessResponse processAnswerSheet(ExamAnswerSheetCreateRequest request) {
+        log.info("답안지 전체 촬영 처리 시작: examSubmissionId={}, 이미지 개수={}", 
+            request.getExamSubmissionId(), request.getAnswerSheetImageUrls().size());
+        
+        // 1단계: 시험 제출 정보 조회
+        ExamSubmission examSubmission = examSubmissionRepository.findById(request.getExamSubmissionId())
+            .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 시험 제출입니다: " + request.getExamSubmissionId()));
+        
+        // 2단계: AI 이미지 인식 수행
+        List<RecognizedAnswer> recognizedAnswers = aiImageRecognitionService.recognizeAnswersFromSheet(
+            request.getAnswerSheetImageUrls()
+        );
+        
+        // 3단계: 인식된 답안들을 DB에 저장
+        List<ExamAnswer> createdAnswers = new ArrayList<>();
+        for (RecognizedAnswer recognizedAnswer : recognizedAnswers) {
+            // 해당 문제 조회
+            Question question = questionRepository.findById(recognizedAnswer.getQuestionNumber().longValue())
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 문제입니다: " + recognizedAnswer.getQuestionNumber()));
+            
+            // 답안 생성
+            ExamAnswer examAnswer = ExamAnswer.builder()
+                .examSubmission(examSubmission)
+                .question(question)
+                .answerImageUrl(request.getAnswerSheetImageUrls().get(0)) // 첫 번째 이미지 URL 사용
+                .answerText(recognizedAnswer.getRecognizedAnswer())
+                .isCorrect(false) // 아직 정답 여부 확인 안됨
+                .score(0) // 아직 점수 계산 안됨
+                .build();
+            
+            ExamAnswer savedAnswer = examAnswerRepository.save(examAnswer);
+            createdAnswers.add(savedAnswer);
+        }
+        
+        // 4단계: 응답 DTO 생성
+        List<ExamAnswerResponse> answerResponses = createdAnswers.stream()
+            .map(this::convertToResponse)
+            .collect(Collectors.toList());
+        
+        log.info("답안지 전체 촬영 처리 완료: examSubmissionId={}, 생성된 답안 개수={}", 
+            request.getExamSubmissionId(), createdAnswers.size());
+        
+        return ExamAnswerSheetProcessResponse.builder()
+            .processedImageCount(request.getAnswerSheetImageUrls().size())
+            .createdAnswerCount(createdAnswers.size())
+            .answers(answerResponses)
+            .status("COMPLETED")
+            .message("답안지 처리가 완료되었습니다. 각 문제별 답안을 확인해주세요.")
+            .build();
+    }
+    
+    /**
+     * ExamAnswer를 ExamAnswerResponse로 변환
+     * 
+     * @param examAnswer 답안 엔티티
+     * @return 답안 응답 DTO
+     */
+    private ExamAnswerResponse convertToResponse(ExamAnswer examAnswer) {
+        return ExamAnswerResponse.from(examAnswer);
     }
     
     /**

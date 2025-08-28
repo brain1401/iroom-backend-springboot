@@ -74,9 +74,9 @@ public class Exam {
     /**
      * QR 코드 URL
      * 학생 접속용 QR 코드 URL
-     * 최대 255자
+     * LONGTEXT 타입으로 긴 QR 코드 URL 저장 가능
      */
-    @Column(length = 255)
+    @Column(columnDefinition = "LONGTEXT")
     private String qrCodeUrl;
     
     /**
