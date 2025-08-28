@@ -229,7 +229,7 @@ public class ExamDraftService {
                 .unitId(unit.getId())
                 .unitName(unit.getUnitName())
                 .difficulty(question.getDifficulty().name())
-                .stem(question.getStem())
+                .stem(question.getStemAsHtml())
                 .points(examDraftQuestion.getPoints())
                 .build();
             questionInfos.add(questionInfo);

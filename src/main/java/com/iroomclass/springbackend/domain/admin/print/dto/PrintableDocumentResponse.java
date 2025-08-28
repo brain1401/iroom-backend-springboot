@@ -13,8 +13,8 @@ import java.util.List;
 @Schema(description = "인쇄 가능한 문서 목록 응답")
 public class PrintableDocumentResponse {
 
-    @Schema(description = "시험 ID", example = "1")
-    private Long examId;
+    @Schema(description = "시험지 초안 ID", example = "1")
+    private Long examDraftId;
 
     @Schema(description = "시험명", example = "1학년 중간고사")
     private String examName;

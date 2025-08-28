@@ -158,7 +158,7 @@ public class StudentService {
             .submissionId(submissionId)
             .questionId(questionId)
             .questionNumber(question.getId().intValue()) // TODO: 실제 문제 번호는 exam_draft_question의 seq_no를 사용해야 함
-            .questionContent(question.getStem())
+            .questionContent(question.getStemAsHtml())
             .isCorrect(answer.getIsCorrect())
             .score(answer.getScore())
             .points(5) // TODO: 실제 배점은 exam_draft_question의 points를 사용해야 함

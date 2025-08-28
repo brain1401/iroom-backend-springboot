@@ -97,6 +97,8 @@ public class SecurityConfig {
                         // (추가) 관리자 API 경로 설정
                         .requestMatchers("/admin/login").permitAll() // 로그인은 누구나 접근 가능
                         .requestMatchers("/admin/academy-name").permitAll() // 학원명 조회도 공개로 설정
+                        .requestMatchers("/admin/print/**").permitAll() // 테스트용으로 print API 공개 설정
+                        .requestMatchers("/api/admin/print/**").permitAll() // context-path 포함 경로도 허용
                         .requestMatchers("/admin/**").authenticated() // 다른 관리자 기능은 로그인 필요
 
                         // 나머지 모든 요청은 인증 필요

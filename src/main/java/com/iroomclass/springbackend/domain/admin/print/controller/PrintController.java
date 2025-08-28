@@ -27,10 +27,10 @@ public class PrintController {
 
     private final PrintService printService;
 
-    @GetMapping("/exam/{examId}/documents")
+    @GetMapping("/exam/{examDraftId}/documents")
     @Operation(
         summary = "인쇄 가능한 문서 목록 조회",
-        description = "해당 시험의 인쇄 가능한 문서 목록을 조회합니다."
+        description = "해당 시험지 초안의 인쇄 가능한 문서 목록을 조회합니다."
     )
     @ApiResponses({
         @ApiResponse(
@@ -40,18 +40,18 @@ public class PrintController {
         ),
         @ApiResponse(
             responseCode = "404", 
-            description = "❌ 리소스 없음 - 존재하지 않는 시험"
+            description = "❌ 리소스 없음 - 존재하지 않는 시험지 초안"
         )
     })
     public ResponseEntity<PrintableDocumentResponse> getPrintableDocuments(
-            @Parameter(description = "시험 ID", example = "1") 
-            @PathVariable Long examId) {
+            @Parameter(description = "시험지 초안 ID", example = "1") 
+            @PathVariable Long examDraftId) {
         
-        log.info("인쇄 가능한 문서 목록 조회 요청: examId={}", examId);
+        log.info("인쇄 가능한 문서 목록 조회 요청: examDraftId={}", examDraftId);
         
-        PrintableDocumentResponse response = printService.getPrintableDocuments(examId);
-        log.info("인쇄 가능한 문서 목록 조회 성공: examId={}, documentCount={}", 
-            examId, response.getDocuments().size());
+        PrintableDocumentResponse response = printService.getPrintableDocuments(examDraftId);
+        log.info("인쇄 가능한 문서 목록 조회 성공: examDraftId={}, documentCount={}", 
+            examDraftId, response.getDocuments().size());
         
         return ResponseEntity.ok(response);
     }
@@ -79,12 +79,12 @@ public class PrintController {
     public ResponseEntity<PrintResponse> printDocuments(
             @Valid @RequestBody PrintRequest request) {
         
-        log.info("문서 인쇄 요청: examId={}, documentTypes={}", 
-            request.getExamId(), request.getDocumentTypes());
+        log.info("문서 인쇄 요청: examDraftId={}, documentTypes={}", 
+            request.getExamDraftId(), request.getDocumentTypes());
         
         PrintResponse response = printService.processPrintRequest(request);
-        log.info("문서 인쇄 요청 성공: examId={}, printJobId={}, fileName={}", 
-            request.getExamId(), response.getPrintJobId(), response.getFileName());
+        log.info("문서 인쇄 요청 성공: examDraftId={}, printJobId={}, fileName={}", 
+            request.getExamDraftId(), response.getPrintJobId(), response.getFileName());
         
         return ResponseEntity.ok(response);
     }

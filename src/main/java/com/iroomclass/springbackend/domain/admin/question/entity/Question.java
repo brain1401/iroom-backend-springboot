@@ -1,5 +1,8 @@
 package com.iroomclass.springbackend.domain.admin.question.entity;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.iroomclass.springbackend.domain.admin.unit.entity.Unit;
 
 import jakarta.persistence.Column;
@@ -18,12 +21,16 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
+import java.util.List;
+import java.util.Map;
 
 /**
  * 문제 정보 Entity
  * 
  * 각 단원별로 생성된 문제들을 관리합니다.
- * 주관식 문제만 지원하며, React Editor로 작성된 HTML 내용을 저장합니다.
+ * 주관식 문제만 지원하며, JSON 형태로 저장된 문제 내용을 HTML로 변환합니다.
  * 
  * @author 이룸클래스
  * @since 2025
@@ -34,7 +41,10 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Builder
+@Slf4j
 public class Question {
+    
+    private static final ObjectMapper objectMapper = new ObjectMapper();
     
     /**
      * 문제 고유 ID
@@ -62,11 +72,11 @@ public class Question {
     private Difficulty difficulty;
 
     /**
-     * 문제 내용
-     * 주관식 문제 내용 (HTML 형태, 텍스트 + 이미지 포함 가능)
-     * 예시: "x + 3 = 7일 때, x의 값은?" 또는 "다음 그래프를 보고 답하세요. <img src='graph.png'> f(x) = 2x + 1일 때, f(3)의 값은?"
+     * 문제 내용 (JSON 형태)
+     * 주관식 문제 내용을 JSON 형태로 저장
+     * 예시: [{"type": "paragraph", "content": [{"type": "text", "value": "연립부등식 "}, {"type": "latex", "value": "\\begin{cases}..."}]}]
      */
-    @Column(columnDefinition = "LONGTEXT", nullable = false)
+    @Column(columnDefinition = "JSON", nullable = false)
     private String stem;
 
     /**
@@ -75,6 +85,44 @@ public class Question {
      */
     @Column(columnDefinition = "LONGTEXT", nullable = false)
     private String answerKey;
+
+    /**
+     * JSON 형태의 stem을 HTML로 변환
+     * 
+     * @return HTML 형태의 문제 내용
+     */
+    public String getStemAsHtml() {
+        try {
+            List<Map<String, Object>> stemData = objectMapper.readValue(stem, new TypeReference<List<Map<String, Object>>>() {});
+            StringBuilder html = new StringBuilder();
+            
+            for (Map<String, Object> block : stemData) {
+                String type = (String) block.get("type");
+                List<Map<String, Object>> content = (List<Map<String, Object>>) block.get("content");
+                
+                if ("paragraph".equals(type)) {
+                    html.append("<p>");
+                    for (Map<String, Object> item : content) {
+                        String itemType = (String) item.get("type");
+                        String value = (String) item.get("value");
+                        
+                        if ("text".equals(itemType)) {
+                            html.append(value);
+                        } else if ("latex".equals(itemType)) {
+                            html.append("$").append(value).append("$");
+                        }
+                    }
+                    html.append("</p>");
+                }
+            }
+            
+            return html.toString();
+            
+        } catch (JsonProcessingException e) {
+            log.error("JSON 파싱 오류: {}", e.getMessage(), e);
+            return stem; // JSON 파싱 실패 시 원본 반환
+        }
+    }
 
     /**
      * 문제 난이도 열거형

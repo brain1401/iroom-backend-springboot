@@ -42,6 +42,14 @@ dependencies {
 	implementation 'com.openhtmltopdf:openhtmltopdf-core:1.0.10'
 	implementation 'com.openhtmltopdf:openhtmltopdf-pdfbox:1.0.10'
 	
+	// HTML 정규화 및 정리 라이브러리
+	implementation 'org.jsoup:jsoup:1.17.2'
+	
+	// LaTeX 수식 렌더링 라이브러리
+	implementation 'org.scilab.forge:jlatexmath:1.0.7'
+	implementation 'org.scilab.forge:jlatexmath-font-greek:1.0.7'
+	implementation 'org.scilab.forge:jlatexmath-font-cyrillic:1.0.7'
+	
 	compileOnly 'org.projectlombok:lombok'
 	developmentOnly 'org.springframework.boot:spring-boot-devtools'
 	runtimeOnly 'com.mysql:mysql-connector-j'

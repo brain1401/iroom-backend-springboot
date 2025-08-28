@@ -169,7 +169,7 @@ public class QuestionService {
             .unitId(unit.getId())
             .unitName(unit.getUnitName())
             .difficulty(question.getDifficulty().name())
-            .stem(question.getStem())
+            .stem(question.getStemAsHtml())
             .answerKey(question.getAnswerKey())
             .build();
     }
@@ -236,7 +236,7 @@ public class QuestionService {
                     .unitId(unit.getId())
                     .unitName(unit.getUnitName())
                     .difficulty(question.getDifficulty().name())
-                    .stem(question.getStem())
+                    .stem(question.getStemAsHtml())
                     .build();
             })
             .collect(Collectors.toList());

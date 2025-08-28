@@ -196,36 +196,29 @@ public class ExamDocumentService {
     private ExamDocument createAnswerSheet(ExamDraft examDraft, List<ExamDraftQuestion> questions) {
         StringBuilder content = new StringBuilder();
         
-        // 답안지 헤더
+        // 답안지 시작
         content.append("<div style='font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px;'>");
-        content.append("<h1 style='text-align: center; color: #333;'>").append(examDraft.getExamName()).append("</h1>");
-        content.append("<h2 style='text-align: center; color: #666;'>답안지</h2>");
-        content.append("<hr style='margin: 20px 0;'>");
-        
-        // 학생 정보 입력란
-        content.append("<div style='margin-bottom: 30px;'>");
-        content.append("<p><strong>학년:</strong> ").append(examDraft.getGrade()).append("학년</p>");
-        content.append("<p><strong>이름:</strong> _________________</p>");
-        content.append("<p><strong>전화번호:</strong> _________________</p>");
-        content.append("</div>");
-        
-        // QR 코드 영역 (답안지에만)
-        String qrCodeUrl = generateQrCodeUrl(examDraft.getId());
-        content.append("<div style='text-align: center; margin: 20px 0;'>");
-        content.append("<p><strong>QR 코드:</strong></p>");
-        content.append("<img src='").append(qrCodeUrl).append("' alt='QR Code' style='width: 150px; height: 150px;'>");
-        content.append("</div>");
         
         // 답안 작성란
         content.append("<div style='margin-top: 30px;'>");
-        content.append("<h3>답안 작성란</h3>");
         
         for (ExamDraftQuestion question : questions) {
-            content.append("<div style='margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px;'>");
-            content.append("<p><strong>").append(question.getSeqNo()).append("번</strong> (배점: ").append(question.getPoints()).append("점)</p>");
-            content.append("<div style='margin: 10px 0; padding: 10px; background-color: #f9f9f9; min-height: 50px;'>");
-            content.append("답안: _________________________________");
+            content.append("<div style='margin: 15px 0; border: 1px solid #000; display: flex; align-items: stretch;'>");
+            
+            // 왼쪽 번호 박스 (회색)
+            content.append("<div style='background-color: #f0f0f0; padding: 15px; border-right: 1px solid #000; display: flex; align-items: center; justify-content: center; min-width: 80px;'>");
+            content.append("<div style='text-align: center; font-weight: bold; font-size: 14px;'>");
+            content.append("주 ").append(question.getSeqNo());
             content.append("</div>");
+            content.append("</div>");
+            
+            // 오른쪽 답안 작성 영역 (흰색)
+            content.append("<div style='flex: 1; padding: 15px; background-color: white;'>");
+            content.append("<div style='min-height: 50px; border: 1px solid #ddd; padding: 10px; background-color: #f9f9f9;'>");
+            content.append("");
+            content.append("</div>");
+            content.append("</div>");
+            
             content.append("</div>");
         }
         
@@ -236,7 +229,7 @@ public class ExamDocumentService {
             .examDraft(examDraft)
             .documentType(ExamDocument.DocumentType.ANSWER_SHEET)
             .documentContent(content.toString())
-            .qrCodeUrl(qrCodeUrl)
+            .qrCodeUrl("") // QR 코드 URL 제거
             .build();
     }
     
@@ -246,29 +239,29 @@ public class ExamDocumentService {
     private ExamDocument createQuestionPaper(ExamDraft examDraft, List<ExamDraftQuestion> questions) {
         StringBuilder content = new StringBuilder();
         
-        // 문제지 헤더
+        // 문제지 시작
         content.append("<div style='font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px;'>");
-        content.append("<h1 style='text-align: center; color: #333;'>").append(examDraft.getExamName()).append("</h1>");
-        content.append("<h2 style='text-align: center; color: #666;'>문제지</h2>");
-        content.append("<hr style='margin: 20px 0;'>");
-        
-        // 시험 정보
-        content.append("<div style='margin-bottom: 30px;'>");
-        content.append("<p><strong>학년:</strong> ").append(examDraft.getGrade()).append("학년</p>");
-        content.append("<p><strong>총 문제 수:</strong> ").append(examDraft.getTotalQuestions()).append("문제</p>");
-        content.append("<p><strong>총점:</strong> 100점</p>");
-        content.append("</div>");
         
         // 문제들
         content.append("<div style='margin-top: 30px;'>");
-        content.append("<h3>문제</h3>");
         
         for (ExamDraftQuestion question : questions) {
-            content.append("<div style='margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px;'>");
-            content.append("<p><strong>").append(question.getSeqNo()).append("번</strong> (배점: ").append(question.getPoints()).append("점)</p>");
-            content.append("<div style='margin: 10px 0;'>");
-            content.append(question.getQuestion().getStem());
+            content.append("<div style='margin: 25px 0; border: 2px solid #000; display: flex; align-items: stretch;'>");
+            
+            // 왼쪽 번호 박스 (회색)
+            content.append("<div style='background-color: #f0f0f0; padding: 20px; border-right: 2px solid #000; display: flex; align-items: center; justify-content: center; min-width: 100px;'>");
+            content.append("<div style='text-align: center; font-weight: bold; font-size: 16px;'>");
+            content.append("주 ").append(question.getSeqNo());
             content.append("</div>");
+            content.append("</div>");
+            
+            // 오른쪽 문제 내용 영역 (흰색)
+            content.append("<div style='flex: 1; padding: 20px; background-color: white;'>");
+            content.append("<div style='line-height: 1.6;'>");
+            content.append(question.getQuestion().getStemAsHtml());
+            content.append("</div>");
+            content.append("</div>");
+            
             content.append("</div>");
         }
         
@@ -288,29 +281,29 @@ public class ExamDocumentService {
     private ExamDocument createAnswerKey(ExamDraft examDraft, List<ExamDraftQuestion> questions) {
         StringBuilder content = new StringBuilder();
         
-        // 답안 헤더
+        // 답안 시작
         content.append("<div style='font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px;'>");
-        content.append("<h1 style='text-align: center; color: #333;'>").append(examDraft.getExamName()).append("</h1>");
-        content.append("<h2 style='text-align: center; color: #666;'>답안</h2>");
-        content.append("<hr style='margin: 20px 0;'>");
-        
-        // 시험 정보
-        content.append("<div style='margin-bottom: 30px;'>");
-        content.append("<p><strong>학년:</strong> ").append(examDraft.getGrade()).append("학년</p>");
-        content.append("<p><strong>총 문제 수:</strong> ").append(examDraft.getTotalQuestions()).append("문제</p>");
-        content.append("<p><strong>총점:</strong> 100점</p>");
-        content.append("</div>");
         
         // 답안들
         content.append("<div style='margin-top: 30px;'>");
-        content.append("<h3>답안</h3>");
         
         for (ExamDraftQuestion question : questions) {
-            content.append("<div style='margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px;'>");
-            content.append("<p><strong>").append(question.getSeqNo()).append("번</strong> (배점: ").append(question.getPoints()).append("점)</p>");
-            content.append("<div style='margin: 10px 0;'>");
-            content.append("<p><strong>정답:</strong> ").append(question.getQuestion().getAnswerKey()).append("</p>");
+            content.append("<div style='margin: 25px 0; border: 2px solid #000; display: flex; align-items: stretch;'>");
+            
+            // 왼쪽 번호 박스 (회색)
+            content.append("<div style='background-color: #f0f0f0; padding: 20px; border-right: 2px solid #000; display: flex; align-items: center; justify-content: center; min-width: 100px;'>");
+            content.append("<div style='text-align: center; font-weight: bold; font-size: 16px;'>");
+            content.append("주 ").append(question.getSeqNo());
             content.append("</div>");
+            content.append("</div>");
+            
+            // 오른쪽 정답 영역 (흰색)
+            content.append("<div style='flex: 1; padding: 20px; background-color: white;'>");
+            content.append("<div style='line-height: 1.6;'>");
+            content.append("<p>").append(question.getQuestion().getAnswerKey()).append("</p>");
+            content.append("</div>");
+            content.append("</div>");
+            
             content.append("</div>");
         }
         
