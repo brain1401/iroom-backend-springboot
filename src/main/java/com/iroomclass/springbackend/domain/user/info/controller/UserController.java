@@ -1,6 +1,6 @@
 package com.iroomclass.springbackend.domain.user.info.controller;
 
-import org.springframework.http.ResponseEntity;
+import com.iroomclass.springbackend.common.ApiResponse;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -12,7 +12,7 @@ import com.iroomclass.springbackend.domain.user.info.service.UserService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
+
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 
 import lombok.RequiredArgsConstructor;
@@ -47,17 +47,17 @@ public class UserController {
         description = "이름과 전화번호로 학생 로그인을 수행합니다."
     )
     @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "로그인 성공"),
-        @ApiResponse(responseCode = "400", description = "잘못된 입력값"),
-        @ApiResponse(responseCode = "404", description = "존재하지 않는 학생")
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "로그인 성공"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "잘못된 입력값"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "존재하지 않는 학생")
     })
-    public ResponseEntity<UserLoginResponse> login(@RequestBody UserLoginRequest request) {
+    public ApiResponse<UserLoginResponse> login(@RequestBody UserLoginRequest request) {
         log.info("학생 로그인 요청: 이름={}, 전화번호={}", request.getName(), request.getPhone());
         
         UserLoginResponse response = userService.login(request);
         
         log.info("학생 로그인 성공: 이름={}, ID={}", response.getName(), response.getUserId());
         
-        return ResponseEntity.ok(response);
+        return ApiResponse.success("학생 로그인 성공", response);
     }
 }

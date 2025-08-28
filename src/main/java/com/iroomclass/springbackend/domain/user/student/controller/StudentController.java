@@ -1,6 +1,6 @@
 package com.iroomclass.springbackend.domain.user.student.controller;
 
-import org.springframework.http.ResponseEntity;
+import com.iroomclass.springbackend.common.ApiResponse;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -15,7 +15,7 @@ import com.iroomclass.springbackend.domain.user.student.service.StudentService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
+
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 
 import lombok.RequiredArgsConstructor;
@@ -50,12 +50,12 @@ public class StudentController {
         summary = "학생별 시험 제출 이력 조회",
         description = "학생의 모든 시험 제출 이력을 조회합니다."
     )
-    @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "조회 성공"),
-        @ApiResponse(responseCode = "400", description = "잘못된 입력값"),
-        @ApiResponse(responseCode = "404", description = "존재하지 않는 학생")
+    @io.swagger.v3.oas.annotations.responses.ApiResponses({
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "조회 성공"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "잘못된 입력값"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "존재하지 않는 학생")
     })
-    public ResponseEntity<StudentSubmissionHistoryResponse> getSubmissionHistory(
+    public ApiResponse<StudentSubmissionHistoryResponse> getSubmissionHistory(
             @Parameter(description = "학생 이름", example = "김철수") 
             @RequestParam String studentName,
             @Parameter(description = "학생 전화번호", example = "010-1234-5678") 
@@ -67,7 +67,7 @@ public class StudentController {
         log.info("학생 시험 제출 이력 조회 성공: 이름={}, 제출 수={}", 
             response.getStudentName(), response.getSubmissions().size());
         
-        return ResponseEntity.ok(response);
+        return ApiResponse.success("성공", response);
     }
     
     /**
@@ -83,12 +83,12 @@ public class StudentController {
         summary = "시험별 상세 결과 조회",
         description = "특정 시험의 상세 결과를 조회합니다."
     )
-    @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "조회 성공"),
-        @ApiResponse(responseCode = "400", description = "잘못된 입력값"),
-        @ApiResponse(responseCode = "404", description = "존재하지 않는 제출 또는 학생")
+    @io.swagger.v3.oas.annotations.responses.ApiResponses({
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "조회 성공"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "잘못된 입력값"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "존재하지 않는 제출 또는 학생")
     })
-    public ResponseEntity<ExamResultDetailResponse> getExamResult(
+    public ApiResponse<ExamResultDetailResponse> getExamResult(
             @Parameter(description = "시험 제출 ID", example = "1") 
             @PathVariable Long submissionId,
             @Parameter(description = "학생 이름", example = "김철수") 
@@ -103,7 +103,7 @@ public class StudentController {
         log.info("시험 상세 결과 조회 성공: 제출 ID={}, 학생={}, 총점={}", 
             submissionId, response.getStudentName(), response.getTotalScore());
         
-        return ResponseEntity.ok(response);
+        return ApiResponse.success("성공", response);
     }
     
     /**
@@ -120,12 +120,12 @@ public class StudentController {
         summary = "문제별 정답/오답, 점수, 단원, 난이도 조회",
         description = "특정 문제의 정답/오답, 점수, 단원, 난이도 정보를 조회합니다."
     )
-    @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "조회 성공"),
-        @ApiResponse(responseCode = "400", description = "잘못된 입력값"),
-        @ApiResponse(responseCode = "404", description = "존재하지 않는 제출, 문제 또는 학생")
+    @io.swagger.v3.oas.annotations.responses.ApiResponses({
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "조회 성공"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "잘못된 입력값"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "존재하지 않는 제출, 문제 또는 학생")
     })
-    public ResponseEntity<QuestionResultResponse> getQuestionResult(
+    public ApiResponse<QuestionResultResponse> getQuestionResult(
             @Parameter(description = "시험 제출 ID", example = "1") 
             @PathVariable Long submissionId,
             @Parameter(description = "문제 ID", example = "1") 
@@ -142,6 +142,6 @@ public class StudentController {
         log.info("문제별 결과 조회 성공: 제출 ID={}, 문제 ID={}, 정답 여부={}, 점수={}", 
             submissionId, questionId, response.getIsCorrect(), response.getScore());
         
-        return ResponseEntity.ok(response);
+        return ApiResponse.success("성공", response);
     }
 }

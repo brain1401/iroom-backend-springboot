@@ -10,7 +10,7 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.ResponseEntity;
+
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -41,7 +41,7 @@ public class DashboardController {
         description = "특정 학년의 시험별 제출 현황을 조회합니다"
     )
     @GetMapping("/grade/{grade}/submission-status")
-    public ResponseEntity<ApiResponse<GradeSubmissionStatusResponse>> getGradeSubmissionStatus(
+    public ApiResponse<GradeSubmissionStatusResponse> getGradeSubmissionStatus(
             @Parameter(description = "학년", example = "1") 
             @PathVariable Integer grade) {
         log.info("학년별 시험 제출 현황 조회 요청: 학년={}", grade);
@@ -50,7 +50,7 @@ public class DashboardController {
         
         log.info("학년별 시험 제출 현황 조회 완료: 학년={}, 시험 수={}", grade, response.getTotalExamCount());
         
-        return ResponseEntity.ok(ApiResponse.success("학년별 시험 제출 현황 조회 성공", response));
+        return ApiResponse.success("학년별 시험 제출 현황 조회 성공", response);
     }
 
     /**
@@ -64,7 +64,7 @@ public class DashboardController {
         description = "특정 학년의 성적 분포도를 조회합니다"
     )
     @GetMapping("/grade/{grade}/score-distribution")
-    public ResponseEntity<ApiResponse<GradeScoreDistributionResponse>> getGradeScoreDistribution(
+    public ApiResponse<GradeScoreDistributionResponse> getGradeScoreDistribution(
             @Parameter(description = "학년", example = "1") 
             @PathVariable Integer grade) {
         log.info("학년별 성적 분포도 조회 요청: 학년={}", grade);
@@ -73,6 +73,6 @@ public class DashboardController {
         
         log.info("학년별 성적 분포도 조회 완료: 학년={}, 전체 학생 수={}", grade, response.getTotalStudentCount());
         
-        return ResponseEntity.ok(ApiResponse.success("학년별 성적 분포도 조회 성공", response));
+        return ApiResponse.success("학년별 성적 분포도 조회 성공", response);
     }
 }
