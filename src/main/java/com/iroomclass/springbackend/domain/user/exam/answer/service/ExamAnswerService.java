@@ -20,6 +20,8 @@ import com.iroomclass.springbackend.domain.user.exam.entity.ExamSubmission;
 import com.iroomclass.springbackend.domain.user.exam.repository.ExamSubmissionRepository;
 import com.iroomclass.springbackend.domain.admin.question.entity.Question;
 import com.iroomclass.springbackend.domain.admin.question.repository.QuestionRepository;
+import com.iroomclass.springbackend.domain.admin.exam.entity.ExamDraftQuestion;
+import com.iroomclass.springbackend.domain.admin.exam.repository.ExamDraftQuestionRepository;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -42,6 +44,7 @@ public class ExamAnswerService {
     private final ExamAnswerRepository examAnswerRepository;
     private final ExamSubmissionRepository examSubmissionRepository;
     private final QuestionRepository questionRepository;
+    private final ExamDraftQuestionRepository examDraftQuestionRepository;
     private final AiImageRecognitionService aiImageRecognitionService;
     
     /**
@@ -145,7 +148,55 @@ public class ExamAnswerService {
         ExamAnswer examAnswer = examAnswerRepository.findById(request.getAnswerId())
             .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 답안입니다: " + request.getAnswerId()));
         
+        // 1단계: 답안 텍스트 업데이트
         examAnswer.updateAnswerText(request.getAnswerText());
+        
+        // 2단계: 정답 여부 다시 확인
+        Question question = examAnswer.getQuestion();
+        if (question != null) {
+            String correctAnswer = question.getAnswerKey();
+            String studentAnswer = request.getAnswerText();
+            
+            // 정답 비교 (공백 제거 후 비교)
+            boolean isCorrect = correctAnswer != null && 
+                correctAnswer.trim().equalsIgnoreCase(studentAnswer.trim());
+            
+            // 3단계: ExamDraftQuestion에서 해당 문제의 배점 가져오기
+            Integer score = 0;
+            if (isCorrect) {
+                try {
+                    // ExamSubmission -> Exam -> ExamDraft -> ExamDraftQuestion 순서로 찾기
+                    Long examDraftId = examAnswer.getExamSubmission().getExam().getExamDraft().getId();
+                    Long questionId = question.getId();
+                    
+                    ExamDraftQuestion examDraftQuestion = examDraftQuestionRepository
+                        .findByExamDraftIdAndQuestionId(examDraftId, questionId)
+                        .orElse(null);
+                    
+                    if (examDraftQuestion != null) {
+                        score = examDraftQuestion.getPoints();
+                        log.info("ExamDraftQuestion에서 배점 조회: examDraftId={}, questionId={}, points={}", 
+                            examDraftId, questionId, score);
+                    } else {
+                        score = 5; // 기본값
+                        log.warn("ExamDraftQuestion을 찾을 수 없어 기본 배점 사용: examDraftId={}, questionId={}", 
+                            examDraftId, questionId);
+                    }
+                } catch (Exception e) {
+                    score = 5; // 기본값
+                    log.error("배점 조회 중 오류 발생, 기본 배점 사용: {}", e.getMessage());
+                }
+            }
+            
+            // 채점 결과 업데이트
+            examAnswer.updateGrading(isCorrect, score);
+            
+            log.info("답안 채점 완료: 답안 ID={}, 학생 답안={}, 정답={}, 정답 여부={}, 점수={}", 
+                examAnswer.getId(), studentAnswer, correctAnswer, isCorrect, score);
+        } else {
+            log.warn("문제 정보를 찾을 수 없습니다: 답안 ID={}", examAnswer.getId());
+        }
+        
         examAnswer = examAnswerRepository.save(examAnswer);
         
         log.info("답안 수정 완료: 답안 ID={}", examAnswer.getId());

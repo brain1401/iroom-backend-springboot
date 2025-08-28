@@ -103,6 +103,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/admin/dashboard/**").permitAll() // context-path 포함 경로도 허용
                         .requestMatchers("/admin/statistics/**").permitAll() // 테스트용으로 통계 API 공개 설정
                         .requestMatchers("/api/admin/statistics/**").permitAll() // context-path 포함 경로도 허용
+                        .requestMatchers("/admin/exam-submission/**").permitAll() // 테스트용으로 시험 제출 관리 API 공개 설정
+                        .requestMatchers("/api/admin/exam-submission/**").permitAll() // context-path 포함 경로도 허용
                         .requestMatchers("/admin/**").authenticated() // 다른 관리자 기능은 로그인 필요
 
                         // 나머지 모든 요청은 인증 필요
