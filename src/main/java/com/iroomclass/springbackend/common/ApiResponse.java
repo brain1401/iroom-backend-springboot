@@ -13,9 +13,9 @@ public record ApiResponse<T>(
     public ApiResponse {
         // result, message null 불가 검증 수행
         if (result == null)
-            throw new IllegalArgumentException("result must not be null");
+            throw new IllegalArgumentException("result는 필수입니다");
         if (message == null)
-            throw new IllegalArgumentException("message must not be null");
+            throw new IllegalArgumentException("message는 필수입니다");
     }
 
     /**
