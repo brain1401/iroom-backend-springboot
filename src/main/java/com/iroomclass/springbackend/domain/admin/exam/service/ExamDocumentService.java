@@ -17,6 +17,9 @@ import com.iroomclass.springbackend.domain.admin.exam.entity.ExamDraftQuestion;
 import com.iroomclass.springbackend.domain.admin.exam.repository.ExamDocumentRepository;
 import com.iroomclass.springbackend.domain.admin.exam.repository.ExamDraftQuestionRepository;
 import com.iroomclass.springbackend.domain.admin.exam.repository.ExamDraftRepository;
+import com.iroomclass.springbackend.domain.admin.print.service.QrCodeGenerationService;
+import com.iroomclass.springbackend.domain.admin.exam.entity.Exam;
+import com.iroomclass.springbackend.domain.admin.exam.repository.ExamRepository;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -38,6 +41,8 @@ public class ExamDocumentService {
     private final ExamDraftRepository examDraftRepository;
     private final ExamDocumentRepository examDocumentRepository;
     private final ExamDraftQuestionRepository examDraftQuestionRepository;
+    private final QrCodeGenerationService qrCodeGenerationService;
+    private final ExamRepository examRepository;
     
     /**
      * 시험지 문서 생성
@@ -225,11 +230,15 @@ public class ExamDocumentService {
         content.append("</div>");
         content.append("</div>");
         
+        // 답안지용 QR 코드 생성
+        String qrCodeUrl = qrCodeGenerationService.generateAnswerSheetQrCodeUrl(examDraft.getId());
+        log.info("답안지 QR 코드 생성: examDraftId={}, qrCodeUrl={}", examDraft.getId(), qrCodeUrl);
+        
         return ExamDocument.builder()
             .examDraft(examDraft)
             .documentType(ExamDocument.DocumentType.ANSWER_SHEET)
             .documentContent(content.toString())
-            .qrCodeUrl("") // QR 코드 URL 제거
+            .qrCodeUrl(qrCodeUrl) // 새로 생성한 QR 코드 URL 사용
             .build();
     }
     
@@ -258,7 +267,18 @@ public class ExamDocumentService {
             // 오른쪽 문제 내용 영역 (흰색)
             content.append("<div style='flex: 1; padding: 20px; background-color: white;'>");
             content.append("<div style='line-height: 1.6;'>");
-            content.append(question.getQuestion().getQuestionTextAsHtml());
+            
+            // 문제 텍스트를 안전하게 HTML로 변환
+            try {
+                String questionHtml = question.getQuestion().getQuestionTextAsHtml();
+                content.append(questionHtml);
+            } catch (Exception e) {
+                log.warn("문제 텍스트 HTML 변환 실패, 원본 텍스트 사용: questionId={}, error={}", 
+                    question.getQuestion().getId(), e.getMessage());
+                // HTML 변환 실패 시 원본 텍스트를 그대로 사용
+                content.append("<p>").append(question.getQuestion().getQuestionText()).append("</p>");
+            }
+            
             content.append("</div>");
             content.append("</div>");
             

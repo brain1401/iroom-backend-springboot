@@ -58,9 +58,9 @@ public class ExamDocument {
     /**
      * QR코드 URL
      * 답안지에만 해당하며, 제출 화면으로 이동하는 링크
-     * 최대 255자
+     * LONGTEXT 타입으로 긴 QR 코드 URL 저장 가능
      */
-    @Column(length = 255)
+    @Column(columnDefinition = "LONGTEXT")
     private String qrCodeUrl;
     
     /**

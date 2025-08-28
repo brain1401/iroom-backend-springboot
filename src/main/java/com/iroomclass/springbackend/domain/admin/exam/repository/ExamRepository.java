@@ -29,6 +29,16 @@ public interface ExamRepository extends JpaRepository<Exam, Long> {
     List<Exam> findByExamDraft(ExamDraft examDraft);
 
     /**
+     * 시험지 초안 ID로 시험 조회
+     * 
+     * 사용처: 시험지 초안 ID로 연결된 시험 조회
+     * 
+     * @param examDraftId 시험지 초안 ID
+     * @return 해당 시험지 초안에서 발행된 시험 목록
+     */
+    List<Exam> findByExamDraftId(Long examDraftId);
+
+    /**
      * 학년별 시험 조회
      * 
      * 사용처: 시험 관리에서 학년별 시험 목록 조회

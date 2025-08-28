@@ -113,7 +113,8 @@ public class PrintService {
             .map(doc -> new PdfGenerator.DocumentInfo(
                 cleanHtmlContent(doc.getDocumentContent()),  // HTML 내용 정리
                 doc.getDocumentType().name(),
-                generateDocumentName(documents.get(0).getExamDraft().getExamName(), doc.getDocumentType().name())
+                generateDocumentName(documents.get(0).getExamDraft().getExamName(), doc.getDocumentType().name()),
+                doc.getQrCodeUrl()  // QR 코드 URL 추가
             ))
             .collect(Collectors.toList());
         

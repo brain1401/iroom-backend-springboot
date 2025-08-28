@@ -14,8 +14,10 @@ import com.iroomclass.springbackend.domain.admin.exam.dto.ExamListResponse;
 import com.iroomclass.springbackend.domain.admin.exam.dto.ExamUpdateRequest;
 import com.iroomclass.springbackend.domain.admin.exam.entity.Exam;
 import com.iroomclass.springbackend.domain.admin.exam.entity.ExamDraft;
+import com.iroomclass.springbackend.domain.admin.exam.entity.ExamDocument;
 import com.iroomclass.springbackend.domain.admin.exam.repository.ExamDraftRepository;
 import com.iroomclass.springbackend.domain.admin.exam.repository.ExamRepository;
+import com.iroomclass.springbackend.domain.admin.exam.repository.ExamDocumentRepository;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -36,6 +38,7 @@ public class ExamService {
     
     private final ExamRepository examRepository;
     private final ExamDraftRepository examDraftRepository;
+    private final ExamDocumentRepository examDocumentRepository;
     
     /**
      * 시험 등록
@@ -220,8 +223,21 @@ public class ExamService {
      * QR 코드 URL 생성
      */
     private String generateQrCodeUrl(Long examDraftId) {
-        // 실제로는 QR 코드 이미지를 생성하고 저장해야 하지만,
-        // 여기서는 임시 URL을 반환합니다.
-        return "https://example.com/exam/qr/" + examDraftId + "/" + UUID.randomUUID().toString();
+        // 답안지에서 QR 코드 URL 가져오기
+        List<ExamDocument> documents = examDocumentRepository.findByExamDraftId(examDraftId);
+        
+        // ANSWER_SHEET 타입의 문서 찾기
+        ExamDocument answerSheet = documents.stream()
+            .filter(doc -> doc.getDocumentType() == ExamDocument.DocumentType.ANSWER_SHEET)
+            .findFirst()
+            .orElseThrow(() -> new IllegalArgumentException("해당 시험지 초안에 대한 답안지가 존재하지 않습니다: " + examDraftId));
+        
+        String qrCodeUrl = answerSheet.getQrCodeUrl();
+        if (qrCodeUrl == null || qrCodeUrl.trim().isEmpty()) {
+            throw new IllegalArgumentException("답안지에 QR 코드가 생성되지 않았습니다. 먼저 시험지 문서를 생성해주세요.");
+        }
+        
+        log.info("답안지에서 QR 코드 URL 가져오기: examDraftId={}, qrCodeUrl={}", examDraftId, qrCodeUrl);
+        return qrCodeUrl;
     }
 }

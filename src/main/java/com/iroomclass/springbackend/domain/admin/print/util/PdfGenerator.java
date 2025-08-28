@@ -35,8 +35,8 @@ public class PdfGenerator {
         try {
             log.info("PDF 생성 시작: documentType={}", documentType);
             
-            // HTML을 PDF용으로 향상
-            String enhancedHtml = enhanceHtmlForPdf(htmlContent, documentType);
+            // HTML을 PDF용으로 향상 (QR 코드 URL은 null로 전달)
+            String enhancedHtml = enhanceHtmlForPdf(htmlContent, documentType, null);
             
             // 실제 HTML → PDF 변환
             byte[] pdfContent = convertHtmlToPdf(enhancedHtml, documentType);
@@ -147,7 +147,7 @@ public class PdfGenerator {
     /**
      * HTML을 PDF용으로 향상
      */
-    private String enhanceHtmlForPdf(String htmlContent, String documentType) {
+    private String enhanceHtmlForPdf(String htmlContent, String documentType, String qrCodeUrl) {
         // LaTeX 수식 렌더링
         String renderedHtml = latexRenderer.renderLatexInHtml(htmlContent);
         
@@ -181,9 +181,21 @@ public class PdfGenerator {
         // QR 코드 추가 (답안지인 경우)
         if ("ANSWER_SHEET".equals(documentType)) {
             enhancedHtml.append("<div class='qr-code'>");
-            enhancedHtml.append("<img src='data:image/png;base64,")
-                .append(qrCodeGenerator.generateQrCodeBase64("ANSWER_SHEET"))
-                .append("' alt='QR Code'/>");
+            
+            // DB에 저장된 QR 코드 URL이 있으면 사용, 없으면 기본값 생성
+            if (qrCodeUrl != null && !qrCodeUrl.trim().isEmpty()) {
+                // DB에 저장된 QR 코드 URL 사용
+                enhancedHtml.append("<img src='").append(qrCodeUrl).append("' alt='QR Code'/>");
+                log.debug("DB에 저장된 QR 코드 URL 사용: {}", qrCodeUrl);
+            } else {
+                // 기본 QR 코드 생성 (fallback)
+                String fallbackQrCode = qrCodeGenerator.generateQrCodeBase64("ANSWER_SHEET");
+                enhancedHtml.append("<img src='data:image/png;base64,")
+                    .append(fallbackQrCode)
+                    .append("' alt='QR Code'/>");
+                log.warn("DB에 QR 코드 URL이 없어 기본 QR 코드를 생성합니다");
+            }
+            
             enhancedHtml.append("<p>QR 코드</p>");
             enhancedHtml.append("</div>");
         }
@@ -218,7 +230,7 @@ public class PdfGenerator {
             }
             
             // HTML 내용을 PDF용으로 향상 (CSS 스타일 포함)
-            String enhancedHtml = enhanceHtmlForPdf(htmlContent, documentType);
+            String enhancedHtml = enhanceHtmlForPdf(htmlContent, documentType, null); // QR 코드 URL은 현재 사용되지 않음
             
             // HTML 내용 로깅 (디버깅용)
             log.debug("PDF 변환 시작 - HTML 내용 길이: {}", enhancedHtml.length());
@@ -337,11 +349,13 @@ public class PdfGenerator {
         public final String htmlContent;
         public final String documentType;
         public final String documentName;
+        public final String qrCodeUrl;
 
-        public DocumentInfo(String htmlContent, String documentType, String documentName) {
+        public DocumentInfo(String htmlContent, String documentType, String documentName, String qrCodeUrl) {
             this.htmlContent = htmlContent;
             this.documentType = documentType;
             this.documentName = documentName;
+            this.qrCodeUrl = qrCodeUrl;
         }
     }
 
@@ -385,9 +399,21 @@ public class PdfGenerator {
             // QR 코드 추가 (답안지인 경우)
             if ("ANSWER_SHEET".equals(doc.documentType)) {
                 mergedHtml.append("<div class='qr-code'>");
-                mergedHtml.append("<img src='data:image/png;base64,")
-                    .append(qrCodeGenerator.generateQrCodeBase64("ANSWER_SHEET"))
-                    .append("' alt='QR Code'/>");
+                
+                // DB에 저장된 QR 코드 URL이 있으면 사용, 없으면 기본값 생성
+                if (doc.qrCodeUrl != null && !doc.qrCodeUrl.trim().isEmpty()) {
+                    // DB에 저장된 QR 코드 URL 사용
+                    mergedHtml.append("<img src='").append(doc.qrCodeUrl).append("' alt='QR Code'/>");
+                    log.debug("DB에 저장된 QR 코드 URL 사용: {}", doc.qrCodeUrl);
+                } else {
+                    // 기본 QR 코드 생성 (fallback)
+                    String fallbackQrCode = qrCodeGenerator.generateQrCodeBase64("ANSWER_SHEET");
+                    mergedHtml.append("<img src='data:image/png;base64,")
+                        .append(fallbackQrCode)
+                        .append("' alt='QR Code'/>");
+                    log.warn("DB에 QR 코드 URL이 없어 기본 QR 코드를 생성합니다");
+                }
+                
                 mergedHtml.append("<p>QR 코드</p>");
                 mergedHtml.append("</div>");
             }
