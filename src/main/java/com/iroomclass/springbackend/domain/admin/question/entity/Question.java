@@ -76,8 +76,8 @@ public class Question {
      * 주관식 문제 내용을 JSON 형태로 저장
      * 예시: [{"type": "paragraph", "content": [{"type": "text", "value": "연립부등식 "}, {"type": "latex", "value": "\\begin{cases}..."}]}]
      */
-    @Column(columnDefinition = "JSON", nullable = false)
-    private String stem;
+    @Column(columnDefinition = "TEXT", nullable = false)
+    private String questionText;
 
     /**
      * 문제 정답
@@ -87,16 +87,24 @@ public class Question {
     private String answerKey;
 
     /**
-     * JSON 형태의 stem을 HTML로 변환
+     * 문제 이미지 (JSON 형태)
+     * 문제와 관련된 이미지들을 JSON 형태로 저장
+     * 예시: {"images": ["image1.jpg", "image2.png"]}
+     */
+    @Column(columnDefinition = "JSON")
+    private String image;
+
+    /**
+     * JSON 형태의 questionText를 HTML로 변환
      * 
      * @return HTML 형태의 문제 내용
      */
-    public String getStemAsHtml() {
+    public String getQuestionTextAsHtml() {
         try {
-            List<Map<String, Object>> stemData = objectMapper.readValue(stem, new TypeReference<List<Map<String, Object>>>() {});
+            List<Map<String, Object>> questionData = objectMapper.readValue(questionText, new TypeReference<List<Map<String, Object>>>() {});
             StringBuilder html = new StringBuilder();
             
-            for (Map<String, Object> block : stemData) {
+            for (Map<String, Object> block : questionData) {
                 String type = (String) block.get("type");
                 List<Map<String, Object>> content = (List<Map<String, Object>>) block.get("content");
                 
@@ -116,11 +124,44 @@ public class Question {
                 }
             }
             
+            // 이미지가 있으면 문제 내용 아래에 추가
+            List<String> imageUrls = getImageUrls();
+            if (!imageUrls.isEmpty()) {
+                html.append("<div style='margin-top: 15px;'>");
+                for (String imageUrl : imageUrls) {
+                    html.append("<img src='").append(imageUrl).append("' alt='문제 이미지' style='max-width: 100%; height: auto; margin: 10px 0;'/>");
+                }
+                html.append("</div>");
+            }
+            
             return html.toString();
             
         } catch (JsonProcessingException e) {
             log.error("JSON 파싱 오류: {}", e.getMessage(), e);
-            return stem; // JSON 파싱 실패 시 원본 반환
+            return questionText; // JSON 파싱 실패 시 원본 반환
+        }
+    }
+
+    /**
+     * 이미지 JSON을 파싱하여 이미지 URL 목록 반환
+     * 
+     * @return 이미지 URL 목록
+     */
+    public List<String> getImageUrls() {
+        try {
+            if (image == null || image.trim().isEmpty()) {
+                return List.of();
+            }
+            
+            Map<String, Object> imageData = objectMapper.readValue(image, new TypeReference<Map<String, Object>>() {});
+            @SuppressWarnings("unchecked")
+            List<String> images = (List<String>) imageData.get("images");
+            
+            return images != null ? images : List.of();
+            
+        } catch (JsonProcessingException e) {
+            log.error("이미지 JSON 파싱 오류: {}", e.getMessage(), e);
+            return List.of();
         }
     }
 
@@ -130,5 +171,4 @@ public class Question {
     public enum Difficulty {
         하, 중, 상
     }
-
 }

@@ -169,7 +169,7 @@ public class QuestionService {
             .unitId(unit.getId())
             .unitName(unit.getUnitName())
             .difficulty(question.getDifficulty().name())
-            .stem(question.getStemAsHtml())
+            .stem(question.getQuestionTextAsHtml())
             .answerKey(question.getAnswerKey())
             .build();
     }
@@ -225,7 +225,7 @@ public class QuestionService {
         }
         
         // 1단계: 키워드로 문제 검색 (문제 내용에서 검색)
-        List<Question> questions = questionRepository.findByStemContaining(keyword.trim());
+        List<Question> questions = questionRepository.findByQuestionTextContaining(keyword.trim());
         
         // 2단계: DTO 변환
         List<QuestionSearchResponse.QuestionInfo> questionInfos = questions.stream()
@@ -236,7 +236,7 @@ public class QuestionService {
                     .unitId(unit.getId())
                     .unitName(unit.getUnitName())
                     .difficulty(question.getDifficulty().name())
-                    .stem(question.getStemAsHtml())
+                    .stem(question.getQuestionTextAsHtml())
                     .build();
             })
             .collect(Collectors.toList());

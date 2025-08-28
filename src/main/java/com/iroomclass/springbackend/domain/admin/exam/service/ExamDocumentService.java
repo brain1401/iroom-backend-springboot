@@ -258,7 +258,7 @@ public class ExamDocumentService {
             // 오른쪽 문제 내용 영역 (흰색)
             content.append("<div style='flex: 1; padding: 20px; background-color: white;'>");
             content.append("<div style='line-height: 1.6;'>");
-            content.append(question.getQuestion().getStemAsHtml());
+            content.append(question.getQuestion().getQuestionTextAsHtml());
             content.append("</div>");
             content.append("</div>");
             

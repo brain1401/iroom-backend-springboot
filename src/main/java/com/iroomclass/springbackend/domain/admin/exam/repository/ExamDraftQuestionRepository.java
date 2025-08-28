@@ -49,4 +49,16 @@ public interface ExamDraftQuestionRepository extends JpaRepository<ExamDraftQues
      * @return 해당 문제 정보
      */
     java.util.Optional<ExamDraftQuestion> findByExamDraftIdAndSeqNo(Long examDraftId, int seqNo);
+
+    /**
+     * 특정 시험지 초안의 특정 문제 조회 (문제 ID로)
+     * 
+     * 사용처: 학생 결과 조회 시 문제 번호와 배점 정보 조회
+     * 예시: 학생 답안에서 문제 번호와 배점 표시
+     * 
+     * @param examDraftId 시험지 초안 ID
+     * @param questionId 문제 ID
+     * @return 해당 문제 정보
+     */
+    java.util.Optional<ExamDraftQuestion> findByExamDraftIdAndQuestionId(Long examDraftId, Long questionId);
 }

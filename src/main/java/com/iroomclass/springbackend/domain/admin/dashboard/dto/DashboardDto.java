@@ -9,7 +9,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
  */
 @Schema(description = "관리자 대시보드 정보")
 public record DashboardDto(
-    @Schema(description = "학원명", example = "이이룸클래스")
+    @Schema(description = "학원명", example = "이룸클래스")
     String academyName
 ) {
     

@@ -15,6 +15,8 @@ import com.iroomclass.springbackend.domain.user.exam.answer.entity.ExamAnswer;
 import com.iroomclass.springbackend.domain.user.exam.answer.repository.ExamAnswerRepository;
 import com.iroomclass.springbackend.domain.admin.question.entity.Question;
 import com.iroomclass.springbackend.domain.admin.question.repository.QuestionRepository;
+import com.iroomclass.springbackend.domain.admin.exam.entity.ExamDraftQuestion;
+import com.iroomclass.springbackend.domain.admin.exam.repository.ExamDraftQuestionRepository;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -36,6 +38,7 @@ public class StudentService {
     private final ExamSubmissionRepository examSubmissionRepository;
     private final ExamAnswerRepository examAnswerRepository;
     private final QuestionRepository questionRepository;
+    private final ExamDraftQuestionRepository examDraftQuestionRepository;
     
     /**
      * 학생별 시험 제출 이력 조회
@@ -123,6 +126,14 @@ public class StudentService {
     }
     
     /**
+     * ExamDraftQuestion 조회 (문제 번호와 배점 정보)
+     */
+    private ExamDraftQuestion getExamDraftQuestion(Long examDraftId, Long questionId) {
+        return examDraftQuestionRepository.findByExamDraftIdAndQuestionId(examDraftId, questionId)
+            .orElse(null);
+    }
+
+    /**
      * 문제별 정답/오답, 점수, 단원, 난이도 조회
      * 
      * @param submissionId 시험 제출 ID
@@ -151,17 +162,21 @@ public class StudentService {
         // 3단계: 문제 정보 조회
         Question question = answer.getQuestion();
         
+        // 4단계: ExamDraftQuestion 조회 (문제 번호와 배점)
+        ExamDraftQuestion examDraftQuestion = getExamDraftQuestion(
+            submission.getExam().getExamDraft().getId(), questionId);
+        
         log.info("문제별 결과 조회 완료: 제출 ID={}, 문제 ID={}, 정답 여부={}, 점수={}", 
             submissionId, questionId, answer.getIsCorrect(), answer.getScore());
         
         return QuestionResultResponse.builder()
             .submissionId(submissionId)
             .questionId(questionId)
-            .questionNumber(question.getId().intValue()) // TODO: 실제 문제 번호는 exam_draft_question의 seq_no를 사용해야 함
-            .questionContent(question.getStemAsHtml())
+            .questionNumber(examDraftQuestion != null ? examDraftQuestion.getSeqNo() : 0)
+            .questionContent(question.getQuestionTextAsHtml())
             .isCorrect(answer.getIsCorrect())
             .score(answer.getScore())
-            .points(5) // TODO: 실제 배점은 exam_draft_question의 points를 사용해야 함
+            .points(examDraftQuestion != null ? examDraftQuestion.getPoints() : 0)
             .unitName(question.getUnit().getUnitName())
             .subcategoryName(question.getUnit().getSubcategory().getSubcategoryName())
             .categoryName(question.getUnit().getSubcategory().getCategory().getCategoryName())
@@ -201,12 +216,16 @@ public class StudentService {
     private ExamResultDetailResponse.QuestionResult convertToQuestionResult(ExamAnswer answer) {
         Question question = answer.getQuestion();
         
+        // ExamDraftQuestion 조회 (문제 번호와 배점)
+        ExamDraftQuestion examDraftQuestion = getExamDraftQuestion(
+            answer.getExamSubmission().getExam().getExamDraft().getId(), question.getId());
+        
         return ExamResultDetailResponse.QuestionResult.builder()
             .questionId(question.getId())
-            .questionNumber(question.getId().intValue()) // TODO: 실제 문제 번호는 exam_draft_question의 seq_no를 사용해야 함
+            .questionNumber(examDraftQuestion != null ? examDraftQuestion.getSeqNo() : 0)
             .isCorrect(answer.getIsCorrect())
             .score(answer.getScore())
-            .points(5) // TODO: 실제 배점은 exam_draft_question의 points를 사용해야 함
+            .points(examDraftQuestion != null ? examDraftQuestion.getPoints() : 0)
             .unitName(question.getUnit().getUnitName())
             .difficulty(question.getDifficulty().name())
             .studentAnswer(answer.getAnswerText())

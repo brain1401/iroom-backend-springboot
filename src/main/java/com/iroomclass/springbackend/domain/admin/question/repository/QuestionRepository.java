@@ -84,7 +84,7 @@ public interface QuestionRepository extends JpaRepository<Question, Long> {
      * @param keyword 검색 키워드
      * @return 키워드가 포함된 문제 목록
      */
-    List<Question> findByStemContaining(String keyword);
+    List<Question> findByQuestionTextContaining(String keyword);
     
     /**
      * 다중 단원별 문제 수 카운트
