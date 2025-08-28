@@ -6,6 +6,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -20,6 +21,7 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
  */
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity(prePostEnabled = true)
 public class SecurityConfig {
 
     /**
@@ -45,7 +47,8 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         // CORS preflight 사전요청 허용
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                        // Swagger UI 관련 경로 허용
+                        
+                        // Swagger UI 관련 경로 허용 (개발/테스트용)
                         .requestMatchers(
                                 "/swagger-ui/**",
                                 "/swagger-ui.html",
@@ -63,52 +66,31 @@ public class SecurityConfig {
                         // 정적 리소스 허용
                         .requestMatchers("/css/**", "/js/**", "/images/**").permitAll()
 
-                        // 공개 API 경로 (필요 시 추가)
-                        .requestMatchers("/api/public/**", "/api/test/**").permitAll()
-                        .requestMatchers("/public/**", "/test/**").permitAll()
-
-                        // 시스템 API 공개 허용
-                        .requestMatchers("/api/system/**").permitAll()
-                        .requestMatchers("/system/**").permitAll()
-
-                        // 단원 API 공개 허용
-                        .requestMatchers("/unit/**").permitAll()
-                        .requestMatchers("/api/unit/**").permitAll()
-
-                        // 문제 API 공개 허용
-                        .requestMatchers("/question/**").permitAll()
-                        .requestMatchers("/api/question/**").permitAll()
-
-                        // 시험지 초안 API 공개 허용
-                        .requestMatchers("/exam-draft/**").permitAll()
-                        .requestMatchers("/api/exam-draft/**").permitAll()
-
-                        // 시험지 문서 API 공개 허용
-                        .requestMatchers("/exam-document/**").permitAll()
-                        .requestMatchers("/api/exam-document/**").permitAll()
-
-                        // 실제 시험 API 공개 허용
-                        .requestMatchers("/exam/**").permitAll()
-                        .requestMatchers("/api/exam/**").permitAll()
-
-                        // 학생용 API 공개 허용
-                        .requestMatchers("/user/**", "/api/user/**").permitAll()
-
-                        // (추가) 관리자 API 경로 설정
-                        .requestMatchers("/admin/login").permitAll() // 로그인은 누구나 접근 가능
-                        .requestMatchers("/admin/academy-name").permitAll() // 학원명 조회도 공개로 설정
-                        .requestMatchers("/admin/print/**").permitAll() // 테스트용으로 print API 공개 설정
-                        .requestMatchers("/api/admin/print/**").permitAll() // context-path 포함 경로도 허용
-                        .requestMatchers("/admin/dashboard/**").permitAll() // 테스트용으로 대시보드 API 공개 설정
-                        .requestMatchers("/api/admin/dashboard/**").permitAll() // context-path 포함 경로도 허용
-                        .requestMatchers("/admin/statistics/**").permitAll() // 테스트용으로 통계 API 공개 설정
-                        .requestMatchers("/api/admin/statistics/**").permitAll() // context-path 포함 경로도 허용
-                        .requestMatchers("/admin/exam-submission/**").permitAll() // 테스트용으로 시험 제출 관리 API 공개 설정
-                        .requestMatchers("/api/admin/exam-submission/**").permitAll() // context-path 포함 경로도 허용
-                        .requestMatchers("/admin/**").authenticated() // 다른 관리자 기능은 로그인 필요
+                        // 시스템 헬스체크는 공개 허용 (모니터링용)
+                        .requestMatchers("/api/system/health", "/system/health").permitAll()
+                        
+                        // 단원 및 문제 조회는 공개 허용 (학습용)
+                        .requestMatchers(HttpMethod.GET, "/api/unit/**", "/unit/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/question/**", "/question/**").permitAll()
+                        
+                        // 학생 로그인은 공개 허용
+                        .requestMatchers("/api/user/login", "/user/login").permitAll()
+                        
+                        // 관리자 로그인은 공개 허용
+                        .requestMatchers("/api/admin/login", "/admin/login").permitAll()
+                        .requestMatchers("/api/admin/academy-name", "/admin/academy-name").permitAll()
+                        
+                        // 사용자 영역 - 인증 필요
+                        .requestMatchers("/api/user/**", "/user/**").authenticated()
+                        
+                        // 관리자 영역 - ADMIN 권한 필요
+                        .requestMatchers("/api/admin/**", "/admin/**").hasRole("ADMIN")
 
                         // 나머지 모든 요청은 인증 필요
-                        .anyRequest().authenticated());
+                        .anyRequest().authenticated())
+                
+                // HTTP Basic 인증 활성화 (임시, JWT 구현 전까지)
+                .httpBasic(Customizer.withDefaults());
 
         return http.build();
     }
