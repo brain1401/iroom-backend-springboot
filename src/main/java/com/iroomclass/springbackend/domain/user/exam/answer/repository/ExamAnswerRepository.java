@@ -88,4 +88,15 @@ public interface ExamAnswerRepository extends JpaRepository<ExamAnswer, Long> {
      * @return 답안 존재 여부
      */
     boolean existsByExamSubmissionIdAndQuestionId(Long examSubmissionId, Long questionId);
+    
+    /**
+     * 여러 시험 제출 ID로 답안 목록 조회
+     * 
+     * 사용처: 여러 시험 제출의 답안을 한 번에 조회
+     * 예시: 특정 학년의 모든 시험 제출 답안 조회
+     * 
+     * @param examSubmissionIds 시험 제출 ID 목록
+     * @return 해당 시험 제출들의 답안 목록
+     */
+    List<ExamAnswer> findByExamSubmissionIdIn(List<Long> examSubmissionIds);
 }

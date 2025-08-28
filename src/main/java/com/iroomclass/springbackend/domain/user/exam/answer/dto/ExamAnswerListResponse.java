@@ -67,39 +67,4 @@ public class ExamAnswerListResponse {
     }
 }
 
-/**
- * 전체 답안지 처리 결과 응답 DTO
- * 
- * 전체 답안지 촬영 후 AI가 각 문제별로 추출한 결과를 전달할 때 사용됩니다.
- * 
- * @author 이룸클래스
- * @since 2025
- */
-@Getter
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
-@Schema(description = "전체 답안지 처리 결과 응답")
-class ExamAnswerSheetProcessResponse {
-    
-    @Schema(description = "시험 제출 ID", example = "1")
-    private Long examSubmissionId;
-    
-    @Schema(description = "처리된 답안 목록")
-    private List<ExamAnswerResponse> processedAnswers;
-    
-    @Schema(description = "총 처리된 답안 수", example = "20")
-    private int totalProcessedCount;
-    
-    @Schema(description = "성공적으로 인식된 답안 수", example = "18")
-    private int successfullyRecognizedCount;
-    
-    @Schema(description = "인식 실패한 답안 수", example = "2")
-    private int failedRecognitionCount;
-    
-    @Schema(description = "인식 실패한 문제 번호 목록", example = "[3, 7]")
-    private List<Integer> failedQuestionNumbers;
-    
-    @Schema(description = "처리된 답안지 이미지 개수", example = "3")
-    private int processedImageCount;
-}
+

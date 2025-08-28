@@ -3,13 +3,15 @@ package com.iroomclass.springbackend.domain.user.exam.service;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.iroomclass.springbackend.domain.admin.exam.entity.Exam;
+import com.iroomclass.springbackend.domain.admin.exam.repository.ExamRepository;
+import com.iroomclass.springbackend.domain.user.exam.answer.repository.ExamAnswerRepository;
 import com.iroomclass.springbackend.domain.user.exam.dto.ExamSubmissionCreateRequest;
 import com.iroomclass.springbackend.domain.user.exam.dto.ExamSubmissionCreateResponse;
 import com.iroomclass.springbackend.domain.user.exam.entity.ExamSubmission;
 import com.iroomclass.springbackend.domain.user.exam.repository.ExamSubmissionRepository;
-import com.iroomclass.springbackend.domain.admin.exam.entity.Exam;
-import com.iroomclass.springbackend.domain.admin.exam.repository.ExamRepository;
-import com.iroomclass.springbackend.domain.user.exam.answer.repository.ExamAnswerRepository;
+import com.iroomclass.springbackend.domain.user.info.entity.User;
+import com.iroomclass.springbackend.domain.user.info.repository.UserRepository;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -31,6 +33,7 @@ public class ExamSubmissionService {
     private final ExamSubmissionRepository examSubmissionRepository;
     private final ExamRepository examRepository;
     private final ExamAnswerRepository examAnswerRepository;
+    private final UserRepository userRepository;
     
     /**
      * 시험 제출 생성
@@ -53,7 +56,18 @@ public class ExamSubmissionService {
             throw new IllegalArgumentException("이미 제출한 시험입니다.");
         }
         
-        // 3단계: 시험 제출 생성
+        // 3단계: 학생 정보 확인 및 등록
+        User user = userRepository.findByNameAndPhone(request.getStudentName(), request.getStudentPhone())
+            .orElseGet(() -> {
+                log.info("새로운 학생 등록: 이름={}, 전화번호={}", request.getStudentName(), request.getStudentPhone());
+                User newUser = User.builder()
+                    .name(request.getStudentName())
+                    .phone(request.getStudentPhone())
+                    .build();
+                return userRepository.save(newUser);
+            });
+        
+        // 4단계: 시험 제출 생성
         ExamSubmission submission = ExamSubmission.builder()
             .exam(exam)
             .studentName(request.getStudentName())
@@ -62,8 +76,8 @@ public class ExamSubmissionService {
         
         submission = examSubmissionRepository.save(submission);
         
-        log.info("시험 제출 생성 완료: ID={}, 학생={}, 시험={}", 
-            submission.getId(), request.getStudentName(), exam.getExamName());
+        log.info("시험 제출 생성 완료: ID={}, 학생={}, 시험={}, 사용자ID={}", 
+            submission.getId(), request.getStudentName(), exam.getExamName(), user.getId());
         
         return ExamSubmissionCreateResponse.builder()
             .submissionId(submission.getId())

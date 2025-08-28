@@ -1,8 +1,8 @@
 package com.iroomclass.springbackend.config;
 
-import org.springframework.http.HttpMethod;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -99,6 +99,10 @@ public class SecurityConfig {
                         .requestMatchers("/admin/academy-name").permitAll() // 학원명 조회도 공개로 설정
                         .requestMatchers("/admin/print/**").permitAll() // 테스트용으로 print API 공개 설정
                         .requestMatchers("/api/admin/print/**").permitAll() // context-path 포함 경로도 허용
+                        .requestMatchers("/admin/dashboard/**").permitAll() // 테스트용으로 대시보드 API 공개 설정
+                        .requestMatchers("/api/admin/dashboard/**").permitAll() // context-path 포함 경로도 허용
+                        .requestMatchers("/admin/statistics/**").permitAll() // 테스트용으로 통계 API 공개 설정
+                        .requestMatchers("/api/admin/statistics/**").permitAll() // context-path 포함 경로도 허용
                         .requestMatchers("/admin/**").authenticated() // 다른 관리자 기능은 로그인 필요
 
                         // 나머지 모든 요청은 인증 필요
