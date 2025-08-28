@@ -53,14 +53,14 @@ public class AdminController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "로그인 실패 (잘못된 아이디/비밀번호)", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
     public ApiResponse<String> login(@RequestBody LoginRequest request) {
-        log.info("관리자 로그인 요청: {}", request.getUsername());
+        log.info("관리자 로그인 요청: {}", request.username());
 
         try {
-            Admin admin = adminService.login(request.getUsername(), request.getPassword());
-            log.info("관리자 로그인 성공: {}", request.getUsername());
+            Admin admin = adminService.login(request.username(), request.password());
+            log.info("관리자 로그인 성공: {}", request.username());
             return ApiResponse.success("관리자 로그인 성공", "로그인 성공");
         } catch (RuntimeException e) {
-            log.warn("관리자 로그인 실패: {} - {}", request.getUsername(), e.getMessage());
+            log.warn("관리자 로그인 실패: {} - {}", request.username(), e.getMessage());
             return new ApiResponse<>(ResultStatus.ERROR, "로그인 실패", null);
         }
     }

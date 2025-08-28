@@ -1,10 +1,7 @@
 package com.iroomclass.springbackend.domain.admin.info.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import java.util.Objects;
 
 /**
  * 로그인 요청 DTO
@@ -14,22 +11,19 @@ import lombok.NoArgsConstructor;
  * @author 이룸클래스
  * @since 2025
  */
-@Data
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
 @Schema(description = "로그인 요청 정보")
-public class LoginRequest {
+public record LoginRequest(
+    @Schema(description = "관리자 아이디", example = "admin", requiredMode = Schema.RequiredMode.REQUIRED)
+    String username,
 
+    @Schema(description = "관리자 비밀번호", example = "admin123", requiredMode = Schema.RequiredMode.REQUIRED)
+    String password
+) {
     /**
-     * 관리자 아이디
+     * Compact Constructor - 입력 검증 수행
      */
-    @Schema(description = "관리자 아이디", example = "admin", required = true)
-    private String username;
-
-    /**
-     * 관리자 비밀번호
-     */
-    @Schema(description = "관리자 비밀번호", example = "admin123", required = true)
-    private String password;
+    public LoginRequest {
+        Objects.requireNonNull(username, "username must not be null");
+        Objects.requireNonNull(password, "password must not be null");
+    }
 }

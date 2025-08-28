@@ -52,11 +52,11 @@ public class UserController {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "존재하지 않는 학생")
     })
     public ApiResponse<UserLoginResponse> login(@RequestBody UserLoginRequest request) {
-        log.info("학생 로그인 요청: 이름={}, 전화번호={}", request.getName(), request.getPhone());
+        log.info("학생 로그인 요청: 이름={}, 전화번호={}", request.name(), request.phone());
         
         UserLoginResponse response = userService.login(request);
         
-        log.info("학생 로그인 성공: 이름={}, ID={}", response.getName(), response.getUserId());
+        log.info("학생 로그인 성공: 이름={}, ID={}", response.name(), response.userId());
         
         return ApiResponse.success("학생 로그인 성공", response);
     }

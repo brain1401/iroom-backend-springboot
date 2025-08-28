@@ -34,19 +34,19 @@ public class UserService {
      * @return 로그인 성공 정보
      */
     public UserLoginResponse login(UserLoginRequest request) {
-        log.info("학생 로그인 요청: 이름={}, 전화번호={}", request.getName(), request.getPhone());
+        log.info("학생 로그인 요청: 이름={}, 전화번호={}", request.name(), request.phone());
         
         // 1단계: 학생 존재 확인
-        User user = userRepository.findByNameAndPhone(request.getName(), request.getPhone())
+        User user = userRepository.findByNameAndPhone(request.name(), request.phone())
             .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 학생입니다. 이름과 전화번호를 확인해주세요."));
         
         log.info("학생 로그인 성공: ID={}, 이름={}", user.getId(), user.getName());
         
-        return UserLoginResponse.builder()
-            .userId(user.getId())
-            .name(user.getName())
-            .phone(user.getPhone())
-            .message("로그인에 성공했습니다.")
-            .build();
+        return new UserLoginResponse(
+            user.getId(),
+            user.getName(),
+            user.getPhone(),
+            "로그인에 성공했습니다."
+        );
     }
 }
