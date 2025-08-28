@@ -27,9 +27,9 @@ public record UserLoginResponse(
      * Compact Constructor - 입력 검증 수행
      */
     public UserLoginResponse {
-        Objects.requireNonNull(userId, "userId must not be null");
-        Objects.requireNonNull(name, "name must not be null");
-        Objects.requireNonNull(phone, "phone must not be null");
-        Objects.requireNonNull(message, "message must not be null");
+        Objects.requireNonNull(userId, "userId는 필수입니다");
+        Objects.requireNonNull(name, "name은 필수입니다");
+        Objects.requireNonNull(phone, "phone은 필수입니다");
+        Objects.requireNonNull(message, "message는 필수입니다");
     }
 }

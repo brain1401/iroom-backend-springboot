@@ -3,11 +3,9 @@ package com.iroomclass.springbackend.domain.user.exam.dto;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
+import java.util.Objects;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 /**
  * 시험 제출 생성 요청 DTO
@@ -17,29 +15,25 @@ import lombok.NoArgsConstructor;
  * @author 이룸클래스
  * @since 2025
  */
-@Getter
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
-public class ExamSubmissionCreateRequest {
-    
-    /**
-     * 시험 ID
-     */
+@Schema(description = "시험 제출 생성 요청")
+public record ExamSubmissionCreateRequest(
     @NotNull(message = "시험 ID는 필수입니다.")
-    private Long examId;
+    @Schema(description = "시험 ID", example = "1", requiredMode = Schema.RequiredMode.REQUIRED)
+    Long examId,
     
-    /**
-     * 학생 이름
-     */
     @NotBlank(message = "학생 이름은 필수입니다.")
-    private String studentName;
+    @Schema(description = "학생 이름", example = "김철수", requiredMode = Schema.RequiredMode.REQUIRED)
+    String studentName,
     
-    /**
-     * 학생 전화번호
-     */
     @NotBlank(message = "학생 전화번호는 필수입니다.")
     @Pattern(regexp = "^01[0-9]-[0-9]{3,4}-[0-9]{4}$", 
              message = "올바른 전화번호 형식이 아닙니다. (예: 010-1234-5678)")
-    private String studentPhone;
+    @Schema(description = "학생 전화번호", example = "010-1234-5678", requiredMode = Schema.RequiredMode.REQUIRED)
+    String studentPhone
+) {
+    public ExamSubmissionCreateRequest {
+        Objects.requireNonNull(examId, "examId은 필수입니다");
+        Objects.requireNonNull(studentName, "studentName는 필수입니다");
+        Objects.requireNonNull(studentPhone, "studentPhone는 필수입니다");
+    }
 }

@@ -1,11 +1,9 @@
 package com.iroomclass.springbackend.domain.user.exam.dto;
 
 import java.time.LocalDateTime;
+import java.util.Objects;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 /**
  * 시험 제출 생성 응답 DTO
@@ -15,44 +13,36 @@ import lombok.NoArgsConstructor;
  * @author 이룸클래스
  * @since 2025
  */
-@Getter
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
-public class ExamSubmissionCreateResponse {
+@Schema(description = "시험 제출 생성 응답")
+public record ExamSubmissionCreateResponse(
+    @Schema(description = "시험 제출 ID", example = "1")
+    Long submissionId,
     
-    /**
-     * 시험 제출 ID
-     */
-    private Long submissionId;
+    @Schema(description = "시험 ID", example = "1")
+    Long examId,
     
-    /**
-     * 시험 ID
-     */
-    private Long examId;
+    @Schema(description = "시험 이름", example = "1학년 중간고사")
+    String examName,
     
-    /**
-     * 시험 이름
-     */
-    private String examName;
+    @Schema(description = "학생 이름", example = "김철수")
+    String studentName,
     
-    /**
-     * 학생 이름
-     */
-    private String studentName;
+    @Schema(description = "학생 전화번호", example = "010-1234-5678")
+    String studentPhone,
     
-    /**
-     * 학생 전화번호
-     */
-    private String studentPhone;
+    @Schema(description = "제출일시", example = "2024-06-01T12:34:56")
+    LocalDateTime submittedAt,
     
-    /**
-     * 제출일시
-     */
-    private LocalDateTime submittedAt;
-    
-    /**
-     * QR 코드 URL (시험 접속용)
-     */
-    private String qrCodeUrl;
+    @Schema(description = "QR 코드 URL (시험 접속용)", example = "https://example.com/qr/123")
+    String qrCodeUrl
+) {
+    public ExamSubmissionCreateResponse {
+        Objects.requireNonNull(submissionId, "submissionId은 필수입니다");
+        Objects.requireNonNull(examId, "examId은 필수입니다");
+        Objects.requireNonNull(examName, "examName는 필수입니다");
+        Objects.requireNonNull(studentName, "studentName는 필수입니다");
+        Objects.requireNonNull(studentPhone, "studentPhone는 필수입니다");
+        Objects.requireNonNull(submittedAt, "submittedAt은 필수입니다");
+        Objects.requireNonNull(qrCodeUrl, "qrCodeUrl은 필수입니다");
+    }
 }

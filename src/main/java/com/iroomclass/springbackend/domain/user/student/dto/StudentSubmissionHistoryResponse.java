@@ -2,11 +2,7 @@ package com.iroomclass.springbackend.domain.user.student.dto;
 
 import java.time.LocalDateTime;
 import java.util.List;
-
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import java.util.Objects;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 /**
@@ -15,63 +11,71 @@ import io.swagger.v3.oas.annotations.media.Schema;
  * @author 이룸클래스
  * @since 2025
  */
-@Getter
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
 @Schema(description = "학생 시험 제출 이력 응답")
-public class StudentSubmissionHistoryResponse {
-
+public record StudentSubmissionHistoryResponse(
     @Schema(description = "학생 이름", example = "김철수")
-    private String studentName;
+    String studentName,
 
     @Schema(description = "학생 전화번호", example = "010-1234-5678")
-    private String studentPhone;
+    String studentPhone,
 
     @Schema(description = "시험 제출 이력 목록")
-    private List<SubmissionInfo> submissions;
+    List<SubmissionInfo> submissions,
 
     @Schema(description = "총 제출 수", example = "5")
-    private int totalCount;
+    int totalCount
+) {
+    /**
+     * Compact Constructor - 입력 검증 수행
+     */
+    public StudentSubmissionHistoryResponse {
+        Objects.requireNonNull(studentName, "studentName는 필수입니다");
+        Objects.requireNonNull(studentPhone, "studentPhone는 필수입니다");
+        Objects.requireNonNull(submissions, "submissions은 필수입니다");
+    }
 
     /**
      * 시험 제출 정보
      */
-    @Getter
-    @Builder
-    @NoArgsConstructor
-    @AllArgsConstructor
     @Schema(description = "시험 제출 정보")
-    public static class SubmissionInfo {
-
+    public record SubmissionInfo(
         @Schema(description = "시험 제출 ID", example = "1")
-        private Long submissionId;
+        Long submissionId,
 
         @Schema(description = "시험 ID", example = "1")
-        private Long examId;
+        Long examId,
 
         @Schema(description = "시험명", example = "1학년 중간고사")
-        private String examName;
+        String examName,
 
         @Schema(description = "학년", example = "1학년")
-        private String grade;
+        String grade,
 
         @Schema(description = "제출일시")
-        private LocalDateTime submittedAt;
+        LocalDateTime submittedAt,
 
         @Schema(description = "총점", example = "85")
-        private Integer totalScore;
+        Integer totalScore,
 
         @Schema(description = "총 문제 수", example = "20")
-        private int totalQuestions;
+        int totalQuestions,
 
         @Schema(description = "정답 수", example = "17")
-        private int correctCount;
+        int correctCount,
 
         @Schema(description = "오답 수", example = "3")
-        private int incorrectCount;
+        int incorrectCount,
 
         @Schema(description = "정답률", example = "85.0")
-        private double correctRate;
+        double correctRate
+    ) {
+        /**
+         * Compact Constructor - 입력 검증 수행
+         */
+        public SubmissionInfo {
+            Objects.requireNonNull(submissionId, "submissionId은 필수입니다");
+            Objects.requireNonNull(examId, "examId은 필수입니다");
+            Objects.requireNonNull(examName, "examName는 필수입니다");
+        }
     }
 }

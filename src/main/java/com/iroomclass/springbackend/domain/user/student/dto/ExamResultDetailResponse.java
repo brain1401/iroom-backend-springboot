@@ -2,11 +2,7 @@ package com.iroomclass.springbackend.domain.user.student.dto;
 
 import java.time.LocalDateTime;
 import java.util.List;
-
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import java.util.Objects;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 /**
@@ -15,84 +11,93 @@ import io.swagger.v3.oas.annotations.media.Schema;
  * @author 이룸클래스
  * @since 2025
  */
-@Getter
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
 @Schema(description = "시험 상세 결과 응답")
-public class ExamResultDetailResponse {
-
+public record ExamResultDetailResponse(
     @Schema(description = "시험 제출 ID", example = "1")
-    private Long submissionId;
+    Long submissionId,
 
     @Schema(description = "시험 ID", example = "1")
-    private Long examId;
+    Long examId,
 
     @Schema(description = "시험명", example = "1학년 중간고사")
-    private String examName;
+    String examName,
 
     @Schema(description = "학년", example = "1학년")
-    private String grade;
+    String grade,
 
     @Schema(description = "학생 이름", example = "김철수")
-    private String studentName;
+    String studentName,
 
     @Schema(description = "학생 전화번호", example = "010-1234-5678")
-    private String studentPhone;
+    String studentPhone,
 
     @Schema(description = "제출일시")
-    private LocalDateTime submittedAt;
+    LocalDateTime submittedAt,
 
     @Schema(description = "총점", example = "85")
-    private Integer totalScore;
+    Integer totalScore,
 
     @Schema(description = "총 문제 수", example = "20")
-    private int totalQuestions;
+    int totalQuestions,
 
     @Schema(description = "정답 수", example = "17")
-    private int correctCount;
+    int correctCount,
 
     @Schema(description = "오답 수", example = "3")
-    private int incorrectCount;
+    int incorrectCount,
 
     @Schema(description = "문제별 결과 목록")
-    private List<QuestionResult> questionResults;
+    List<QuestionResult> questionResults
+) {
+    /**
+     * Compact Constructor - 입력 검증 수행
+     */
+    public ExamResultDetailResponse {
+        Objects.requireNonNull(submissionId, "submissionId은 필수입니다");
+        Objects.requireNonNull(examId, "examId은 필수입니다");
+        Objects.requireNonNull(examName, "examName는 필수입니다");
+        Objects.requireNonNull(studentName, "studentName는 필수입니다");
+        Objects.requireNonNull(studentPhone, "studentPhone는 필수입니다");
+        Objects.requireNonNull(questionResults, "questionResults은 필수입니다");
+    }
 
     /**
      * 문제별 결과
      */
-    @Getter
-    @Builder
-    @NoArgsConstructor
-    @AllArgsConstructor
     @Schema(description = "문제별 결과")
-    public static class QuestionResult {
-
+    public record QuestionResult(
         @Schema(description = "문제 ID", example = "1")
-        private Long questionId;
+        Long questionId,
 
         @Schema(description = "문제 번호", example = "1")
-        private int questionNumber;
+        int questionNumber,
 
         @Schema(description = "정답 여부", example = "true")
-        private Boolean isCorrect;
+        Boolean isCorrect,
 
         @Schema(description = "획득 점수", example = "5")
-        private Integer score;
+        Integer score,
 
         @Schema(description = "문제 배점", example = "5")
-        private Integer points;
+        Integer points,
 
         @Schema(description = "단원명", example = "정수와 유리수")
-        private String unitName;
+        String unitName,
 
         @Schema(description = "난이도", example = "중")
-        private String difficulty;
+        String difficulty,
 
         @Schema(description = "학생 답안", example = "42")
-        private String studentAnswer;
+        String studentAnswer,
 
         @Schema(description = "정답", example = "42")
-        private String correctAnswer;
+        String correctAnswer
+    ) {
+        /**
+         * Compact Constructor - 입력 검증 수행
+         */
+        public QuestionResult {
+            Objects.requireNonNull(questionId, "questionId은 필수입니다");
+        }
     }
 }
