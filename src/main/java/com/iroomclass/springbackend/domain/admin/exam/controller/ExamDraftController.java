@@ -9,6 +9,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import jakarta.validation.Valid;
+
 import com.iroomclass.springbackend.domain.admin.exam.dto.ExamDraftCreateRequest;
 import com.iroomclass.springbackend.domain.admin.exam.dto.ExamDraftCreateResponse;
 import com.iroomclass.springbackend.domain.admin.exam.dto.ExamDraftDetailResponse;
@@ -22,6 +24,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 /**
  * 시험지 초안 관리 컨트롤러
@@ -47,19 +50,20 @@ public class ExamDraftController {
      * @return 생성된 시험지 초안 정보
      */
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "시험지 초안 생성", description = "학년, 단원, 문제 개수를 선택하여 시험지 초안을 생성합니다. 선택된 단원들에서 랜덤으로 문제를 선택합니다.")
     @io.swagger.v3.oas.annotations.responses.ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "생성 성공"),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "잘못된 입력값"),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "존재하지 않는 단원")
     })
-    public ApiResponse<ExamDraftCreateResponse> createExamDraft(@RequestBody ExamDraftCreateRequest request) {
+    public ApiResponse<ExamDraftCreateResponse> createExamDraft(@Valid @RequestBody ExamDraftCreateRequest request) {
         log.info("시험지 초안 생성 요청: 학년={}, 단원={}개, 문제={}개",
-                request.getGrade(), request.getUnitIds().size(), request.getTotalQuestions());
+                request.grade(), request.unitIds().size(), request.totalQuestions());
 
         ExamDraftCreateResponse response = examDraftService.createExamDraft(request);
 
-        log.info("시험지 초안 생성 성공: ID={}, 이름={}", response.getExamDraftId(), response.getExamName());
+        log.info("시험지 초안 생성 성공: ID={}, 이름={}", response.examDraftId(), response.examName());
 
         return ApiResponse.success("성공", response);
     }
@@ -70,6 +74,7 @@ public class ExamDraftController {
      * @return 모든 시험지 초안 목록 (최신순)
      */
     @GetMapping
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "전체 시험지 초안 목록 조회", description = "모든 학년의 시험지 초안 목록을 최신순으로 조회합니다.")
     @io.swagger.v3.oas.annotations.responses.ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "조회 성공")
@@ -79,7 +84,7 @@ public class ExamDraftController {
 
         ExamDraftListResponse response = examDraftService.getAllExamDrafts();
 
-        log.info("전체 시험지 초안 목록 조회 성공: {}개", response.getTotalCount());
+        log.info("전체 시험지 초안 목록 조회 성공: {}개", response.totalCount());
 
         return ApiResponse.success("성공", response);
     }
@@ -91,6 +96,7 @@ public class ExamDraftController {
      * @return 해당 학년의 시험지 초안 목록
      */
     @GetMapping("/grade/{grade}")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "학년별 시험지 초안 목록 조회", description = "특정 학년의 모든 시험지 초안 목록을 조회합니다. 최신순으로 정렬됩니다.")
     @io.swagger.v3.oas.annotations.responses.ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "조회 성공"),
@@ -102,7 +108,7 @@ public class ExamDraftController {
 
         ExamDraftListResponse response = examDraftService.getExamDraftsByGrade(grade);
 
-        log.info("학년 {} 시험지 초안 목록 조회 성공: {}개", grade, response.getTotalCount());
+        log.info("학년 {} 시험지 초안 목록 조회 성공: {}개", grade, response.totalCount());
 
         return ApiResponse.success("성공", response);
     }
@@ -114,6 +120,7 @@ public class ExamDraftController {
      * @return 시험지 초안 상세 정보
      */
     @GetMapping("/{examDraftId}")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "시험지 초안 상세 조회", description = "특정 시험지 초안의 상세 정보를 조회합니다. 선택된 단원들과 문제들을 포함합니다.")
     @io.swagger.v3.oas.annotations.responses.ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "조회 성공"),
@@ -127,7 +134,7 @@ public class ExamDraftController {
         ExamDraftDetailResponse response = examDraftService.getExamDraftDetail(examDraftId);
 
         log.info("시험지 초안 {} 상세 조회 성공: 단원={}개, 문제={}개",
-                examDraftId, response.getUnits().size(), response.getQuestions().size());
+                examDraftId, response.units().size(), response.questions().size());
 
         return ApiResponse.success("성공", response);
     }
@@ -140,6 +147,7 @@ public class ExamDraftController {
      * @return 수정된 시험지 초안 정보
      */
     @PutMapping("/{examDraftId}")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "시험지 초안 수정 (문제 교체)", description = "시험지 초안의 특정 문제를 같은 단원의 다른 문제로 교체합니다.")
     @io.swagger.v3.oas.annotations.responses.ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "수정 성공"),
@@ -148,12 +156,12 @@ public class ExamDraftController {
     })
     public ApiResponse<ExamDraftDetailResponse> updateExamDraft(
             @Parameter(description = "시험지 초안 ID", example = "1") @PathVariable Long examDraftId,
-            @RequestBody ExamDraftUpdateRequest request) {
-        log.info("시험지 초안 {} 수정 요청: 문제={}번 교체", examDraftId, request.getSeqNo());
+            @Valid @RequestBody ExamDraftUpdateRequest request) {
+        log.info("시험지 초안 {} 수정 요청: 문제={}번 교체", examDraftId, request.seqNo());
 
         ExamDraftDetailResponse response = examDraftService.updateExamDraft(examDraftId, request);
 
-        log.info("시험지 초안 {} 수정 성공: 문제={}번 교체 완료", examDraftId, request.getSeqNo());
+        log.info("시험지 초안 {} 수정 성공: 문제={}번 교체 완료", examDraftId, request.seqNo());
 
         return ApiResponse.success("성공", response);
     }

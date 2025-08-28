@@ -3,6 +3,8 @@ package com.iroomclass.springbackend.domain.admin.exam.controller;
 import com.iroomclass.springbackend.common.ApiResponse;
 import org.springframework.web.bind.annotation.*;
 
+import jakarta.validation.Valid;
+
 import com.iroomclass.springbackend.domain.admin.exam.dto.ExamCreateRequest;
 import com.iroomclass.springbackend.domain.admin.exam.dto.ExamCreateResponse;
 import com.iroomclass.springbackend.domain.admin.exam.dto.ExamDetailResponse;
@@ -16,6 +18,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 /**
  * 실제 시험 관리 컨트롤러
@@ -41,18 +44,19 @@ public class ExamController {
      * @return 생성된 시험 정보
      */
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "시험 등록", description = "시험지 초안을 기반으로 실제 시험을 등록합니다.")
     @io.swagger.v3.oas.annotations.responses.ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "등록 성공"),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "잘못된 요청"),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "존재하지 않는 시험지 초안")
     })
-    public ApiResponse<ExamCreateResponse> createExam(@RequestBody ExamCreateRequest request) {
-        log.info("시험 등록 요청: 시험지 초안 ID={}, 학생 수={}", request.getExamDraftId(), request.getStudentCount());
+    public ApiResponse<ExamCreateResponse> createExam(@Valid @RequestBody ExamCreateRequest request) {
+        log.info("시험 등록 요청: 시험지 초안 ID={}, 학생 수={}", request.examDraftId(), request.studentCount());
 
         ExamCreateResponse response = examService.createExam(request);
 
-        log.info("시험 등록 성공: ID={}, 이름={}", response.getExamId(), response.getExamName());
+        log.info("시험 등록 성공: ID={}, 이름={}", response.examId(), response.examName());
 
         return ApiResponse.success("시험 등록 성공", response);
     }
@@ -63,6 +67,7 @@ public class ExamController {
      * @return 모든 시험 목록 (최신순)
      */
     @GetMapping
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "전체 시험 목록 조회", description = "모든 학년의 시험 목록을 최신순으로 조회합니다.")
     @io.swagger.v3.oas.annotations.responses.ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "조회 성공")
@@ -72,7 +77,7 @@ public class ExamController {
 
         ExamListResponse response = examService.getAllExams();
 
-        log.info("전체 시험 목록 조회 성공: {}개", response.getTotalCount());
+        log.info("전체 시험 목록 조회 성공: {}개", response.totalCount());
 
         return ApiResponse.success("전체 시험 목록 조회 성공", response);
     }
@@ -84,6 +89,7 @@ public class ExamController {
      * @return 해당 학년의 시험 목록
      */
     @GetMapping("/grade/{grade}")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "학년별 시험 목록 조회", description = "특정 학년의 시험 목록을 조회합니다.")
     @io.swagger.v3.oas.annotations.responses.ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "조회 성공"),
@@ -95,7 +101,7 @@ public class ExamController {
 
         ExamListResponse response = examService.getExamsByGrade(grade);
 
-        log.info("학년별 시험 목록 조회 성공: {}학년, {}개", grade, response.getTotalCount());
+        log.info("학년별 시험 목록 조회 성공: {}학년, {}개", grade, response.totalCount());
 
         return ApiResponse.success("학년별 시험 목록 조회 성공", response);
     }
@@ -107,6 +113,7 @@ public class ExamController {
      * @return 시험 상세 정보
      */
     @GetMapping("/{examId}")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "시험 상세 조회", description = "특정 시험의 상세 정보를 조회합니다.")
     @io.swagger.v3.oas.annotations.responses.ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "조회 성공"),
@@ -119,7 +126,7 @@ public class ExamController {
 
         ExamDetailResponse response = examService.getExamDetail(examId);
 
-        log.info("시험 상세 조회 성공: ID={}, 이름={}", examId, response.getExamName());
+        log.info("시험 상세 조회 성공: ID={}, 이름={}", examId, response.examName());
 
         return ApiResponse.success("시험 상세 조회 성공", response);
     }
@@ -132,6 +139,7 @@ public class ExamController {
      * @return 수정된 시험 정보
      */
     @PutMapping("/{examId}")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "시험 수정", description = "시험 정보를 수정합니다.")
     @io.swagger.v3.oas.annotations.responses.ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "수정 성공"),
@@ -140,7 +148,7 @@ public class ExamController {
     })
     public ApiResponse<ExamDetailResponse> updateExam(
             @Parameter(description = "시험 ID", example = "1") @PathVariable Long examId,
-            @RequestBody ExamUpdateRequest request) {
+            @Valid @RequestBody ExamUpdateRequest request) {
         log.info("시험 수정 요청: ID={}", examId);
 
         ExamDetailResponse response = examService.updateExam(examId, request);

@@ -48,11 +48,11 @@ public class ExamService {
      */
     @Transactional
     public ExamCreateResponse createExam(ExamCreateRequest request) {
-        log.info("시험 등록 요청: 시험지 초안 ID={}, 학생 수={}", request.getExamDraftId(), request.getStudentCount());
+        log.info("시험 등록 요청: 시험지 초안 ID={}, 학생 수={}", request.examDraftId(), request.studentCount());
         
         // 1단계: 시험지 초안 조회
-        ExamDraft examDraft = examDraftRepository.findById(request.getExamDraftId())
-            .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 시험지 초안입니다: " + request.getExamDraftId()));
+        ExamDraft examDraft = examDraftRepository.findById(request.examDraftId())
+            .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 시험지 초안입니다: " + request.examDraftId()));
         
         // 2단계: QR 코드 URL 생성
         String qrCodeUrl = generateQrCodeUrl(examDraft.getId());
@@ -62,8 +62,8 @@ public class ExamService {
             .examDraft(examDraft)
             .examName(examDraft.getExamName())
             .grade(examDraft.getGrade())
-            .content(request.getContent())
-            .studentCount(request.getStudentCount())
+            .content(request.content())
+            .studentCount(request.studentCount())
             .qrCodeUrl(qrCodeUrl)
             .build();
         
@@ -71,14 +71,14 @@ public class ExamService {
         
         log.info("시험 등록 완료: ID={}, 이름={}", exam.getId(), exam.getExamName());
         
-        return ExamCreateResponse.builder()
-            .examId(exam.getId())
-            .examName(exam.getExamName())
-            .grade(exam.getGrade())
-            .studentCount(exam.getStudentCount())
-            .qrCodeUrl(exam.getQrCodeUrl())
-            .createdAt(exam.getCreatedAt())
-            .build();
+        return new ExamCreateResponse(
+            exam.getId(),
+            exam.getExamName(),
+            exam.getGrade(),
+            exam.getStudentCount(),
+            exam.getQrCodeUrl(),
+            exam.getCreatedAt()
+        );
     }
     
     /**
@@ -94,24 +94,24 @@ public class ExamService {
         
         List<ExamListResponse.ExamInfo> examInfos = new ArrayList<>();
         for (Exam exam : exams) {
-            ExamListResponse.ExamInfo examInfo = ExamListResponse.ExamInfo.builder()
-                .examId(exam.getId())
-                .examName(exam.getExamName())
-                .grade(exam.getGrade())
-                .studentCount(exam.getStudentCount())
-                .qrCodeUrl(exam.getQrCodeUrl())
-                .createdAt(exam.getCreatedAt())
-                .build();
+            ExamListResponse.ExamInfo examInfo = new ExamListResponse.ExamInfo(
+                exam.getId(),
+                exam.getExamName(),
+                exam.getGrade(),
+                exam.getStudentCount(),
+                exam.getQrCodeUrl(),
+                exam.getCreatedAt()
+            );
             examInfos.add(examInfo);
         }
         
         log.info("학년별 시험 목록 조회 완료: {}학년, {}개", grade, examInfos.size());
         
-        return ExamListResponse.builder()
-            .grade(grade)
-            .exams(examInfos)
-            .totalCount(examInfos.size())
-            .build();
+        return new ExamListResponse(
+            grade,
+            examInfos,
+            examInfos.size()
+        );
     }
     
     /**
@@ -126,24 +126,24 @@ public class ExamService {
         
         List<ExamListResponse.ExamInfo> examInfos = new ArrayList<>();
         for (Exam exam : exams) {
-            ExamListResponse.ExamInfo examInfo = ExamListResponse.ExamInfo.builder()
-                .examId(exam.getId())
-                .examName(exam.getExamName())
-                .grade(exam.getGrade())
-                .studentCount(exam.getStudentCount())
-                .qrCodeUrl(exam.getQrCodeUrl())
-                .createdAt(exam.getCreatedAt())
-                .build();
+            ExamListResponse.ExamInfo examInfo = new ExamListResponse.ExamInfo(
+                exam.getId(),
+                exam.getExamName(),
+                exam.getGrade(),
+                exam.getStudentCount(),
+                exam.getQrCodeUrl(),
+                exam.getCreatedAt()
+            );
             examInfos.add(examInfo);
         }
         
         log.info("전체 시험 목록 조회 완료: {}개", examInfos.size());
         
-        return ExamListResponse.builder()
-            .grade(null) // 전체 목록이므로 학년 정보 없음
-            .exams(examInfos)
-            .totalCount(examInfos.size())
-            .build();
+        return new ExamListResponse(
+            null, // 전체 목록이므로 학년 정보 없음
+            examInfos,
+            examInfos.size()
+        );
     }
     
     /**
@@ -162,16 +162,16 @@ public class ExamService {
         
         log.info("시험 상세 조회 완료: ID={}, 이름={}", examId, exam.getExamName());
         
-        return ExamDetailResponse.builder()
-            .examId(exam.getId())
-            .examDraftId(examDraft.getId())
-            .examName(exam.getExamName())
-            .grade(exam.getGrade())
-            .content(exam.getContent())
-            .studentCount(exam.getStudentCount())
-            .qrCodeUrl(exam.getQrCodeUrl())
-            .createdAt(exam.getCreatedAt())
-            .build();
+        return new ExamDetailResponse(
+            exam.getId(),
+            exam.getExamDraft().getId(),
+            exam.getExamName(),
+            exam.getGrade(),
+            exam.getContent(),
+            exam.getStudentCount(),
+            exam.getQrCodeUrl(),
+            exam.getCreatedAt()
+        );
     }
     
     /**
@@ -190,7 +190,7 @@ public class ExamService {
             .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 시험입니다: " + examId));
         
         // 2단계: 시험 정보 수정
-        exam.updateExamInfo(request.getExamName(), request.getContent(), request.getStudentCount());
+        exam.updateExamInfo(request.examName(), request.content(), request.studentCount());
         
         exam = examRepository.save(exam);
         

@@ -6,6 +6,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import jakarta.validation.Valid;
+
 import com.iroomclass.springbackend.domain.user.info.dto.UserLoginRequest;
 import com.iroomclass.springbackend.domain.user.info.dto.UserLoginResponse;
 import com.iroomclass.springbackend.domain.user.info.service.UserService;
@@ -17,6 +19,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 /**
  * 사용자 로그인 컨트롤러
@@ -51,7 +54,7 @@ public class UserController {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "잘못된 입력값"),
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "존재하지 않는 학생")
     })
-    public ApiResponse<UserLoginResponse> login(@RequestBody UserLoginRequest request) {
+    public ApiResponse<UserLoginResponse> login(@Valid @RequestBody UserLoginRequest request) {
         log.info("학생 로그인 요청: 이름={}, 전화번호={}", request.name(), request.phone());
         
         UserLoginResponse response = userService.login(request);

@@ -43,7 +43,7 @@ public class StatisticsController {
 
         GradeStatisticsResponse response = statisticsService.getGradeStatistics(grade);
         log.info("학년별 통계 조회 성공: 학년={}, 최근 시험 수={}, 오답률 높은 단원 수={}",
-                grade, response.getRecentExamAverages().size(), response.getHighErrorRateUnits().size());
+                grade, response.recentExamAverages().size(), response.highErrorRateUnits().size());
 
         return ApiResponse.success("학년별 통계 조회 성공", response);
     }

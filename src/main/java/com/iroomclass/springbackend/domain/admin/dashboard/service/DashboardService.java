@@ -45,13 +45,13 @@ public class DashboardService {
         
         if (exams.isEmpty()) {
             log.info("해당 학년의 시험이 없습니다: 학년={}", grade);
-            return GradeSubmissionStatusResponse.builder()
-                .grade(grade)
-                .gradeName("중" + grade)
-                .examSubmissions(new ArrayList<>())
-                .totalExamCount(0)
-                .totalSubmissionCount(0)
-                .build();
+            return new GradeSubmissionStatusResponse(
+                grade,
+                "중" + grade,
+                new ArrayList<>(),
+                0,
+                0
+            );
         }
         
         // 2단계: 각 시험별 제출 현황 계산
@@ -68,14 +68,14 @@ public class DashboardService {
             double submissionRate = totalStudentCount > 0 ? 
                 (double) submittedCount / totalStudentCount * 100 : 0.0;
             
-            examSubmissions.add(GradeSubmissionStatusResponse.ExamSubmissionStatus.builder()
-                .examId(exam.getId())
-                .examName(exam.getExamName())
-                .totalStudentCount(totalStudentCount)
-                .submittedStudentCount((int) submittedCount)
-                .notSubmittedStudentCount(notSubmittedCount)
-                .submissionRate(Math.round(submissionRate * 10.0) / 10.0) // 소수점 첫째자리까지
-                .build());
+            examSubmissions.add(new GradeSubmissionStatusResponse.ExamSubmissionStatus(
+                exam.getId(),
+                exam.getExamName(),
+                totalStudentCount,
+                (int) submittedCount,
+                Math.round(submissionRate * 10.0) / 10.0, // 소수점 첫째자리까지
+                notSubmittedCount
+            ));
             
             totalSubmissionCount += submittedCount;
         }
@@ -83,13 +83,13 @@ public class DashboardService {
         log.info("학년별 시험 제출 현황 조회 완료: 학년={}, 시험 수={}, 총 제출 수={}", 
             grade, exams.size(), totalSubmissionCount);
         
-        return GradeSubmissionStatusResponse.builder()
-            .grade(grade)
-            .gradeName("중" + grade)
-            .examSubmissions(examSubmissions)
-            .totalExamCount(exams.size())
-            .totalSubmissionCount(totalSubmissionCount)
-            .build();
+        return new GradeSubmissionStatusResponse(
+            grade,
+            "중" + grade,
+            examSubmissions,
+            exams.size(),
+            totalSubmissionCount
+        );
     }
 
     /**
@@ -147,15 +147,15 @@ public class DashboardService {
         log.info("학년별 성적 분포도 조회 완료: 학년={}, 전체 학생 수={}, 평균 성적={}", 
             grade, studentSubmissions.size(), overallAverageScore);
         
-        return GradeScoreDistributionResponse.builder()
-            .grade(grade)
-            .gradeName("중" + grade)
-            .totalStudentCount(studentSubmissions.size())
-            .studentWithScoreCount(studentAverageScores.size())
-            .overallAverageScore(Math.round(overallAverageScore * 10.0) / 10.0)
-            .scoreRanges(scoreRanges)
-            .rankDistribution(rankDistribution)
-            .build();
+        return new GradeScoreDistributionResponse(
+            grade,
+            "중" + grade,
+            studentSubmissions.size(),
+            studentAverageScores.size(),
+            Math.round(overallAverageScore * 10.0) / 10.0,
+            scoreRanges,
+            rankDistribution
+        );
     }
 
     /**
@@ -178,13 +178,13 @@ public class DashboardService {
             
             double percentage = scores.size() > 0 ? (double) count / scores.size() * 100 : 0.0;
             
-            ranges.add(GradeScoreDistributionResponse.ScoreRangeDistribution.builder()
-                .scoreRange(startScore + "-" + endScore)
-                .studentCount((int) count)
-                .percentage(Math.round(percentage * 10.0) / 10.0)
-                .startScore(startScore)
-                .endScore(endScore)
-                .build());
+            ranges.add(new GradeScoreDistributionResponse.ScoreRangeDistribution(
+                startScore + "-" + endScore,
+                (int) count,
+                Math.round(percentage * 10.0) / 10.0,
+                startScore,
+                endScore
+            ));
         }
         
         return ranges;
@@ -203,14 +203,14 @@ public class DashboardService {
         double middleRankPercentage = totalCount > 0 ? (double) middleRankCount / totalCount * 100 : 0.0;
         double bottomRankPercentage = totalCount > 0 ? (double) bottomRankCount / totalCount * 100 : 0.0;
         
-        return GradeScoreDistributionResponse.RankDistribution.builder()
-            .topRankCount((int) topRankCount)
-            .topRankPercentage(Math.round(topRankPercentage * 10.0) / 10.0)
-            .middleRankCount((int) middleRankCount)
-            .middleRankPercentage(Math.round(middleRankPercentage * 10.0) / 10.0)
-            .bottomRankCount((int) bottomRankCount)
-            .bottomRankPercentage(Math.round(bottomRankPercentage * 10.0) / 10.0)
-            .build();
+        return new GradeScoreDistributionResponse.RankDistribution(
+            (int) topRankCount,
+            Math.round(topRankPercentage * 10.0) / 10.0,
+            (int) middleRankCount,
+            Math.round(middleRankPercentage * 10.0) / 10.0,
+            (int) bottomRankCount,
+            Math.round(bottomRankPercentage * 10.0) / 10.0
+        );
     }
 
     /**
@@ -223,33 +223,33 @@ public class DashboardService {
         };
         
         for (int[] range : scoreRanges) {
-            emptyRanges.add(GradeScoreDistributionResponse.ScoreRangeDistribution.builder()
-                .scoreRange(range[0] + "-" + range[1])
-                .studentCount(0)
-                .percentage(0.0)
-                .startScore(range[0])
-                .endScore(range[1])
-                .build());
+            emptyRanges.add(new GradeScoreDistributionResponse.ScoreRangeDistribution(
+                range[0] + "-" + range[1],
+                0,
+                0.0,
+                range[0],
+                range[1]
+            ));
         }
         
         GradeScoreDistributionResponse.RankDistribution emptyRankDistribution = 
-            GradeScoreDistributionResponse.RankDistribution.builder()
-                .topRankCount(0)
-                .topRankPercentage(0.0)
-                .middleRankCount(0)
-                .middleRankPercentage(0.0)
-                .bottomRankCount(0)
-                .bottomRankPercentage(0.0)
-                .build();
+            new GradeScoreDistributionResponse.RankDistribution(
+                0,
+                0.0,
+                0,
+                0.0,
+                0,
+                0.0
+            );
         
-        return GradeScoreDistributionResponse.builder()
-            .grade(grade)
-            .gradeName("중" + grade)
-            .totalStudentCount(0)
-            .studentWithScoreCount(0)
-            .overallAverageScore(0.0)
-            .scoreRanges(emptyRanges)
-            .rankDistribution(emptyRankDistribution)
-            .build();
+        return new GradeScoreDistributionResponse(
+            grade,
+            "중" + grade,
+            0,
+            0,
+            0.0,
+            emptyRanges,
+            emptyRankDistribution
+        );
     }
 }

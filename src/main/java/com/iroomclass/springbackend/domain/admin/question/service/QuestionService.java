@@ -58,35 +58,24 @@ public class QuestionService {
         
         // 3단계: DTO 변환
         List<QuestionListResponse.QuestionInfo> questionInfos = questions.stream()
-            .map(question -> QuestionListResponse.QuestionInfo.builder()
-                .questionId(question.getId())
-                .difficulty(question.getDifficulty().name())
-                .build())
+            .map(question -> new QuestionListResponse.QuestionInfo(question.getId(), question.getDifficulty().name()))
             .collect(Collectors.toList());
         
         // 4단계: 통계 계산
         int totalQuestions = questionInfos.size();
         long easyCount = questionInfos.stream()
-            .filter(q -> "하".equals(q.getDifficulty()))
+            .filter(q -> "하".equals(q.difficulty()))
             .count();
         long mediumCount = questionInfos.stream()
-            .filter(q -> "중".equals(q.getDifficulty()))
+            .filter(q -> "중".equals(q.difficulty()))
             .count();
         long hardCount = questionInfos.stream()
-            .filter(q -> "상".equals(q.getDifficulty()))
+            .filter(q -> "상".equals(q.difficulty()))
             .count();
         
         log.info("단원 {} 문제 목록 조회 완료: {}개 문제", unitId, totalQuestions);
         
-        return QuestionListResponse.builder()
-            .unitId(unitId)
-            .unitName(unit.getUnitName())
-            .questions(questionInfos)
-            .totalQuestions(totalQuestions)
-            .easyCount((int) easyCount)
-            .mediumCount((int) mediumCount)
-            .hardCount((int) hardCount)
-            .build();
+        return new QuestionListResponse(unitId, unit.getUnitName(), questionInfos, totalQuestions, (int) easyCount, (int) mediumCount, (int) hardCount);
     }
     
     /**
@@ -120,26 +109,20 @@ public class QuestionService {
         
         // 4단계: DTO 변환
         List<QuestionListResponse.QuestionInfo> questionInfos = questions.stream()
-            .map(question -> QuestionListResponse.QuestionInfo.builder()
-                .questionId(question.getId())
-                .difficulty(question.getDifficulty().name())
-                .build())
+            .map(question -> new QuestionListResponse.QuestionInfo(question.getId(), question.getDifficulty().name()))
             .collect(Collectors.toList());
         
         // 5단계: 통계 계산
         int totalQuestions = questionInfos.size();
         
+        // 특정 난이도로 필터링했으므로 해당 난이도의 카운트만 설정
+        int easyCount = difficultyEnum == Question.Difficulty.하 ? totalQuestions : 0;
+        int mediumCount = difficultyEnum == Question.Difficulty.중 ? totalQuestions : 0;
+        int hardCount = difficultyEnum == Question.Difficulty.상 ? totalQuestions : 0;
+        
         log.info("단원 {} 난이도 {} 문제 목록 조회 완료: {}개 문제", unitId, difficulty, totalQuestions);
         
-        return QuestionListResponse.builder()
-            .unitId(unitId)
-            .unitName(unit.getUnitName())
-            .questions(questionInfos)
-            .totalQuestions(totalQuestions)
-            .easyCount("하".equals(difficulty) ? totalQuestions : 0)
-            .mediumCount("중".equals(difficulty) ? totalQuestions : 0)
-            .hardCount("상".equals(difficulty) ? totalQuestions : 0)
-            .build();
+        return new QuestionListResponse(unitId, unit.getUnitName(), questionInfos, totalQuestions, easyCount, mediumCount, hardCount);
     }
     
     /**
@@ -164,14 +147,7 @@ public class QuestionService {
         
         log.info("문제 {} 상세 조회 완료", questionId);
         
-        return QuestionDetailResponse.builder()
-            .questionId(question.getId())
-            .unitId(unit.getId())
-            .unitName(unit.getUnitName())
-            .difficulty(question.getDifficulty().name())
-            .stem(question.getQuestionTextAsHtml())
-            .answerKey(question.getAnswerKey())
-            .build();
+        return new QuestionDetailResponse(question.getId(), unit.getId(), unit.getUnitName(), question.getDifficulty().name(), question.getQuestionTextAsHtml(), question.getAnswerKey());
     }
     
     /**
@@ -201,14 +177,7 @@ public class QuestionService {
         log.info("단원 {} 문제 통계 조회 완료: 총 {}개 (하: {}, 중: {}, 상: {})", 
             unitId, totalQuestions, easyCount, mediumCount, hardCount);
         
-        return QuestionStatisticsResponse.builder()
-            .unitId(unitId)
-            .unitName(unit.getUnitName())
-            .totalQuestions(totalQuestions)
-            .easyCount((int) easyCount)
-            .mediumCount((int) mediumCount)
-            .hardCount((int) hardCount)
-            .build();
+        return new QuestionStatisticsResponse(unitId, unit.getUnitName(), totalQuestions, (int) easyCount, (int) mediumCount, (int) hardCount);
     }
     
     /**
@@ -231,13 +200,7 @@ public class QuestionService {
         List<QuestionSearchResponse.QuestionInfo> questionInfos = questions.stream()
             .map(question -> {
                 Unit unit = question.getUnit();
-                return QuestionSearchResponse.QuestionInfo.builder()
-                    .questionId(question.getId())
-                    .unitId(unit.getId())
-                    .unitName(unit.getUnitName())
-                    .difficulty(question.getDifficulty().name())
-                    .stem(question.getQuestionTextAsHtml())
-                    .build();
+                return new QuestionSearchResponse.QuestionInfo(question.getId(), unit.getId(), unit.getUnitName(), question.getDifficulty().name(), question.getQuestionTextAsHtml());
             })
             .collect(Collectors.toList());
         
@@ -245,10 +208,6 @@ public class QuestionService {
         
         log.info("문제 검색 완료: {}개 결과", totalResults);
         
-        return QuestionSearchResponse.builder()
-            .keyword(keyword)
-            .questions(questionInfos)
-            .totalResults(totalResults)
-            .build();
+        return new QuestionSearchResponse(keyword, questionInfos, totalResults);
     }
 }

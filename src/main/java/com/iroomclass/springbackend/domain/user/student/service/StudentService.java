@@ -67,12 +67,12 @@ public class StudentService {
         
         log.info("학생 시험 제출 이력 조회 완료: 이름={}, 제출 수={}", studentName, submissionInfos.size());
         
-        return StudentSubmissionHistoryResponse.builder()
-            .studentName(studentName)
-            .studentPhone(studentPhone)
-            .submissions(submissionInfos)
-            .totalCount(submissionInfos.size())
-            .build();
+        return new StudentSubmissionHistoryResponse(
+            studentName,
+            studentPhone,
+            submissionInfos,
+            submissionInfos.size()
+        );
     }
     
     /**
@@ -109,20 +109,20 @@ public class StudentService {
         log.info("시험 상세 결과 조회 완료: 제출 ID={}, 학생={}, 총점={}, 정답 수={}", 
             submissionId, studentName, submission.getTotalScore(), correctCount);
         
-        return ExamResultDetailResponse.builder()
-            .submissionId(submission.getId())
-            .examId(submission.getExam().getId())
-            .examName(submission.getExam().getExamName())
-            .grade(submission.getExam().getGrade() + "학년")
-            .studentName(submission.getStudentName())
-            .studentPhone(submission.getStudentPhone())
-            .submittedAt(submission.getSubmittedAt())
-            .totalScore(submission.getTotalScore())
-            .totalQuestions(answers.size())
-            .correctCount(correctCount)
-            .incorrectCount(incorrectCount)
-            .questionResults(questionResults)
-            .build();
+        return new ExamResultDetailResponse(
+            submission.getId(),
+            submission.getExam().getId(),
+            submission.getExam().getExamName(),
+            submission.getExam().getGrade() + "학년",
+            submission.getStudentName(),
+            submission.getStudentPhone(),
+            submission.getSubmittedAt(),
+            submission.getTotalScore(),
+            answers.size(),
+            correctCount,
+            incorrectCount,
+            questionResults
+        );
     }
     
     /**
@@ -169,22 +169,22 @@ public class StudentService {
         log.info("문제별 결과 조회 완료: 제출 ID={}, 문제 ID={}, 정답 여부={}, 점수={}", 
             submissionId, questionId, answer.getIsCorrect(), answer.getScore());
         
-        return QuestionResultResponse.builder()
-            .submissionId(submissionId)
-            .questionId(questionId)
-            .questionNumber(examDraftQuestion != null ? examDraftQuestion.getSeqNo() : 0)
-            .questionContent(question.getQuestionTextAsHtml())
-            .isCorrect(answer.getIsCorrect())
-            .score(answer.getScore())
-            .points(examDraftQuestion != null ? examDraftQuestion.getPoints() : 0)
-            .unitName(question.getUnit().getUnitName())
-            .subcategoryName(question.getUnit().getSubcategory().getSubcategoryName())
-            .categoryName(question.getUnit().getSubcategory().getCategory().getCategoryName())
-            .difficulty(question.getDifficulty().name())
-            .studentAnswer(answer.getAnswerText())
-            .correctAnswer(question.getAnswerKey())
-            .answerImageUrl(answer.getAnswerImageUrl())
-            .build();
+        return new QuestionResultResponse(
+            submissionId,
+            questionId,
+            examDraftQuestion != null ? examDraftQuestion.getSeqNo() : 0,
+            question.getQuestionTextAsHtml(),
+            answer.getIsCorrect(),
+            answer.getScore(),
+            examDraftQuestion != null ? examDraftQuestion.getPoints() : 0,
+            question.getUnit().getUnitName(),
+            question.getUnit().getSubcategory().getSubcategoryName(),
+            question.getUnit().getSubcategory().getCategory().getCategoryName(),
+            question.getDifficulty().name(),
+            answer.getAnswerText(),
+            question.getAnswerKey(),
+            answer.getAnswerImageUrl()
+        );
     }
     
     /**
@@ -196,18 +196,18 @@ public class StudentService {
         int incorrectCount = answers.size() - correctCount;
         double correctRate = answers.size() > 0 ? (double) correctCount / answers.size() * 100 : 0.0;
         
-        return StudentSubmissionHistoryResponse.SubmissionInfo.builder()
-            .submissionId(submission.getId())
-            .examId(submission.getExam().getId())
-            .examName(submission.getExam().getExamName())
-            .grade(submission.getExam().getGrade() + "학년")
-            .submittedAt(submission.getSubmittedAt())
-            .totalScore(submission.getTotalScore())
-            .totalQuestions(answers.size())
-            .correctCount(correctCount)
-            .incorrectCount(incorrectCount)
-            .correctRate(Math.round(correctRate * 10.0) / 10.0) // 소수점 첫째자리까지
-            .build();
+        return new StudentSubmissionHistoryResponse.SubmissionInfo(
+            submission.getId(),
+            submission.getExam().getId(),
+            submission.getExam().getExamName(),
+            submission.getExam().getGrade() + "학년",
+            submission.getSubmittedAt(),
+            submission.getTotalScore(),
+            answers.size(),
+            correctCount,
+            incorrectCount,
+            Math.round(correctRate * 10.0) / 10.0 // 소수점 첫째자리까지
+        );
     }
     
     /**
@@ -220,16 +220,16 @@ public class StudentService {
         ExamDraftQuestion examDraftQuestion = getExamDraftQuestion(
             answer.getExamSubmission().getExam().getExamDraft().getId(), question.getId());
         
-        return ExamResultDetailResponse.QuestionResult.builder()
-            .questionId(question.getId())
-            .questionNumber(examDraftQuestion != null ? examDraftQuestion.getSeqNo() : 0)
-            .isCorrect(answer.getIsCorrect())
-            .score(answer.getScore())
-            .points(examDraftQuestion != null ? examDraftQuestion.getPoints() : 0)
-            .unitName(question.getUnit().getUnitName())
-            .difficulty(question.getDifficulty().name())
-            .studentAnswer(answer.getAnswerText())
-            .correctAnswer(question.getAnswerKey())
-            .build();
+        return new ExamResultDetailResponse.QuestionResult(
+            question.getId(),
+            examDraftQuestion != null ? examDraftQuestion.getSeqNo() : 0,
+            answer.getIsCorrect(),
+            answer.getScore(),
+            examDraftQuestion != null ? examDraftQuestion.getPoints() : 0,
+            question.getUnit().getUnitName(),
+            question.getDifficulty().name(),
+            answer.getAnswerText(),
+            question.getAnswerKey()
+        );
     }
 }

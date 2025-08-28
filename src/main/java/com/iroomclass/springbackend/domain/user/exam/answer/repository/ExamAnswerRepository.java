@@ -2,7 +2,6 @@ package com.iroomclass.springbackend.domain.user.exam.answer.repository;
 
 import com.iroomclass.springbackend.domain.user.exam.answer.entity.ExamAnswer;
 import com.iroomclass.springbackend.domain.user.exam.entity.ExamSubmission;
-import com.iroomclass.springbackend.domain.admin.question.entity.Question;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
@@ -20,7 +19,7 @@ import java.util.Optional;
  */
 @Repository
 public interface ExamAnswerRepository extends JpaRepository<ExamAnswer, Long> {
-    
+
     /**
      * 시험 제출별 답안 목록 조회
      * 
@@ -31,7 +30,7 @@ public interface ExamAnswerRepository extends JpaRepository<ExamAnswer, Long> {
      * @return 해당 시험 제출의 답안 목록
      */
     List<ExamAnswer> findByExamSubmission(ExamSubmission examSubmission);
-    
+
     /**
      * 시험 제출 ID로 답안 목록 조회
      * 
@@ -42,7 +41,7 @@ public interface ExamAnswerRepository extends JpaRepository<ExamAnswer, Long> {
      * @return 해당 시험 제출의 답안 목록
      */
     List<ExamAnswer> findByExamSubmissionId(Long examSubmissionId);
-    
+
     /**
      * 특정 문제의 답안 조회
      * 
@@ -50,11 +49,11 @@ public interface ExamAnswerRepository extends JpaRepository<ExamAnswer, Long> {
      * 예시: 특정 문제의 답안만 조회
      * 
      * @param examSubmissionId 시험 제출 ID
-     * @param questionId 문제 ID
+     * @param questionId       문제 ID
      * @return 해당 문제의 답안
      */
     Optional<ExamAnswer> findByExamSubmissionIdAndQuestionId(Long examSubmissionId, Long questionId);
-    
+
     /**
      * 시험 제출별 답안 수 조회
      * 
@@ -65,7 +64,7 @@ public interface ExamAnswerRepository extends JpaRepository<ExamAnswer, Long> {
      * @return 해당 시험 제출의 답안 수
      */
     long countByExamSubmissionId(Long examSubmissionId);
-    
+
     /**
      * 정답 답안 수 조회
      * 
@@ -76,7 +75,7 @@ public interface ExamAnswerRepository extends JpaRepository<ExamAnswer, Long> {
      * @return 정답인 답안 수
      */
     long countByExamSubmissionIdAndIsCorrectTrue(Long examSubmissionId);
-    
+
     /**
      * 답안 존재 여부 확인
      * 
@@ -84,11 +83,11 @@ public interface ExamAnswerRepository extends JpaRepository<ExamAnswer, Long> {
      * 예시: 특정 문제에 답안이 이미 있는지 확인
      * 
      * @param examSubmissionId 시험 제출 ID
-     * @param questionId 문제 ID
+     * @param questionId       문제 ID
      * @return 답안 존재 여부
      */
     boolean existsByExamSubmissionIdAndQuestionId(Long examSubmissionId, Long questionId);
-    
+
     /**
      * 여러 시험 제출 ID로 답안 목록 조회
      * 

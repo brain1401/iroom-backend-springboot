@@ -54,23 +54,23 @@ public class ExamDraftService {
     @Transactional
     public ExamDraftCreateResponse createExamDraft(ExamDraftCreateRequest request) {
         log.info("시험지 초안 생성 요청: 학년={}, 단원={}개, 문제={}개, 이름={}", 
-            request.getGrade(), request.getUnitIds().size(), request.getTotalQuestions(), request.getExamName());
+            request.grade(), request.unitIds().size(), request.totalQuestions(), request.examName());
         
         // 1단계: 입력값 검증
         validateCreateRequest(request);
         
         // 2단계: 시험지 초안 생성
         ExamDraft examDraft = ExamDraft.builder()
-            .examName(request.getExamName())
-            .grade(request.getGrade())
-            .totalQuestions(request.getTotalQuestions())
+            .examName(request.examName())
+            .grade(request.grade())
+            .totalQuestions(request.totalQuestions())
             .build();
         
         examDraft = examDraftRepository.save(examDraft);
         
         // 3단계: 선택된 단원들 저장
         List<ExamSelectedUnit> selectedUnits = new ArrayList<>();
-        for (Long unitId : request.getUnitIds()) {
+        for (Long unitId : request.unitIds()) {
             Unit unit = unitRepository.findById(unitId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 단원입니다: " + unitId));
             
@@ -85,16 +85,16 @@ public class ExamDraftService {
         examSelectedUnitRepository.saveAll(selectedUnits);
         
         // 4단계: 랜덤 문제 선택 및 저장
-        List<Question> selectedQuestions = selectRandomQuestions(request.getUnitIds(), request.getTotalQuestions());
+        List<Question> selectedQuestions = selectRandomQuestions(request.unitIds(), request.totalQuestions());
         
         List<ExamDraftQuestion> examDraftQuestions = new ArrayList<>();
         for (int i = 0; i < selectedQuestions.size(); i++) {
             Question question = selectedQuestions.get(i);
             // 배점 계산 (총 100점을 문제 수로 나누기)
-            int points = 100 / request.getTotalQuestions();
+            int points = 100 / request.totalQuestions();
             // 마지막 문제는 나머지 점수 추가
             if (i == selectedQuestions.size() - 1) {
-                points += 100 % request.getTotalQuestions();
+                points += 100 % request.totalQuestions();
             }
             
             ExamDraftQuestion examDraftQuestion = ExamDraftQuestion.builder()
@@ -111,13 +111,13 @@ public class ExamDraftService {
         
         log.info("시험지 초안 생성 완료: ID={}, 문제={}개", examDraft.getId(), selectedQuestions.size());
         
-        return ExamDraftCreateResponse.builder()
-            .examDraftId(examDraft.getId())
-            .examName(examDraft.getExamName())
-            .grade(examDraft.getGrade())
-            .totalQuestions(examDraft.getTotalQuestions())
-            .selectedUnitCount(selectedUnits.size())
-            .build();
+        return new ExamDraftCreateResponse(
+            examDraft.getId(),
+            examDraft.getExamName(),
+            examDraft.getGrade(),
+            examDraft.getTotalQuestions(),
+            selectedUnits.size()
+        );
     }
     
     /**
@@ -135,24 +135,24 @@ public class ExamDraftService {
             // 선택된 단원 수 조회
             long selectedUnitCount = examSelectedUnitRepository.countByExamDraftId(examDraft.getId());
             
-            ExamDraftListResponse.ExamDraftInfo examDraftInfo = ExamDraftListResponse.ExamDraftInfo.builder()
-                .examDraftId(examDraft.getId())
-                .examName(examDraft.getExamName())
-                .grade(examDraft.getGrade())
-                .totalQuestions(examDraft.getTotalQuestions())
-                .selectedUnitCount((int) selectedUnitCount)
-                .build();
+            ExamDraftListResponse.ExamDraftInfo examDraftInfo = new ExamDraftListResponse.ExamDraftInfo(
+                examDraft.getId(),
+                examDraft.getExamName(),
+                examDraft.getGrade(),
+                examDraft.getTotalQuestions(),
+                (int) selectedUnitCount
+            );
             
             examDraftInfos.add(examDraftInfo);
         }
         
         log.info("전체 시험지 초안 목록 조회 완료: {}개", examDraftInfos.size());
         
-        return ExamDraftListResponse.builder()
-            .grade(null) // 전체 목록이므로 학년 정보 없음
-            .examDrafts(examDraftInfos)
-            .totalCount(examDraftInfos.size())
-            .build();
+        return new ExamDraftListResponse(
+            null, // 전체 목록이므로 학년 정보 없음
+            examDraftInfos,
+            examDraftInfos.size()
+        );
     }
     
     /**
@@ -171,24 +171,24 @@ public class ExamDraftService {
             // 선택된 단원 수 조회
             long selectedUnitCount = examSelectedUnitRepository.countByExamDraftId(examDraft.getId());
             
-            ExamDraftListResponse.ExamDraftInfo examDraftInfo = ExamDraftListResponse.ExamDraftInfo.builder()
-                .examDraftId(examDraft.getId())
-                .examName(examDraft.getExamName())
-                .grade(examDraft.getGrade())
-                .totalQuestions(examDraft.getTotalQuestions())
-                .selectedUnitCount((int) selectedUnitCount)
-                .build();
+            ExamDraftListResponse.ExamDraftInfo examDraftInfo = new ExamDraftListResponse.ExamDraftInfo(
+                examDraft.getId(),
+                examDraft.getExamName(),
+                examDraft.getGrade(),
+                examDraft.getTotalQuestions(),
+                (int) selectedUnitCount
+            );
             
             examDraftInfos.add(examDraftInfo);
         }
         
         log.info("학년 {} 시험지 초안 목록 조회 완료: {}개", grade, examDraftInfos.size());
         
-        return ExamDraftListResponse.builder()
-            .grade(grade)
-            .examDrafts(examDraftInfos)
-            .totalCount(examDraftInfos.size())
-            .build();
+        return new ExamDraftListResponse(
+            null, // 전체 목록이므로 학년 정보 없음
+            examDraftInfos,
+            examDraftInfos.size()
+        );
     }
     
     /**
@@ -209,10 +209,10 @@ public class ExamDraftService {
         List<ExamDraftDetailResponse.UnitInfo> unitInfos = new ArrayList<>();
         for (ExamSelectedUnit selectedUnit : selectedUnits) {
             Unit unit = selectedUnit.getUnit();
-            ExamDraftDetailResponse.UnitInfo unitInfo = ExamDraftDetailResponse.UnitInfo.builder()
-                .unitId(unit.getId())
-                .unitName(unit.getUnitName())
-                .build();
+            ExamDraftDetailResponse.UnitInfo unitInfo = new ExamDraftDetailResponse.UnitInfo(
+                unit.getId(),
+                unit.getUnitName()
+            );
             unitInfos.add(unitInfo);
         }
         
@@ -223,29 +223,29 @@ public class ExamDraftService {
             Question question = examDraftQuestion.getQuestion();
             Unit unit = question.getUnit();
             
-            ExamDraftDetailResponse.QuestionInfo questionInfo = ExamDraftDetailResponse.QuestionInfo.builder()
-                .seqNo(examDraftQuestion.getSeqNo())
-                .questionId(question.getId())
-                .unitId(unit.getId())
-                .unitName(unit.getUnitName())
-                .difficulty(question.getDifficulty().name())
-                .stem(question.getQuestionTextAsHtml())
-                .points(examDraftQuestion.getPoints())
-                .build();
+            ExamDraftDetailResponse.QuestionInfo questionInfo = new ExamDraftDetailResponse.QuestionInfo(
+                examDraftQuestion.getSeqNo(),
+                question.getId(),
+                unit.getId(),
+                unit.getUnitName(),
+                question.getDifficulty().name(),
+                question.getQuestionTextAsHtml(),
+                examDraftQuestion.getPoints()
+            );
             questionInfos.add(questionInfo);
         }
         
         log.info("시험지 초안 {} 상세 조회 완료: 단원={}개, 문제={}개", 
             examDraftId, unitInfos.size(), questionInfos.size());
         
-        return ExamDraftDetailResponse.builder()
-            .examDraftId(examDraft.getId())
-            .examName(examDraft.getExamName())
-            .grade(examDraft.getGrade())
-            .totalQuestions(examDraft.getTotalQuestions())
-            .units(unitInfos)
-            .questions(questionInfos)
-            .build();
+        return new ExamDraftDetailResponse(
+            examDraft.getId(),
+            examDraft.getExamName(),
+            examDraft.getGrade(),
+            examDraft.getTotalQuestions(),
+            unitInfos,
+            questionInfos
+        );
     }
     
     /**
@@ -257,15 +257,15 @@ public class ExamDraftService {
      */
     @Transactional
     public ExamDraftDetailResponse updateExamDraft(Long examDraftId, ExamDraftUpdateRequest request) {
-        log.info("시험지 초안 {} 수정 요청: 문제={}번 교체", examDraftId, request.getSeqNo());
+        log.info("시험지 초안 {} 수정 요청: 문제={}번 교체", examDraftId, request.seqNo());
         
         // 1단계: 시험지 초안 존재 확인
         ExamDraft examDraft = examDraftRepository.findById(examDraftId)
             .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 시험지 초안입니다: " + examDraftId));
         
         // 2단계: 교체할 문제 조회
-        ExamDraftQuestion currentQuestion = examDraftQuestionRepository.findByExamDraftIdAndSeqNo(examDraftId, request.getSeqNo())
-            .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 문제 번호입니다: " + request.getSeqNo()));
+        ExamDraftQuestion currentQuestion = examDraftQuestionRepository.findByExamDraftIdAndSeqNo(examDraftId, request.seqNo())
+            .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 문제 번호입니다: " + request.seqNo()));
         
         // 3단계: 같은 단원에서 다른 문제 선택
         Question newQuestion = selectRandomQuestionFromUnit(currentQuestion.getQuestion().getUnit().getId(), currentQuestion.getQuestion().getId());
@@ -276,13 +276,13 @@ public class ExamDraftService {
         ExamDraftQuestion newExamDraftQuestion = ExamDraftQuestion.builder()
             .examDraft(examDraft)
             .question(newQuestion)
-            .seqNo(request.getSeqNo())
+            .seqNo(request.seqNo())
             .points(currentQuestion.getPoints())
             .build();
         
         examDraftQuestionRepository.save(newExamDraftQuestion);
         
-        log.info("시험지 초안 {} 문제 교체 완료: {}번 문제", examDraftId, request.getSeqNo());
+        log.info("시험지 초안 {} 문제 교체 완료: {}번 문제", examDraftId, request.seqNo());
         
         // 5단계: 수정된 시험지 초안 상세 정보 반환
         return getExamDraftDetail(examDraftId);
@@ -292,24 +292,24 @@ public class ExamDraftService {
      * 입력값 검증
      */
     private void validateCreateRequest(ExamDraftCreateRequest request) {
-        if (request.getGrade() < 1 || request.getGrade() > 3) {
+        if (request.grade() < 1 || request.grade() > 3) {
             throw new IllegalArgumentException("학년은 1, 2, 3만 가능합니다.");
         }
         
-        if (request.getTotalQuestions() < 1 || request.getTotalQuestions() > 30) {
+        if (request.totalQuestions() < 1 || request.totalQuestions() > 30) {
             throw new IllegalArgumentException("문제 개수는 1~30개만 가능합니다.");
         }
         
-        if (request.getUnitIds().isEmpty()) {
+        if (request.unitIds().isEmpty()) {
             throw new IllegalArgumentException("최소 1개 이상의 단원을 선택해야 합니다.");
         }
         
         // 선택된 단원들의 문제 수 확인
-        long totalAvailableQuestions = questionRepository.countByUnitIdIn(request.getUnitIds());
-        if (totalAvailableQuestions < request.getTotalQuestions()) {
+        long totalAvailableQuestions = questionRepository.countByUnitIdIn(request.unitIds());
+        if (totalAvailableQuestions < request.totalQuestions()) {
             throw new IllegalArgumentException(
                 String.format("선택된 단원들에는 %d문제만 있는데 %d문제를 요청했습니다.", 
-                    totalAvailableQuestions, request.getTotalQuestions()));
+                    totalAvailableQuestions, request.totalQuestions()));
         }
     }
     

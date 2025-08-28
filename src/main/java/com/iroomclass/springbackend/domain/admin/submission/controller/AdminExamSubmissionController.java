@@ -62,7 +62,7 @@ public class AdminExamSubmissionController {
         
         ExamSubmissionListResponse response = adminExamSubmissionService.getExamSubmissions(examId);
         
-        log.info("관리자 - 시험별 제출 목록 조회 성공: 시험={}, 제출={}개", response.getExamName(), response.getTotalCount());
+        log.info("관리자 - 시험별 제출 목록 조회 성공: 시험={}, 제출={}개", response.examName(), response.totalCount());
         
         return ApiResponse.success("성공", response);
     }
@@ -90,7 +90,7 @@ public class AdminExamSubmissionController {
         
         ExamSubmissionDetailResponse response = adminExamSubmissionService.getExamSubmissionDetail(submissionId);
         
-        log.info("관리자 - 시험 제출 상세 조회 성공: 학생={}, 시험={}", response.getStudentName(), response.getExamName());
+        log.info("관리자 - 시험 제출 상세 조회 성공: 학생={}, 시험={}", response.studentName(), response.examName());
         
         return ApiResponse.success("성공", response);
     }

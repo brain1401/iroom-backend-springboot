@@ -52,21 +52,21 @@ public class ExamDocumentService {
      */
     @Transactional
     public ExamDocumentCreateResponse createExamDocuments(ExamDocumentCreateRequest request) {
-        log.info("시험지 문서 생성 요청: 시험지 초안 ID={}", request.getExamDraftId());
+        log.info("시험지 문서 생성 요청: 시험지 초안 ID={}", request.examDraftId());
         
         // 1단계: 시험지 초안 조회
-        ExamDraft examDraft = examDraftRepository.findById(request.getExamDraftId())
-            .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 시험지 초안입니다: " + request.getExamDraftId()));
+        ExamDraft examDraft = examDraftRepository.findById(request.examDraftId())
+            .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 시험지 초안입니다: " + request.examDraftId()));
         
         // 2단계: 기존 문서 삭제 (재생성 시)
-        List<ExamDocument> existingDocuments = examDocumentRepository.findByExamDraftId(request.getExamDraftId());
+        List<ExamDocument> existingDocuments = examDocumentRepository.findByExamDraftId(request.examDraftId());
         if (!existingDocuments.isEmpty()) {
             examDocumentRepository.deleteAll(existingDocuments);
             log.info("기존 시험지 문서 {}개 삭제", existingDocuments.size());
         }
         
         // 3단계: 시험지 초안의 문제들 조회
-        List<ExamDraftQuestion> examDraftQuestions = examDraftQuestionRepository.findByExamDraftIdOrderBySeqNo(request.getExamDraftId());
+        List<ExamDraftQuestion> examDraftQuestions = examDraftQuestionRepository.findByExamDraftIdOrderBySeqNo(request.examDraftId());
         
         if (examDraftQuestions.isEmpty()) {
             throw new IllegalArgumentException("시험지 초안에 문제가 없습니다.");
@@ -92,13 +92,13 @@ public class ExamDocumentService {
         
         log.info("시험지 문서 생성 완료: 답안지, 문제지, 답안 생성됨");
         
-        return ExamDocumentCreateResponse.builder()
-            .examDraftId(examDraft.getId())
-            .examName(examDraft.getExamName())
-            .grade(examDraft.getGrade())
-            .totalQuestions(examDraft.getTotalQuestions())
-            .documentCount(documents.size())
-            .build();
+        return new ExamDocumentCreateResponse(
+            examDraft.getId(),
+            examDraft.getExamName(),
+            examDraft.getGrade(),
+            examDraft.getTotalQuestions(),
+            documents.size()
+        );
     }
     
     /**
@@ -119,24 +119,24 @@ public class ExamDocumentService {
         
         List<ExamDocumentListResponse.DocumentInfo> documentInfos = new ArrayList<>();
         for (ExamDocument document : documents) {
-            ExamDocumentListResponse.DocumentInfo documentInfo = ExamDocumentListResponse.DocumentInfo.builder()
-                .documentId(document.getId())
-                .documentType(document.getDocumentType().name())
-                .documentTypeName(getDocumentTypeName(document.getDocumentType()))
-                .qrCodeUrl(document.getQrCodeUrl())
-                .build();
+            ExamDocumentListResponse.DocumentInfo documentInfo = new ExamDocumentListResponse.DocumentInfo(
+                document.getId(),
+                document.getDocumentType().name(),
+                document.getDocumentType().name(),
+                document.getQrCodeUrl()
+            );
             documentInfos.add(documentInfo);
         }
         
         log.info("시험지 초안 {} 문서 목록 조회 완료: {}개", examDraftId, documentInfos.size());
         
-        return ExamDocumentListResponse.builder()
-            .examDraftId(examDraft.getId())
-            .examName(examDraft.getExamName())
-            .grade(examDraft.getGrade())
-            .documents(documentInfos)
-            .totalCount(documentInfos.size())
-            .build();
+        return new ExamDocumentListResponse(
+            examDraft.getId(),
+            examDraft.getExamName(),
+            examDraft.getGrade(),
+            documentInfos,
+            documentInfos.size()
+        );
     }
     
     /**
@@ -155,16 +155,16 @@ public class ExamDocumentService {
         
         log.info("시험지 문서 {} 상세 조회 완료: 타입={}", documentId, document.getDocumentType());
         
-        return ExamDocumentDetailResponse.builder()
-            .documentId(document.getId())
-            .examDraftId(examDraft.getId())
-            .examName(examDraft.getExamName())
-            .grade(examDraft.getGrade())
-            .documentType(document.getDocumentType().name())
-            .documentTypeName(getDocumentTypeName(document.getDocumentType()))
-            .documentContent(document.getDocumentContent())
-            .qrCodeUrl(document.getQrCodeUrl())
-            .build();
+        return new ExamDocumentDetailResponse(
+            document.getId(),
+            examDraft.getId(),
+            examDraft.getExamName(),
+            examDraft.getGrade(),
+            document.getDocumentType().name(),
+            document.getDocumentType().name(),
+            document.getDocumentContent(),
+            document.getQrCodeUrl()
+        );
     }
     
     /**

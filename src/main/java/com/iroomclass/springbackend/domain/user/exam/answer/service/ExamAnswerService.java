@@ -56,27 +56,27 @@ public class ExamAnswerService {
     @Transactional
     public ExamAnswerResponse createExamAnswer(ExamAnswerCreateRequest request) {
         log.info("답안 생성 요청: 제출 ID={}, 문제 ID={}, 이미지 URL={}", 
-            request.getExamSubmissionId(), request.getQuestionId(), request.getAnswerImageUrl());
+            request.examSubmissionId(), request.questionId(), request.answerImageUrl());
         
         // 1단계: 시험 제출 존재 확인
-        ExamSubmission examSubmission = examSubmissionRepository.findById(request.getExamSubmissionId())
-            .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 시험 제출입니다: " + request.getExamSubmissionId()));
+        ExamSubmission examSubmission = examSubmissionRepository.findById(request.examSubmissionId())
+            .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 시험 제출입니다: " + request.examSubmissionId()));
         
         // 2단계: 문제 존재 확인
-        Question question = questionRepository.findById(request.getQuestionId())
-            .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 문제입니다: " + request.getQuestionId()));
+        Question question = questionRepository.findById(request.questionId())
+            .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 문제입니다: " + request.questionId()));
         
         // 3단계: 중복 답안 방지
         if (examAnswerRepository.existsByExamSubmissionIdAndQuestionId(
-                request.getExamSubmissionId(), request.getQuestionId())) {
-            throw new IllegalArgumentException("이미 답안이 존재하는 문제입니다: " + request.getQuestionId());
+                request.examSubmissionId(), request.questionId())) {
+            throw new IllegalArgumentException("이미 답안이 존재하는 문제입니다: " + request.questionId());
         }
         
         // 4단계: 답안 생성
         ExamAnswer examAnswer = ExamAnswer.builder()
             .examSubmission(examSubmission)
             .question(question)
-            .answerImageUrl(request.getAnswerImageUrl())
+            .answerImageUrl(request.answerImageUrl())
             .build();
         
         examAnswer = examAnswerRepository.save(examAnswer);
@@ -84,7 +84,7 @@ public class ExamAnswerService {
         // 5단계: AI 이미지 인식 수행
         try {
             AiImageRecognitionService.AiRecognitionResult recognitionResult = 
-                aiImageRecognitionService.recognizeTextFromImage(request.getAnswerImageUrl());
+                aiImageRecognitionService.recognizeTextFromImage(request.answerImageUrl());
             
             examAnswer.updateAnswerText(recognitionResult.getRecognizedText());
             examAnswer = examAnswerRepository.save(examAnswer);
@@ -143,19 +143,19 @@ public class ExamAnswerService {
      */
     @Transactional
     public ExamAnswerResponse updateExamAnswer(ExamAnswerUpdateRequest request) {
-        log.info("답안 수정 요청: 답안 ID={}, 수정된 답안={}", request.getAnswerId(), request.getAnswerText());
+        log.info("답안 수정 요청: 답안 ID={}, 수정된 답안={}", request.answerId(), request.answerText());
         
-        ExamAnswer examAnswer = examAnswerRepository.findById(request.getAnswerId())
-            .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 답안입니다: " + request.getAnswerId()));
+        ExamAnswer examAnswer = examAnswerRepository.findById(request.answerId())
+            .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 답안입니다: " + request.answerId()));
         
         // 1단계: 답안 텍스트 업데이트
-        examAnswer.updateAnswerText(request.getAnswerText());
+        examAnswer.updateAnswerText(request.answerText());
         
         // 2단계: 정답 여부 다시 확인
         Question question = examAnswer.getQuestion();
         if (question != null) {
             String correctAnswer = question.getAnswerKey();
-            String studentAnswer = request.getAnswerText();
+            String studentAnswer = request.answerText();
             
             // 정답 비교 (공백 제거 후 비교)
             boolean isCorrect = correctAnswer != null && 
@@ -269,30 +269,30 @@ public class ExamAnswerService {
     @Transactional
     public ExamAnswerSheetProcessResponse processAnswerSheet(ExamAnswerSheetCreateRequest request) {
         log.info("답안지 전체 촬영 처리 시작: examSubmissionId={}, 이미지 개수={}", 
-            request.getExamSubmissionId(), request.getAnswerSheetImageUrls().size());
+            request.examSubmissionId(), request.answerSheetImageUrls().size());
         
         // 1단계: 시험 제출 정보 조회
-        ExamSubmission examSubmission = examSubmissionRepository.findById(request.getExamSubmissionId())
-            .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 시험 제출입니다: " + request.getExamSubmissionId()));
+        ExamSubmission examSubmission = examSubmissionRepository.findById(request.examSubmissionId())
+            .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 시험 제출입니다: " + request.examSubmissionId()));
         
         // 2단계: AI 이미지 인식 수행
         List<RecognizedAnswer> recognizedAnswers = aiImageRecognitionService.recognizeAnswersFromSheet(
-            request.getAnswerSheetImageUrls()
+            request.answerSheetImageUrls()
         );
         
         // 3단계: 인식된 답안들을 DB에 저장
         List<ExamAnswer> createdAnswers = new ArrayList<>();
         for (RecognizedAnswer recognizedAnswer : recognizedAnswers) {
             // 해당 문제 조회
-            Question question = questionRepository.findById(recognizedAnswer.getQuestionNumber().longValue())
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 문제입니다: " + recognizedAnswer.getQuestionNumber()));
+            Question question = questionRepository.findById(recognizedAnswer.questionNumber().longValue())
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 문제입니다: " + recognizedAnswer.questionNumber()));
             
             // 답안 생성
             ExamAnswer examAnswer = ExamAnswer.builder()
                 .examSubmission(examSubmission)
                 .question(question)
-                .answerImageUrl(request.getAnswerSheetImageUrls().get(0)) // 첫 번째 이미지 URL 사용
-                .answerText(recognizedAnswer.getRecognizedAnswer())
+                .answerImageUrl(request.answerSheetImageUrls().get(0)) // 첫 번째 이미지 URL 사용
+                .answerText(recognizedAnswer.recognizedAnswer())
                 .isCorrect(false) // 아직 정답 여부 확인 안됨
                 .score(0) // 아직 점수 계산 안됨
                 .build();
@@ -307,15 +307,15 @@ public class ExamAnswerService {
             .collect(Collectors.toList());
         
         log.info("답안지 전체 촬영 처리 완료: examSubmissionId={}, 생성된 답안 개수={}", 
-            request.getExamSubmissionId(), createdAnswers.size());
+            request.examSubmissionId(), createdAnswers.size());
         
-        return ExamAnswerSheetProcessResponse.builder()
-            .processedImageCount(request.getAnswerSheetImageUrls().size())
-            .createdAnswerCount(createdAnswers.size())
-            .answers(answerResponses)
-            .status("COMPLETED")
-            .message("답안지 처리가 완료되었습니다. 각 문제별 답안을 확인해주세요.")
-            .build();
+        return new ExamAnswerSheetProcessResponse(
+            request.answerSheetImageUrls().size(),
+            createdAnswers.size(),
+            answerResponses,
+            "COMPLETED",
+            "답안지 처리가 완료되었습니다. 각 문제별 답안을 확인해주세요."
+        );
     }
     
     /**

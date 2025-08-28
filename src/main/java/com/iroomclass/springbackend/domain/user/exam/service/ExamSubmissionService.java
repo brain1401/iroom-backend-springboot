@@ -44,25 +44,25 @@ public class ExamSubmissionService {
     @Transactional
     public ExamSubmissionCreateResponse createExamSubmission(ExamSubmissionCreateRequest request) {
         log.info("시험 제출 생성 요청: 시험={}, 학생={}, 전화번호={}", 
-            request.getExamId(), request.getStudentName(), request.getStudentPhone());
+            request.examId(), request.studentName(), request.studentPhone());
         
         // 1단계: 시험 존재 확인
-        Exam exam = examRepository.findById(request.getExamId())
-            .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 시험입니다: " + request.getExamId()));
+        Exam exam = examRepository.findById(request.examId())
+            .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 시험입니다: " + request.examId()));
         
         // 2단계: 중복 제출 방지
         if (examSubmissionRepository.existsByExamIdAndStudentNameAndStudentPhone(
-                request.getExamId(), request.getStudentName(), request.getStudentPhone())) {
+                request.examId(), request.studentName(), request.studentPhone())) {
             throw new IllegalArgumentException("이미 제출한 시험입니다.");
         }
         
         // 3단계: 학생 정보 확인 및 등록
-        User user = userRepository.findByNameAndPhone(request.getStudentName(), request.getStudentPhone())
+        User user = userRepository.findByNameAndPhone(request.studentName(), request.studentPhone())
             .orElseGet(() -> {
-                log.info("새로운 학생 등록: 이름={}, 전화번호={}", request.getStudentName(), request.getStudentPhone());
+                log.info("새로운 학생 등록: 이름={}, 전화번호={}", request.studentName(), request.studentPhone());
                 User newUser = User.builder()
-                    .name(request.getStudentName())
-                    .phone(request.getStudentPhone())
+                    .name(request.studentName())
+                    .phone(request.studentPhone())
                     .build();
                 return userRepository.save(newUser);
             });
@@ -70,24 +70,24 @@ public class ExamSubmissionService {
         // 4단계: 시험 제출 생성
         ExamSubmission submission = ExamSubmission.builder()
             .exam(exam)
-            .studentName(request.getStudentName())
-            .studentPhone(request.getStudentPhone())
+            .studentName(request.studentName())
+            .studentPhone(request.studentPhone())
             .build();
         
         submission = examSubmissionRepository.save(submission);
         
         log.info("시험 제출 생성 완료: ID={}, 학생={}, 시험={}, 사용자ID={}", 
-            submission.getId(), request.getStudentName(), exam.getExamName(), user.getId());
+            submission.getId(), request.studentName(), exam.getExamName(), user.getId());
         
-        return ExamSubmissionCreateResponse.builder()
-            .submissionId(submission.getId())
-            .examId(exam.getId())
-            .examName(exam.getExamName())
-            .studentName(submission.getStudentName())
-            .studentPhone(submission.getStudentPhone())
-            .submittedAt(submission.getSubmittedAt())
-            .qrCodeUrl(exam.getQrCodeUrl())
-            .build();
+        return new ExamSubmissionCreateResponse(
+            submission.getId(),
+            exam.getId(),
+            exam.getExamName(),
+            submission.getStudentName(),
+            submission.getStudentPhone(),
+            submission.getSubmittedAt(),
+            exam.getQrCodeUrl()
+        );
     }
     
     /**
@@ -117,14 +117,14 @@ public class ExamSubmissionService {
         log.info("시험 최종 제출 완료: 제출 ID={}, 학생={}, 답안 수={}", 
             submission.getId(), submission.getStudentName(), answerCount);
         
-        return ExamSubmissionCreateResponse.builder()
-            .submissionId(submission.getId())
-            .examId(submission.getExam().getId())
-            .examName(submission.getExam().getExamName())
-            .studentName(submission.getStudentName())
-            .studentPhone(submission.getStudentPhone())
-            .submittedAt(submission.getSubmittedAt())
-            .qrCodeUrl(submission.getExam().getQrCodeUrl())
-            .build();
+        return new ExamSubmissionCreateResponse(
+            submission.getId(),
+            submission.getExam().getId(),
+            submission.getExam().getExamName(),
+            submission.getStudentName(),
+            submission.getStudentPhone(),
+            submission.getSubmittedAt(),
+            submission.getExam().getQrCodeUrl()
+        );
     }
 }

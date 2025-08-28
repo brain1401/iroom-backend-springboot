@@ -59,7 +59,7 @@ public class UnitController {
         
         UnitListResponse response = unitService.getUnitsByGrade(grade);
         
-        log.info("학년 {} 단원 목록 조회 성공: {}개 단원", grade, response.getTotalUnits());
+        log.info("학년 {} 단원 목록 조회 성공: {}개 단원", grade, response.totalUnits());
         
         return ApiResponse.success("학년별 단원 목록 조회 성공", response);
     }
@@ -87,7 +87,7 @@ public class UnitController {
         
         UnitStatisticsResponse response = unitService.getUnitStatisticsByGrade(grade);
         
-        log.info("학년 {} 단원 통계 조회 성공: {}개 단원", grade, response.getTotalStat().getTotalUnits());
+        log.info("학년 {} 단원 통계 조회 성공: {}개 단원", grade, response.totalStat().totalUnits());
         
         return ApiResponse.success("학년별 단원 통계 조회 성공", response);
     }

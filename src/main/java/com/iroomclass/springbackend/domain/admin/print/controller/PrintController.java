@@ -17,6 +17,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 @Slf4j
 @RestController
@@ -28,6 +29,7 @@ public class PrintController {
     private final PrintService printService;
 
     @GetMapping("/exam/{examDraftId}/documents")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "인쇄 가능한 문서 목록 조회", description = "해당 시험지 초안의 인쇄 가능한 문서 목록을 조회합니다.")
     @io.swagger.v3.oas.annotations.responses.ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "✅ 문서 목록 조회 성공", content = @Content(schema = @Schema(implementation = PrintableDocumentResponse.class))),
@@ -40,12 +42,13 @@ public class PrintController {
 
         PrintableDocumentResponse response = printService.getPrintableDocuments(examDraftId);
         log.info("인쇄 가능한 문서 목록 조회 성공: examDraftId={}, documentCount={}",
-                examDraftId, response.getDocuments().size());
+                examDraftId, response.documents().size());
 
         return ApiResponse.success("인쇄 가능한 문서 목록 조회 성공", response);
     }
 
     @PostMapping("/exam/print")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "문서 인쇄 요청", description = "선택된 문서들을 PDF로 생성하여 인쇄합니다.")
     @io.swagger.v3.oas.annotations.responses.ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "✅ 인쇄 요청 성공 - PDF 생성 완료", content = @Content(schema = @Schema(implementation = PrintResponse.class))),
@@ -56,16 +59,17 @@ public class PrintController {
             @Valid @RequestBody PrintRequest request) {
 
         log.info("문서 인쇄 요청: examDraftId={}, documentTypes={}",
-                request.getExamDraftId(), request.getDocumentTypes());
+                request.examDraftId(), request.documentTypes());
 
         PrintResponse response = printService.processPrintRequest(request);
         log.info("문서 인쇄 요청 성공: examDraftId={}, printJobId={}, fileName={}",
-                request.getExamDraftId(), response.getPrintJobId(), response.getFileName());
+                request.examDraftId(), response.printJobId(), response.fileName());
 
         return ApiResponse.success("문서 인쇄 요청 성공", response);
     }
 
     @GetMapping("/download/{printJobId}")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "PDF 다운로드", description = "생성된 PDF 파일을 다운로드합니다.")
     @io.swagger.v3.oas.annotations.responses.ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "✅ PDF 다운로드 성공 - 파일 다운로드 시작"),

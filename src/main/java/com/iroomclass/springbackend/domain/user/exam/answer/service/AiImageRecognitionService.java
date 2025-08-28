@@ -76,7 +76,7 @@ public class AiImageRecognitionService {
         }
         
         // 문제 번호별로 정렬
-        allAnswers.sort(Comparator.comparing(RecognizedAnswer::getQuestionNumber));
+        allAnswers.sort(Comparator.comparing(RecognizedAnswer::questionNumber));
         
         log.info("답안지 전체 인식 완료: 총 {}개 답안 인식", allAnswers.size());
         return allAnswers;
@@ -100,12 +100,9 @@ public class AiImageRecognitionService {
             int questionNumber = baseQuestionNumber + i;
             if (questionNumber <= 20) { // 최대 20문제
                 String recognizedAnswer = generateRandomAnswer();
+                double confidenceScore = 0.9;
                 
-                RecognizedAnswer answer = RecognizedAnswer.builder()
-                    .questionNumber(questionNumber)
-                    .recognizedAnswer(recognizedAnswer)
-                    .confidenceScore(0.85 + (Math.random() * 0.15)) // 85-100% 신뢰도
-                    .build();
+                RecognizedAnswer answer = new RecognizedAnswer(questionNumber, recognizedAnswer, confidenceScore);
                 
                 answers.add(answer);
             }

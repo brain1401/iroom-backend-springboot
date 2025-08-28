@@ -50,30 +50,30 @@ public class UnitService {
                 // 각 단원의 문제 수 조회
                 long questionCount = questionRepository.countByUnitId(unit.getId());
                 
-                return UnitListResponse.UnitInfo.builder()
-                    .unitId(unit.getId())
-                    .unitName(unit.getUnitName())
-                    .description(unit.getDescription())
-                    .displayOrder(unit.getDisplayOrder())
-                    .questionCount((int) questionCount)
-                    .build();
+                return new UnitListResponse.UnitInfo(
+                    unit.getId(),
+                    unit.getUnitName(),
+                    unit.getDescription(),
+                    unit.getDisplayOrder(),
+                    (int) questionCount
+                );
             })
             .collect(Collectors.toList());
         
         // 3단계: 전체 통계 계산
         int totalUnits = unitInfos.size();
         int totalQuestions = unitInfos.stream()
-            .mapToInt(UnitListResponse.UnitInfo::getQuestionCount)
+            .mapToInt(UnitListResponse.UnitInfo::questionCount)
             .sum();
         
         log.info("학년 {} 단원 목록 조회 완료: {}개 단원, {}개 문제", grade, totalUnits, totalQuestions);
         
-        return UnitListResponse.builder()
-            .grade(grade)
-            .units(unitInfos)
-            .totalUnits(totalUnits)
-            .totalQuestions(totalQuestions)
-            .build();
+        return new UnitListResponse(
+            grade,
+            unitInfos,
+            unitInfos.size(),
+            totalQuestions
+        );
     }
     
     /**
@@ -96,49 +96,57 @@ public class UnitService {
                 
                 // 난이도별 문제 수 (실제로는 Question 엔티티에 difficulty 필드가 있어야 함)
                 // 현재는 임시로 0으로 설정
-                UnitStatisticsResponse.DifficultyCount difficultyCount = 
-                    UnitStatisticsResponse.DifficultyCount.builder()
-                        .easy(0)
-                        .medium(0)
-                        .hard(0)
-                        .build();
+                int easyCount = 0;
+                int mediumCount = 0;
+                int hardCount = 0;
                 
-                return UnitStatisticsResponse.UnitStat.builder()
-                    .unitId(unit.getId())
-                    .unitName(unit.getUnitName())
-                    .totalQuestions((int) totalQuestions)
-                    .difficultyCount(difficultyCount)
-                    .build();
+                UnitStatisticsResponse.DifficultyCount difficultyCount = 
+                    new UnitStatisticsResponse.DifficultyCount(
+                        easyCount,
+                        mediumCount,
+                        hardCount
+                    );
+                
+                return new UnitStatisticsResponse.UnitStat(
+                    unit.getId(),
+                    unit.getUnitName(),
+                    (int) totalQuestions,
+                    difficultyCount
+                );
             })
             .collect(Collectors.toList());
         
         // 3단계: 전체 통계 계산
         int totalUnits = unitStats.size();
         int totalQuestions = unitStats.stream()
-            .mapToInt(UnitStatisticsResponse.UnitStat::getTotalQuestions)
+            .mapToInt(UnitStatisticsResponse.UnitStat::totalQuestions)
             .sum();
         
         // 전체 난이도별 문제 수 (현재는 모두 0)
+        int totalEasyCount = 0;
+        int totalMediumCount = 0; 
+        int totalHardCount = 0;
+        
         UnitStatisticsResponse.DifficultyCount totalDifficultyCount = 
-            UnitStatisticsResponse.DifficultyCount.builder()
-                .easy(0)
-                .medium(0)
-                .hard(0)
-                .build();
+            new UnitStatisticsResponse.DifficultyCount(
+                        totalEasyCount,
+                        totalMediumCount,
+                        totalHardCount
+                    );
         
         UnitStatisticsResponse.TotalStat totalStat = 
-            UnitStatisticsResponse.TotalStat.builder()
-                .totalUnits(totalUnits)
-                .totalQuestions(totalQuestions)
-                .difficultyCount(totalDifficultyCount)
-                .build();
+            new UnitStatisticsResponse.TotalStat(
+                unitStats.size(),
+                totalQuestions,
+                totalDifficultyCount
+            );
         
         log.info("학년 {} 단원 통계 조회 완료: {}개 단원, {}개 문제", grade, totalUnits, totalQuestions);
         
-        return UnitStatisticsResponse.builder()
-            .grade(grade)
-            .unitStats(unitStats)
-            .totalStat(totalStat)
-            .build();
+        return new UnitStatisticsResponse(
+            grade,
+            unitStats,
+            totalStat
+        );
     }
 }

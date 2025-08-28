@@ -51,25 +51,13 @@ public class AdminExamSubmissionService {
         
         List<ExamSubmissionListResponse.SubmissionInfo> submissionInfos = new ArrayList<>();
         for (ExamSubmission submission : submissions) {
-            ExamSubmissionListResponse.SubmissionInfo submissionInfo = ExamSubmissionListResponse.SubmissionInfo.builder()
-                .submissionId(submission.getId())
-                .studentName(submission.getStudentName())
-                .studentPhone(submission.getStudentPhone())
-                .submittedAt(submission.getSubmittedAt())
-                .totalScore(submission.getTotalScore())
-                .build();
+            ExamSubmissionListResponse.SubmissionInfo submissionInfo = new ExamSubmissionListResponse.SubmissionInfo(submission.getId(), submission.getStudentName(), submission.getStudentPhone(), submission.getSubmittedAt(), submission.getTotalScore());
             submissionInfos.add(submissionInfo);
         }
         
         log.info("관리자 - 시험별 제출 목록 조회 완료: 시험={}, 제출={}개", exam.getExamName(), submissionInfos.size());
         
-        return ExamSubmissionListResponse.builder()
-            .examId(exam.getId())
-            .examName(exam.getExamName())
-            .grade(exam.getGrade() + "학년")
-            .submissions(submissionInfos)
-            .totalCount(submissionInfos.size())
-            .build();
+        return new ExamSubmissionListResponse(exam.getId(), exam.getExamName(), exam.getGrade() + "학년", submissionInfos, submissionInfos.size());
     }
     
     /**
@@ -88,17 +76,7 @@ public class AdminExamSubmissionService {
         
         log.info("관리자 - 시험 제출 상세 조회 완료: 학생={}, 시험={}", submission.getStudentName(), exam.getExamName());
         
-        return ExamSubmissionDetailResponse.builder()
-            .submissionId(submission.getId())
-            .examId(exam.getId())
-            .examName(exam.getExamName())
-            .grade(exam.getGrade() + "학년")
-            .studentName(submission.getStudentName())
-            .studentPhone(submission.getStudentPhone())
-            .submittedAt(submission.getSubmittedAt())
-            .totalScore(submission.getTotalScore())
-            .qrCodeUrl(exam.getQrCodeUrl())
-            .build();
+        return new ExamSubmissionDetailResponse(submission.getId(), exam.getId(), exam.getExamName(), exam.getGrade() + "학년", submission.getStudentName(), submission.getStudentPhone(), submission.getSubmittedAt(), submission.getTotalScore(), exam.getQrCodeUrl());
     }
     
     /**
@@ -116,17 +94,7 @@ public class AdminExamSubmissionService {
         List<ExamSubmissionDetailResponse> submissionDetails = new ArrayList<>();
         for (ExamSubmission submission : submissions) {
             Exam exam = submission.getExam();
-            ExamSubmissionDetailResponse detail = ExamSubmissionDetailResponse.builder()
-                .submissionId(submission.getId())
-                .examId(exam.getId())
-                .examName(exam.getExamName())
-                .grade(exam.getGrade() + "학년")
-                .studentName(submission.getStudentName())
-                .studentPhone(submission.getStudentPhone())
-                .submittedAt(submission.getSubmittedAt())
-                .totalScore(submission.getTotalScore())
-                .qrCodeUrl(exam.getQrCodeUrl())
-                .build();
+            ExamSubmissionDetailResponse detail = new ExamSubmissionDetailResponse(submission.getId(), exam.getId(), exam.getExamName(), exam.getGrade() + "학년", submission.getStudentName(), submission.getStudentPhone(), submission.getSubmittedAt(), submission.getTotalScore(), exam.getQrCodeUrl());
             submissionDetails.add(detail);
         }
         

@@ -48,7 +48,7 @@ public class DashboardController {
         
         GradeSubmissionStatusResponse response = dashboardService.getGradeSubmissionStatus(grade);
         
-        log.info("학년별 시험 제출 현황 조회 완료: 학년={}, 시험 수={}", grade, response.getTotalExamCount());
+        log.info("학년별 시험 제출 현황 조회 완료: 학년={}, 시험 수={}", grade, response.totalExamCount());
         
         return ApiResponse.success("학년별 시험 제출 현황 조회 성공", response);
     }
@@ -71,7 +71,7 @@ public class DashboardController {
         
         GradeScoreDistributionResponse response = dashboardService.getGradeScoreDistribution(grade);
         
-        log.info("학년별 성적 분포도 조회 완료: 학년={}, 전체 학생 수={}", grade, response.getTotalStudentCount());
+        log.info("학년별 성적 분포도 조회 완료: 학년={}, 전체 학생 수={}", grade, response.totalStudentCount());
         
         return ApiResponse.success("학년별 성적 분포도 조회 성공", response);
     }

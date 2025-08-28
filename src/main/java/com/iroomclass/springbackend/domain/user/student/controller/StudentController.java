@@ -65,7 +65,7 @@ public class StudentController {
         StudentSubmissionHistoryResponse response = studentService.getSubmissionHistory(studentName, studentPhone);
         
         log.info("학생 시험 제출 이력 조회 성공: 이름={}, 제출 수={}", 
-            response.getStudentName(), response.getSubmissions().size());
+            response.studentName(), response.submissions().size());
         
         return ApiResponse.success("성공", response);
     }
@@ -101,7 +101,7 @@ public class StudentController {
         ExamResultDetailResponse response = studentService.getExamResult(submissionId, studentName, studentPhone);
         
         log.info("시험 상세 결과 조회 성공: 제출 ID={}, 학생={}, 총점={}", 
-            submissionId, response.getStudentName(), response.getTotalScore());
+            submissionId, response.studentName(), response.totalScore());
         
         return ApiResponse.success("성공", response);
     }
@@ -140,7 +140,7 @@ public class StudentController {
         QuestionResultResponse response = studentService.getQuestionResult(submissionId, questionId, studentName, studentPhone);
         
         log.info("문제별 결과 조회 성공: 제출 ID={}, 문제 ID={}, 정답 여부={}, 점수={}", 
-            submissionId, questionId, response.getIsCorrect(), response.getScore());
+            submissionId, questionId, response.isCorrect(), response.score());
         
         return ApiResponse.success("성공", response);
     }

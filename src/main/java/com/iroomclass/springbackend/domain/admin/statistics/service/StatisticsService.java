@@ -54,12 +54,12 @@ public class StatisticsService {
         log.info("학년별 통계 조회 완료: 학년={}, 최근 시험 수={}, 오답률 높은 단원 수={}", 
             grade, recentExams.size(), highErrorRateUnits.size());
         
-        return GradeStatisticsResponse.builder()
-            .grade(grade)
-            .gradeName("중" + grade)
-            .recentExamAverages(recentExamAverages)
-            .highErrorRateUnits(highErrorRateUnits)
-            .build();
+        return new GradeStatisticsResponse(
+            grade,
+            "중" + grade,
+            recentExamAverages,
+            highErrorRateUnits
+        );
     }
 
     /**
@@ -74,13 +74,13 @@ public class StatisticsService {
             
             if (submissions.isEmpty()) {
                 // 제출이 없는 경우 0점으로 처리
-                averages.add(GradeStatisticsResponse.RecentExamAverage.builder()
-                    .examId(exam.getId())
-                    .examName(exam.getExamName())
-                    .averageScore(0.0)
-                    .studentCount(0)
-                    .examDate(exam.getCreatedAt().format(DateTimeFormatter.ofPattern("yyyy-MM-dd")))
-                    .build());
+                averages.add(new GradeStatisticsResponse.RecentExamAverage(
+                    exam.getId(),
+                    exam.getExamName(),
+                    0.0,
+                    0,
+                    exam.getCreatedAt().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
+                ));
                 continue;
             }
             
@@ -91,13 +91,13 @@ public class StatisticsService {
             
             if (validSubmissions.isEmpty()) {
                 // 유효한 성적이 없는 경우 0점으로 처리
-                averages.add(GradeStatisticsResponse.RecentExamAverage.builder()
-                    .examId(exam.getId())
-                    .examName(exam.getExamName())
-                    .averageScore(0.0)
-                    .studentCount(submissions.size())
-                    .examDate(exam.getCreatedAt().format(DateTimeFormatter.ofPattern("yyyy-MM-dd")))
-                    .build());
+                averages.add(new GradeStatisticsResponse.RecentExamAverage(
+                    exam.getId(),
+                    exam.getExamName(),
+                    0.0,
+                    submissions.size(),
+                    exam.getCreatedAt().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
+                ));
                 continue;
             }
             
@@ -107,13 +107,13 @@ public class StatisticsService {
                 .average()
                 .orElse(0.0);
             
-            averages.add(GradeStatisticsResponse.RecentExamAverage.builder()
-                .examId(exam.getId())
-                .examName(exam.getExamName())
-                .averageScore(Math.round(averageScore * 10.0) / 10.0) // 소수점 첫째자리까지
-                .studentCount(validSubmissions.size())
-                .examDate(exam.getCreatedAt().format(DateTimeFormatter.ofPattern("yyyy-MM-dd")))
-                .build());
+            averages.add(new GradeStatisticsResponse.RecentExamAverage(
+                exam.getId(),
+                exam.getExamName(),
+                Math.round(averageScore * 10.0) / 10.0, // 소수점 첫째자리까지
+                validSubmissions.size(),
+                exam.getCreatedAt().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
+            ));
         }
         
         return averages;
@@ -174,17 +174,17 @@ public class StatisticsService {
                 double errorRate = stats.totalQuestions > 0 ? 
                     (double) stats.wrongAnswers / stats.totalQuestions * 100 : 0.0;
                 
-                return GradeStatisticsResponse.HighErrorRateUnit.builder()
-                    .unitId(unitId)
-                    .unitName(stats.unitName)
-                    .totalQuestions(stats.totalQuestions)
-                    .incorrectAnswers(stats.wrongAnswers)
-                    .correctAnswers(stats.totalQuestions - stats.wrongAnswers)
-                    .errorRate(Math.round(errorRate * 10.0) / 10.0) // 소수점 첫째자리까지
-                    .build();
+                return new GradeStatisticsResponse.HighErrorRateUnit(
+                    unitId,
+                    stats.unitName,
+                    Math.round(errorRate * 10.0) / 10.0, // 소수점 첫째자리까지
+                    stats.totalQuestions,
+                    stats.wrongAnswers,
+                    stats.totalQuestions - stats.wrongAnswers
+                );
             })
-            .filter(unit -> unit.getTotalQuestions() > 0) // 문제가 있는 단원만
-            .sorted(Comparator.comparing(GradeStatisticsResponse.HighErrorRateUnit::getErrorRate).reversed())
+            .filter(unit -> unit.totalQuestions() > 0) // 문제가 있는 단원만
+            .sorted(Comparator.comparing(GradeStatisticsResponse.HighErrorRateUnit::errorRate).reversed())
             .limit(5) // 상위 5개만
             .collect(Collectors.toList());
         
