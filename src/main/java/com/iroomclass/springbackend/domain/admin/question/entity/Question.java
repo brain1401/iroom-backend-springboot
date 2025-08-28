@@ -44,7 +44,7 @@ import java.util.Map;
 @Slf4j
 public class Question {
     
-    private static final ObjectMapper objectMapper = new ObjectMapper();
+
     
     /**
      * 문제 고유 ID
@@ -72,9 +72,8 @@ public class Question {
     private Difficulty difficulty;
 
     /**
-     * 문제 내용 (JSON 형태)
-     * 주관식 문제 내용을 JSON 형태로 저장
-     * 예시: [{"type": "paragraph", "content": [{"type": "text", "value": "연립부등식 "}, {"type": "latex", "value": "\\begin{cases}..."}]}]
+     * 문제 내용 (일반 텍스트)
+     * 주관식 문제 내용을 텍스트로 저장
      */
     @Column(columnDefinition = "TEXT", nullable = false)
     private String questionText;
@@ -95,51 +94,31 @@ public class Question {
     private String image;
 
     /**
-     * JSON 형태의 questionText를 HTML로 변환
+     * 문제 내용을 HTML로 변환
      * 
      * @return HTML 형태의 문제 내용
      */
     public String getQuestionTextAsHtml() {
-        try {
-            List<Map<String, Object>> questionData = objectMapper.readValue(questionText, new TypeReference<List<Map<String, Object>>>() {});
-            StringBuilder html = new StringBuilder();
-            
-            for (Map<String, Object> block : questionData) {
-                String type = (String) block.get("type");
-                List<Map<String, Object>> content = (List<Map<String, Object>>) block.get("content");
-                
-                if ("paragraph".equals(type)) {
-                    html.append("<p>");
-                    for (Map<String, Object> item : content) {
-                        String itemType = (String) item.get("type");
-                        String value = (String) item.get("value");
-                        
-                        if ("text".equals(itemType)) {
-                            html.append(value);
-                        } else if ("latex".equals(itemType)) {
-                            html.append("$").append(value).append("$");
-                        }
-                    }
-                    html.append("</p>");
-                }
-            }
-            
-            // 이미지가 있으면 문제 내용 아래에 추가
-            List<String> imageUrls = getImageUrls();
-            if (!imageUrls.isEmpty()) {
-                html.append("<div style='margin-top: 15px;'>");
-                for (String imageUrl : imageUrls) {
-                    html.append("<img src='").append(imageUrl).append("' alt='문제 이미지' style='max-width: 100%; height: auto; margin: 10px 0;'/>");
-                }
-                html.append("</div>");
-            }
-            
-            return html.toString();
-            
-        } catch (JsonProcessingException e) {
-            log.error("JSON 파싱 오류: {}", e.getMessage(), e);
-            return questionText; // JSON 파싱 실패 시 원본 반환
+        StringBuilder html = new StringBuilder();
+        
+        // 문제 텍스트를 HTML로 변환
+        if (questionText != null && !questionText.trim().isEmpty()) {
+            // 줄바꿈을 <br> 태그로 변환
+            String formattedText = questionText.replace("\n", "<br>");
+            html.append("<p>").append(formattedText).append("</p>");
         }
+        
+        // 이미지가 있으면 문제 내용 아래에 추가
+        List<String> imageUrls = getImageUrls();
+        if (!imageUrls.isEmpty()) {
+            html.append("<div style='margin-top: 15px;'>");
+            for (String imageUrl : imageUrls) {
+                html.append("<img src='").append(imageUrl).append("' alt='문제 이미지' style='max-width: 100%; height: auto; margin: 10px 0;'/>");
+            }
+            html.append("</div>");
+        }
+        
+        return html.toString();
     }
 
     /**
@@ -153,6 +132,7 @@ public class Question {
                 return List.of();
             }
             
+            ObjectMapper objectMapper = new ObjectMapper();
             Map<String, Object> imageData = objectMapper.readValue(image, new TypeReference<Map<String, Object>>() {});
             @SuppressWarnings("unchecked")
             List<String> images = (List<String>) imageData.get("images");
