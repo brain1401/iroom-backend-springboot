@@ -18,7 +18,6 @@ import com.iroomclass.springbackend.domain.admin.exam.repository.ExamDocumentRep
 import com.iroomclass.springbackend.domain.admin.exam.repository.ExamDraftQuestionRepository;
 import com.iroomclass.springbackend.domain.admin.exam.repository.ExamDraftRepository;
 import com.iroomclass.springbackend.domain.admin.print.service.QrCodeGenerationService;
-import com.iroomclass.springbackend.domain.admin.exam.entity.Exam;
 import com.iroomclass.springbackend.domain.admin.exam.repository.ExamRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -37,13 +36,13 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Transactional(readOnly = true)
 public class ExamDocumentService {
-    
+
     private final ExamDraftRepository examDraftRepository;
     private final ExamDocumentRepository examDocumentRepository;
     private final ExamDraftQuestionRepository examDraftQuestionRepository;
     private final QrCodeGenerationService qrCodeGenerationService;
     private final ExamRepository examRepository;
-    
+
     /**
      * 시험지 문서 생성
      * 
@@ -53,54 +52,54 @@ public class ExamDocumentService {
     @Transactional
     public ExamDocumentCreateResponse createExamDocuments(ExamDocumentCreateRequest request) {
         log.info("시험지 문서 생성 요청: 시험지 초안 ID={}", request.examDraftId());
-        
+
         // 1단계: 시험지 초안 조회
         ExamDraft examDraft = examDraftRepository.findById(request.examDraftId())
-            .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 시험지 초안입니다: " + request.examDraftId()));
-        
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 시험지 초안입니다: " + request.examDraftId()));
+
         // 2단계: 기존 문서 삭제 (재생성 시)
         List<ExamDocument> existingDocuments = examDocumentRepository.findByExamDraftId(request.examDraftId());
         if (!existingDocuments.isEmpty()) {
             examDocumentRepository.deleteAll(existingDocuments);
             log.info("기존 시험지 문서 {}개 삭제", existingDocuments.size());
         }
-        
+
         // 3단계: 시험지 초안의 문제들 조회
-        List<ExamDraftQuestion> examDraftQuestions = examDraftQuestionRepository.findByExamDraftIdOrderBySeqNo(request.examDraftId());
-        
+        List<ExamDraftQuestion> examDraftQuestions = examDraftQuestionRepository
+                .findByExamDraftIdOrderBySeqNo(request.examDraftId());
+
         if (examDraftQuestions.isEmpty()) {
             throw new IllegalArgumentException("시험지 초안에 문제가 없습니다.");
         }
-        
+
         // 4단계: 문서 생성
         List<ExamDocument> documents = new ArrayList<>();
-        
+
         // 4-1. 답안지 생성
         ExamDocument answerSheet = createAnswerSheet(examDraft, examDraftQuestions);
         documents.add(answerSheet);
-        
+
         // 4-2. 문제지 생성
         ExamDocument questionPaper = createQuestionPaper(examDraft, examDraftQuestions);
         documents.add(questionPaper);
-        
+
         // 4-3. 답안 생성
         ExamDocument answerKey = createAnswerKey(examDraft, examDraftQuestions);
         documents.add(answerKey);
-        
+
         // 5단계: 문서 저장
         examDocumentRepository.saveAll(documents);
-        
+
         log.info("시험지 문서 생성 완료: 답안지, 문제지, 답안 생성됨");
-        
+
         return new ExamDocumentCreateResponse(
-            examDraft.getId(),
-            examDraft.getExamName(),
-            examDraft.getGrade(),
-            examDraft.getTotalQuestions(),
-            documents.size()
-        );
+                examDraft.getId(),
+                examDraft.getExamName(),
+                examDraft.getGrade(),
+                examDraft.getTotalQuestions(),
+                documents.size());
     }
-    
+
     /**
      * 시험지 초안별 문서 목록 조회
      * 
@@ -109,36 +108,34 @@ public class ExamDocumentService {
      */
     public ExamDocumentListResponse getExamDocumentsByDraft(Long examDraftId) {
         log.info("시험지 초안 {} 문서 목록 조회 요청", examDraftId);
-        
+
         // 1단계: 시험지 초안 존재 확인
         ExamDraft examDraft = examDraftRepository.findById(examDraftId)
-            .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 시험지 초안입니다: " + examDraftId));
-        
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 시험지 초안입니다: " + examDraftId));
+
         // 2단계: 문서 목록 조회
         List<ExamDocument> documents = examDocumentRepository.findByExamDraftId(examDraftId);
-        
+
         List<ExamDocumentListResponse.DocumentInfo> documentInfos = new ArrayList<>();
         for (ExamDocument document : documents) {
             ExamDocumentListResponse.DocumentInfo documentInfo = new ExamDocumentListResponse.DocumentInfo(
-                document.getId(),
-                document.getDocumentType().name(),
-                document.getDocumentType().name(),
-                document.getQrCodeUrl()
-            );
+                    document.getId(),
+                    document.getDocumentType().name(),
+                    document.getDocumentType().name(),
+                    document.getQrCodeUrl());
             documentInfos.add(documentInfo);
         }
-        
+
         log.info("시험지 초안 {} 문서 목록 조회 완료: {}개", examDraftId, documentInfos.size());
-        
+
         return new ExamDocumentListResponse(
-            examDraft.getId(),
-            examDraft.getExamName(),
-            examDraft.getGrade(),
-            documentInfos,
-            documentInfos.size()
-        );
+                examDraft.getId(),
+                examDraft.getExamName(),
+                examDraft.getGrade(),
+                documentInfos,
+                documentInfos.size());
     }
-    
+
     /**
      * 시험지 문서 상세 조회
      * 
@@ -147,26 +144,25 @@ public class ExamDocumentService {
      */
     public ExamDocumentDetailResponse getExamDocumentDetail(Long documentId) {
         log.info("시험지 문서 {} 상세 조회 요청", documentId);
-        
+
         ExamDocument document = examDocumentRepository.findById(documentId)
-            .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 시험지 문서입니다: " + documentId));
-        
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 시험지 문서입니다: " + documentId));
+
         ExamDraft examDraft = document.getExamDraft();
-        
+
         log.info("시험지 문서 {} 상세 조회 완료: 타입={}", documentId, document.getDocumentType());
-        
+
         return new ExamDocumentDetailResponse(
-            document.getId(),
-            examDraft.getId(),
-            examDraft.getExamName(),
-            examDraft.getGrade(),
-            document.getDocumentType().name(),
-            document.getDocumentType().name(),
-            document.getDocumentContent(),
-            document.getQrCodeUrl()
-        );
+                document.getId(),
+                examDraft.getId(),
+                examDraft.getExamName(),
+                examDraft.getGrade(),
+                document.getDocumentType().name(),
+                document.getDocumentType().name(),
+                document.getDocumentContent(),
+                document.getQrCodeUrl());
     }
-    
+
     /**
      * 시험지 문서 삭제 (시험지 목록에서 삭제)
      * 
@@ -175,168 +171,178 @@ public class ExamDocumentService {
     @Transactional
     public void deleteExamDocuments(Long examDraftId) {
         log.info("시험지 문서 삭제 요청: 시험지 초안 ID={}", examDraftId);
-        
+
         // 1단계: 시험지 초안 존재 확인
         ExamDraft examDraft = examDraftRepository.findById(examDraftId)
-            .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 시험지 초안입니다: " + examDraftId));
-        
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 시험지 초안입니다: " + examDraftId));
+
         // 2단계: 연관된 모든 문서 삭제
         List<ExamDocument> documents = examDocumentRepository.findByExamDraftId(examDraftId);
-        
+
         if (!documents.isEmpty()) {
             examDocumentRepository.deleteAll(documents);
             log.info("시험지 문서 {}개 삭제 완료: 시험지 초안 ID={}", documents.size(), examDraftId);
         } else {
             log.info("삭제할 시험지 문서가 없습니다: 시험지 초안 ID={}", examDraftId);
         }
-        
+
         // 3단계: 시험지 초안과 관련된 모든 데이터 삭제 (CASCADE로 자동 삭제됨)
         examDraftRepository.delete(examDraft);
         log.info("시험지 초안 및 관련 데이터 삭제 완료: 시험지 초안 ID={}", examDraftId);
     }
-    
+
     /**
      * 답안지 생성
      */
     private ExamDocument createAnswerSheet(ExamDraft examDraft, List<ExamDraftQuestion> questions) {
         StringBuilder content = new StringBuilder();
-        
+
         // 답안지 시작
-        content.append("<div style='font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px;'>");
-        
+        content.append(
+                "<div style='font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px;'>");
+
         // 답안 작성란
         content.append("<div style='margin-top: 30px;'>");
-        
+
         for (ExamDraftQuestion question : questions) {
-            content.append("<div style='margin: 15px 0; border: 1px solid #000; display: flex; align-items: stretch;'>");
-            
+            content.append(
+                    "<div style='margin: 15px 0; border: 1px solid #000; display: flex; align-items: stretch;'>");
+
             // 왼쪽 번호 박스 (회색)
-            content.append("<div style='background-color: #f0f0f0; padding: 15px; border-right: 1px solid #000; display: flex; align-items: center; justify-content: center; min-width: 80px;'>");
+            content.append(
+                    "<div style='background-color: #f0f0f0; padding: 15px; border-right: 1px solid #000; display: flex; align-items: center; justify-content: center; min-width: 80px;'>");
             content.append("<div style='text-align: center; font-weight: bold; font-size: 14px;'>");
             content.append("주 ").append(question.getSeqNo());
             content.append("</div>");
             content.append("</div>");
-            
+
             // 오른쪽 답안 작성 영역 (흰색)
             content.append("<div style='flex: 1; padding: 15px; background-color: white;'>");
-            content.append("<div style='min-height: 50px; border: 1px solid #ddd; padding: 10px; background-color: #f9f9f9;'>");
+            content.append(
+                    "<div style='min-height: 50px; border: 1px solid #ddd; padding: 10px; background-color: #f9f9f9;'>");
             content.append("");
             content.append("</div>");
             content.append("</div>");
-            
+
             content.append("</div>");
         }
-        
+
         content.append("</div>");
         content.append("</div>");
-        
+
         // 답안지용 QR 코드 생성
         String qrCodeUrl = qrCodeGenerationService.generateAnswerSheetQrCodeUrl(examDraft.getId());
         log.info("답안지 QR 코드 생성: examDraftId={}, qrCodeUrl={}", examDraft.getId(), qrCodeUrl);
-        
+
         return ExamDocument.builder()
-            .examDraft(examDraft)
-            .documentType(ExamDocument.DocumentType.ANSWER_SHEET)
-            .documentContent(content.toString())
-            .qrCodeUrl(qrCodeUrl) // 새로 생성한 QR 코드 URL 사용
-            .build();
+                .examDraft(examDraft)
+                .documentType(ExamDocument.DocumentType.ANSWER_SHEET)
+                .documentContent(content.toString())
+                .qrCodeUrl(qrCodeUrl) // 새로 생성한 QR 코드 URL 사용
+                .build();
     }
-    
+
     /**
      * 문제지 생성
      */
     private ExamDocument createQuestionPaper(ExamDraft examDraft, List<ExamDraftQuestion> questions) {
         StringBuilder content = new StringBuilder();
-        
+
         // 문제지 시작
-        content.append("<div style='font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px;'>");
-        
+        content.append(
+                "<div style='font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px;'>");
+
         // 문제들
         content.append("<div style='margin-top: 30px;'>");
-        
+
         for (ExamDraftQuestion question : questions) {
-            content.append("<div style='margin: 25px 0; border: 2px solid #000; display: flex; align-items: stretch;'>");
-            
+            content.append(
+                    "<div style='margin: 25px 0; border: 2px solid #000; display: flex; align-items: stretch;'>");
+
             // 왼쪽 번호 박스 (회색)
-            content.append("<div style='background-color: #f0f0f0; padding: 20px; border-right: 2px solid #000; display: flex; align-items: center; justify-content: center; min-width: 100px;'>");
+            content.append(
+                    "<div style='background-color: #f0f0f0; padding: 20px; border-right: 2px solid #000; display: flex; align-items: center; justify-content: center; min-width: 100px;'>");
             content.append("<div style='text-align: center; font-weight: bold; font-size: 16px;'>");
             content.append("주 ").append(question.getSeqNo());
             content.append("</div>");
             content.append("</div>");
-            
+
             // 오른쪽 문제 내용 영역 (흰색)
             content.append("<div style='flex: 1; padding: 20px; background-color: white;'>");
             content.append("<div style='line-height: 1.6;'>");
-            
+
             // 문제 텍스트를 안전하게 HTML로 변환
             try {
                 String questionHtml = question.getQuestion().getQuestionTextAsHtml();
                 content.append(questionHtml);
             } catch (Exception e) {
-                log.warn("문제 텍스트 HTML 변환 실패, 원본 텍스트 사용: questionId={}, error={}", 
-                    question.getQuestion().getId(), e.getMessage());
+                log.warn("문제 텍스트 HTML 변환 실패, 원본 텍스트 사용: questionId={}, error={}",
+                        question.getQuestion().getId(), e.getMessage());
                 // HTML 변환 실패 시 원본 텍스트를 그대로 사용
                 content.append("<p>").append(question.getQuestion().getQuestionText()).append("</p>");
             }
-            
+
             content.append("</div>");
             content.append("</div>");
-            
+
             content.append("</div>");
         }
-        
+
         content.append("</div>");
         content.append("</div>");
-        
+
         return ExamDocument.builder()
-            .examDraft(examDraft)
-            .documentType(ExamDocument.DocumentType.QUESTION_PAPER)
-            .documentContent(content.toString())
-            .build();
+                .examDraft(examDraft)
+                .documentType(ExamDocument.DocumentType.QUESTION_PAPER)
+                .documentContent(content.toString())
+                .build();
     }
-    
+
     /**
      * 답안 생성
      */
     private ExamDocument createAnswerKey(ExamDraft examDraft, List<ExamDraftQuestion> questions) {
         StringBuilder content = new StringBuilder();
-        
+
         // 답안 시작
-        content.append("<div style='font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px;'>");
-        
+        content.append(
+                "<div style='font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px;'>");
+
         // 답안들
         content.append("<div style='margin-top: 30px;'>");
-        
+
         for (ExamDraftQuestion question : questions) {
-            content.append("<div style='margin: 25px 0; border: 2px solid #000; display: flex; align-items: stretch;'>");
-            
+            content.append(
+                    "<div style='margin: 25px 0; border: 2px solid #000; display: flex; align-items: stretch;'>");
+
             // 왼쪽 번호 박스 (회색)
-            content.append("<div style='background-color: #f0f0f0; padding: 20px; border-right: 2px solid #000; display: flex; align-items: center; justify-content: center; min-width: 100px;'>");
+            content.append(
+                    "<div style='background-color: #f0f0f0; padding: 20px; border-right: 2px solid #000; display: flex; align-items: center; justify-content: center; min-width: 100px;'>");
             content.append("<div style='text-align: center; font-weight: bold; font-size: 16px;'>");
             content.append("주 ").append(question.getSeqNo());
             content.append("</div>");
             content.append("</div>");
-            
+
             // 오른쪽 정답 영역 (흰색)
             content.append("<div style='flex: 1; padding: 20px; background-color: white;'>");
             content.append("<div style='line-height: 1.6;'>");
             content.append("<p>").append(question.getQuestion().getAnswerKey()).append("</p>");
             content.append("</div>");
             content.append("</div>");
-            
+
             content.append("</div>");
         }
-        
+
         content.append("</div>");
         content.append("</div>");
-        
+
         return ExamDocument.builder()
-            .examDraft(examDraft)
-            .documentType(ExamDocument.DocumentType.ANSWER_KEY)
-            .documentContent(content.toString())
-            .build();
+                .examDraft(examDraft)
+                .documentType(ExamDocument.DocumentType.ANSWER_KEY)
+                .documentContent(content.toString())
+                .build();
     }
-    
+
     /**
      * QR 코드 URL 생성
      */
@@ -345,7 +351,7 @@ public class ExamDocumentService {
         // 여기서는 임시 URL을 반환합니다.
         return "https://example.com/qr/" + examDraftId + "/" + UUID.randomUUID().toString();
     }
-    
+
     /**
      * 문서 타입 한글명 반환
      */
