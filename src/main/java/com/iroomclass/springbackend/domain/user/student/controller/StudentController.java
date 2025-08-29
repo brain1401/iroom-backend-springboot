@@ -16,8 +16,6 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
-
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -35,113 +33,96 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Tag(name = "학생 결과 조회", description = "학생 시험 이력 조회, 결과 상세 조회 API")
 public class StudentController {
-    
+
     private final StudentService studentService;
-    
+
     /**
      * 학생별 시험 제출 이력 조회
      * 
-     * @param studentName 학생 이름
+     * @param studentName  학생 이름
      * @param studentPhone 학생 전화번호
      * @return 시험 제출 이력 목록
      */
     @GetMapping("/submissions")
-    @Operation(
-        summary = "학생별 시험 제출 이력 조회",
-        description = "학생의 모든 시험 제출 이력을 조회합니다."
-    )
+    @Operation(summary = "학생별 시험 제출 이력 조회", description = "학생의 모든 시험 제출 이력을 조회합니다.")
     @io.swagger.v3.oas.annotations.responses.ApiResponses({
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "조회 성공"),
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "잘못된 입력값"),
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "존재하지 않는 학생")
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "조회 성공"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "잘못된 입력값"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "존재하지 않는 학생")
     })
     public ApiResponse<StudentSubmissionHistoryResponse> getSubmissionHistory(
-            @Parameter(description = "학생 이름", example = "김철수") 
-            @RequestParam String studentName,
-            @Parameter(description = "학생 전화번호", example = "010-1234-5678") 
-            @RequestParam String studentPhone) {
+            @Parameter(description = "학생 이름", example = "김철수") @RequestParam String studentName,
+            @Parameter(description = "학생 전화번호", example = "010-1234-5678") @RequestParam String studentPhone) {
         log.info("학생 시험 제출 이력 조회 요청: 이름={}, 전화번호={}", studentName, studentPhone);
-        
+
         StudentSubmissionHistoryResponse response = studentService.getSubmissionHistory(studentName, studentPhone);
-        
-        log.info("학생 시험 제출 이력 조회 성공: 이름={}, 제출 수={}", 
-            response.studentName(), response.submissions().size());
-        
+
+        log.info("학생 시험 제출 이력 조회 성공: 이름={}, 제출 수={}",
+                response.studentName(), response.submissions().size());
+
         return ApiResponse.success("성공", response);
     }
-    
+
     /**
      * 시험별 상세 결과 조회
      * 
      * @param submissionId 시험 제출 ID
-     * @param studentName 학생 이름
+     * @param studentName  학생 이름
      * @param studentPhone 학생 전화번호
      * @return 시험 상세 결과
      */
     @GetMapping("/submission/{submissionId}/result")
-    @Operation(
-        summary = "시험별 상세 결과 조회",
-        description = "특정 시험의 상세 결과를 조회합니다."
-    )
+    @Operation(summary = "시험별 상세 결과 조회", description = "특정 시험의 상세 결과를 조회합니다.")
     @io.swagger.v3.oas.annotations.responses.ApiResponses({
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "조회 성공"),
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "잘못된 입력값"),
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "존재하지 않는 제출 또는 학생")
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "조회 성공"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "잘못된 입력값"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "존재하지 않는 제출 또는 학생")
     })
     public ApiResponse<ExamResultDetailResponse> getExamResult(
-            @Parameter(description = "시험 제출 ID", example = "1") 
-            @PathVariable Long submissionId,
-            @Parameter(description = "학생 이름", example = "김철수") 
-            @RequestParam String studentName,
-            @Parameter(description = "학생 전화번호", example = "010-1234-5678") 
-            @RequestParam String studentPhone) {
-        log.info("시험 상세 결과 조회 요청: 제출 ID={}, 학생={}, 전화번호={}", 
-            submissionId, studentName, studentPhone);
-        
+            @Parameter(description = "시험 제출 ID", example = "1") @PathVariable Long submissionId,
+            @Parameter(description = "학생 이름", example = "김철수") @RequestParam String studentName,
+            @Parameter(description = "학생 전화번호", example = "010-1234-5678") @RequestParam String studentPhone) {
+        log.info("시험 상세 결과 조회 요청: 제출 ID={}, 학생={}, 전화번호={}",
+                submissionId, studentName, studentPhone);
+
         ExamResultDetailResponse response = studentService.getExamResult(submissionId, studentName, studentPhone);
-        
-        log.info("시험 상세 결과 조회 성공: 제출 ID={}, 학생={}, 총점={}", 
-            submissionId, response.studentName(), response.totalScore());
-        
+
+        log.info("시험 상세 결과 조회 성공: 제출 ID={}, 학생={}, 총점={}",
+                submissionId, response.studentName(), response.totalScore());
+
         return ApiResponse.success("성공", response);
     }
-    
+
     /**
      * 문제별 정답/오답, 점수, 단원, 난이도 조회
      * 
      * @param submissionId 시험 제출 ID
-     * @param questionId 문제 ID
-     * @param studentName 학생 이름
+     * @param questionId   문제 ID
+     * @param studentName  학생 이름
      * @param studentPhone 학생 전화번호
      * @return 문제별 결과 정보
      */
     @GetMapping("/submission/{submissionId}/question/{questionId}")
-    @Operation(
-        summary = "문제별 정답/오답, 점수, 단원, 난이도 조회",
-        description = "특정 문제의 정답/오답, 점수, 단원, 난이도 정보를 조회합니다."
-    )
+    @Operation(summary = "문제별 정답/오답, 점수, 단원, 난이도 조회", description = "특정 문제의 정답/오답, 점수, 단원, 난이도 정보를 조회합니다.")
     @io.swagger.v3.oas.annotations.responses.ApiResponses({
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "조회 성공"),
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "잘못된 입력값"),
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "존재하지 않는 제출, 문제 또는 학생")
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "조회 성공"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "잘못된 입력값"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "존재하지 않는 제출, 문제 또는 학생")
     })
     public ApiResponse<QuestionResultResponse> getQuestionResult(
-            @Parameter(description = "시험 제출 ID", example = "1") 
-            @PathVariable Long submissionId,
-            @Parameter(description = "문제 ID", example = "1") 
-            @PathVariable Long questionId,
-            @Parameter(description = "학생 이름", example = "김철수") 
-            @RequestParam String studentName,
-            @Parameter(description = "학생 전화번호", example = "010-1234-5678") 
-            @RequestParam String studentPhone) {
-        log.info("문제별 결과 조회 요청: 제출 ID={}, 문제 ID={}, 학생={}, 전화번호={}", 
-            submissionId, questionId, studentName, studentPhone);
-        
-        QuestionResultResponse response = studentService.getQuestionResult(submissionId, questionId, studentName, studentPhone);
-        
-        log.info("문제별 결과 조회 성공: 제출 ID={}, 문제 ID={}, 정답 여부={}, 점수={}", 
-            submissionId, questionId, response.isCorrect(), response.score());
-        
+            @Parameter(description = "시험 제출 ID", example = "1") @PathVariable Long submissionId,
+            @Parameter(description = "문제 ID", example = "1") @PathVariable Long questionId,
+            @Parameter(description = "학생 이름", example = "김철수") @RequestParam String studentName,
+            @Parameter(description = "학생 전화번호", example = "010-1234-5678") @RequestParam String studentPhone) {
+        log.info("문제별 결과 조회 요청: 제출 ID={}, 문제 ID={}, 학생={}, 전화번호={}",
+                submissionId, questionId, studentName, studentPhone);
+
+        QuestionResultResponse response = studentService.getQuestionResult(submissionId, questionId, studentName,
+                studentPhone);
+
+        log.info("문제별 결과 조회 성공: 제출 ID={}, 문제 ID={}, 정답 여부={}, 점수={}",
+                submissionId, questionId, response.isCorrect(), response.score());
+
         return ApiResponse.success("성공", response);
     }
 }
