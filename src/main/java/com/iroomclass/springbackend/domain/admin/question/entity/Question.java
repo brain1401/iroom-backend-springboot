@@ -30,7 +30,13 @@ import java.util.Map;
  * 문제 정보 Entity
  * 
  * 각 단원별로 생성된 문제들을 관리합니다.
- * 주관식 문제만 지원하며, JSON 형태로 저장된 문제 내용을 HTML로 변환합니다.
+ * 주관식과 객관식 문제를 모두 지원하며, JSON 형태로 저장된 문제 내용을 HTML로 변환합니다.
+ * 
+ * <p>문제 유형별 특징:</p>
+ * <ul>
+ *   <li>주관식: questionText와 answerKey 사용</li>
+ *   <li>객관식: questionText, choices, correctChoice 사용</li>
+ * </ul>
  * 
  * @author 이룸클래스
  * @since 2025
@@ -93,6 +99,31 @@ public class Question {
      */
     @Column(columnDefinition = "JSON")
     private String image;
+
+    /**
+     * 문제 유형
+     * 주관식(SUBJECTIVE) 또는 객관식(MULTIPLE_CHOICE)
+     * 기본값: 주관식 (하위 호환성 보장)
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, columnDefinition = "VARCHAR(20) DEFAULT 'SUBJECTIVE'")
+    @Builder.Default
+    private QuestionType questionType = QuestionType.SUBJECTIVE;
+
+    /**
+     * 객관식 선택지 (JSON 형태)
+     * 객관식 문제일 때만 사용
+     * 예시: {"1": "선택지1", "2": "선택지2", "3": "선택지3", "4": "선택지4", "5": "선택지5"}
+     */
+    @Column(columnDefinition = "JSON")
+    private String choices;
+
+    /**
+     * 객관식 정답 번호
+     * 객관식 문제일 때만 사용 (1, 2, 3, 4, 5)
+     */
+    @Column
+    private Integer correctChoice;
 
     /**
      * JSON 형태의 questionText를 HTML로 변환
@@ -166,9 +197,129 @@ public class Question {
     }
 
     /**
+     * 객관식 문제 여부 확인
+     * 
+     * @return 객관식 문제이면 true, 아니면 false
+     */
+    public boolean isMultipleChoice() {
+        return QuestionType.MULTIPLE_CHOICE.equals(this.questionType);
+    }
+
+    /**
+     * 주관식 문제 여부 확인
+     * 
+     * @return 주관식 문제이면 true, 아니면 false
+     */
+    public boolean isSubjective() {
+        return QuestionType.SUBJECTIVE.equals(this.questionType);
+    }
+
+    /**
+     * 객관식 선택지를 Map 형태로 반환
+     * 
+     * @return 선택지 Map (번호 -> 내용), 주관식이면 빈 Map
+     */
+    public Map<String, String> getChoicesAsMap() {
+        try {
+            if (!isMultipleChoice() || choices == null || choices.trim().isEmpty()) {
+                return Map.of();
+            }
+            
+            return objectMapper.readValue(choices, new TypeReference<Map<String, String>>() {});
+            
+        } catch (JsonProcessingException e) {
+            log.error("선택지 JSON 파싱 오류: {}", e.getMessage(), e);
+            return Map.of();
+        }
+    }
+
+    /**
+     * 객관식 선택지를 HTML 형태로 변환
+     * 
+     * @return HTML 형태의 선택지 목록
+     */
+    public String getChoicesAsHtml() {
+        if (!isMultipleChoice()) {
+            return "";
+        }
+
+        Map<String, String> choicesMap = getChoicesAsMap();
+        if (choicesMap.isEmpty()) {
+            return "";
+        }
+
+        StringBuilder html = new StringBuilder();
+        html.append("<div class='multiple-choice-options'>");
+        
+        // 선택지 번호 순서대로 정렬 (1, 2, 3, 4, 5)
+        choicesMap.entrySet().stream()
+            .sorted(Map.Entry.comparingByKey())
+            .forEach(entry -> {
+                String number = entry.getKey();
+                String content = entry.getValue();
+                html.append("<div class='choice-option'>")
+                    .append("<span class='choice-number'>").append(number).append("</span>")
+                    .append("<span class='choice-content'>").append(content).append("</span>")
+                    .append("</div>");
+            });
+        
+        html.append("</div>");
+        return html.toString();
+    }
+
+    /**
+     * 정답 검증 메서드 (객관식용)
+     * 
+     * @param selectedChoice 선택된 답안 번호
+     * @return 정답 여부
+     */
+    public boolean isCorrectChoice(Integer selectedChoice) {
+        if (!isMultipleChoice() || selectedChoice == null || correctChoice == null) {
+            return false;
+        }
+        return correctChoice.equals(selectedChoice);
+    }
+
+    /**
+     * 문제 유형에 따른 완전한 HTML 표시
+     * 
+     * @return 문제 내용 + 선택지(객관식인 경우) HTML
+     */
+    public String getCompleteQuestionHtml() {
+        StringBuilder html = new StringBuilder();
+        
+        // 기본 문제 내용
+        html.append(getQuestionTextAsHtml());
+        
+        // 객관식인 경우 선택지 추가
+        if (isMultipleChoice()) {
+            html.append(getChoicesAsHtml());
+        }
+        
+        return html.toString();
+    }
+
+    /**
      * 문제 난이도 열거형
      */
     public enum Difficulty {
         하, 중, 상
+    }
+
+    /**
+     * 문제 유형 열거형
+     */
+    public enum QuestionType {
+        /**
+         * 주관식 문제
+         * 학생이 직접 답안을 작성하는 형태
+         */
+        SUBJECTIVE,
+        
+        /**
+         * 객관식 문제 (5지 선다)
+         * 주어진 선택지 중 정답을 선택하는 형태
+         */
+        MULTIPLE_CHOICE
     }
 }

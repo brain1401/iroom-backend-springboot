@@ -9,6 +9,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
  * 문제 목록 조회 응답 DTO
  * 
  * 단원별 문제 목록 조회 시 사용됩니다.
+ * 주관식과 객관식 문제를 모두 포함합니다.
  * 
  * @author 이룸클래스
  * @since 2025
@@ -50,11 +51,15 @@ public record QuestionListResponse(
         @Schema(description = "문제 ID", example = "1")
         Long questionId,
         
+        @Schema(description = "문제 유형", example = "SUBJECTIVE", allowableValues = {"SUBJECTIVE", "MULTIPLE_CHOICE"})
+        String questionType,
+        
         @Schema(description = "난이도", example = "EASY", allowableValues = {"EASY", "MEDIUM", "HARD"})
         String difficulty
     ) {
         public QuestionInfo {
             Objects.requireNonNull(questionId, "questionId은 필수입니다");
+            Objects.requireNonNull(questionType, "questionType은 필수입니다");
             Objects.requireNonNull(difficulty, "difficulty은 필수입니다");
         }
     }

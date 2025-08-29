@@ -58,7 +58,10 @@ public class QuestionService {
         
         // 3단계: DTO 변환
         List<QuestionListResponse.QuestionInfo> questionInfos = questions.stream()
-            .map(question -> new QuestionListResponse.QuestionInfo(question.getId(), question.getDifficulty().name()))
+            .map(question -> new QuestionListResponse.QuestionInfo(
+                question.getId(), 
+                question.getQuestionType().name(), 
+                question.getDifficulty().name()))
             .collect(Collectors.toList());
         
         // 4단계: 통계 계산
@@ -109,7 +112,10 @@ public class QuestionService {
         
         // 4단계: DTO 변환
         List<QuestionListResponse.QuestionInfo> questionInfos = questions.stream()
-            .map(question -> new QuestionListResponse.QuestionInfo(question.getId(), question.getDifficulty().name()))
+            .map(question -> new QuestionListResponse.QuestionInfo(
+                question.getId(), 
+                question.getQuestionType().name(), 
+                question.getDifficulty().name()))
             .collect(Collectors.toList());
         
         // 5단계: 통계 계산
@@ -147,7 +153,16 @@ public class QuestionService {
         
         log.info("문제 {} 상세 조회 완료", questionId);
         
-        return new QuestionDetailResponse(question.getId(), unit.getId(), unit.getUnitName(), question.getDifficulty().name(), question.getQuestionTextAsHtml(), question.getAnswerKey());
+        return new QuestionDetailResponse(
+            question.getId(), 
+            unit.getId(), 
+            unit.getUnitName(), 
+            question.getQuestionType().name(),
+            question.getDifficulty().name(), 
+            question.getQuestionTextAsHtml(), 
+            question.getAnswerKey(),
+            question.getChoicesAsMap(),
+            question.getCorrectChoice());
     }
     
     /**
@@ -200,7 +215,13 @@ public class QuestionService {
         List<QuestionSearchResponse.QuestionInfo> questionInfos = questions.stream()
             .map(question -> {
                 Unit unit = question.getUnit();
-                return new QuestionSearchResponse.QuestionInfo(question.getId(), unit.getId(), unit.getUnitName(), question.getDifficulty().name(), question.getQuestionTextAsHtml());
+                return new QuestionSearchResponse.QuestionInfo(
+                    question.getId(), 
+                    unit.getId(), 
+                    unit.getUnitName(), 
+                    question.getQuestionType().name(),
+                    question.getDifficulty().name(), 
+                    question.getQuestionTextAsHtml());
             })
             .collect(Collectors.toList());
         

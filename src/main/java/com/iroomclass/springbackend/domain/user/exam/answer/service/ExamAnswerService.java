@@ -48,15 +48,15 @@ public class ExamAnswerService {
     private final AiImageRecognitionService aiImageRecognitionService;
     
     /**
-     * 답안 생성 (AI 이미지 인식 포함)
+     * 답안 생성 (주관식은 AI 이미지 인식, 객관식은 선택지 저장)
      * 
      * @param request 답안 생성 요청
      * @return 생성된 답안 정보
      */
     @Transactional
     public ExamAnswerResponse createExamAnswer(ExamAnswerCreateRequest request) {
-        log.info("답안 생성 요청: 제출 ID={}, 문제 ID={}, 이미지 URL={}", 
-            request.examSubmissionId(), request.questionId(), request.answerImageUrl());
+        log.info("답안 생성 요청: 제출 ID={}, 문제 ID={}, 이미지 URL={}, 선택 답안={}", 
+            request.examSubmissionId(), request.questionId(), request.answerImageUrl(), request.selectedChoice());
         
         // 1단계: 시험 제출 존재 확인
         ExamSubmission examSubmission = examSubmissionRepository.findById(request.examSubmissionId())
@@ -77,23 +77,41 @@ public class ExamAnswerService {
             .examSubmission(examSubmission)
             .question(question)
             .answerImageUrl(request.answerImageUrl())
+            .selectedChoice(request.selectedChoice())
             .build();
         
         examAnswer = examAnswerRepository.save(examAnswer);
         
-        // 5단계: AI 이미지 인식 수행
-        try {
-            AiImageRecognitionService.AiRecognitionResult recognitionResult = 
-                aiImageRecognitionService.recognizeTextFromImage(request.answerImageUrl());
+        // 5단계: 문제 유형에 따른 처리
+        if (question.isMultipleChoice()) {
+            // 객관식 문제: 자동 채점
+            log.info("객관식 문제 자동 채점 시작: 답안 ID={}", examAnswer.getId());
             
-            examAnswer.updateAnswerText(recognitionResult.getRecognizedText());
-            examAnswer = examAnswerRepository.save(examAnswer);
-            
-            log.info("답안 생성 및 AI 인식 완료: 답안 ID={}, 인식 결과={}", 
-                examAnswer.getId(), recognitionResult.getRecognizedText());
-                
-        } catch (Exception e) {
-            log.error("AI 인식 실패: 답안 ID={}, 오류={}", examAnswer.getId(), e.getMessage());
+            boolean gradingResult = examAnswer.autoGradeMultipleChoice();
+            if (gradingResult) {
+                examAnswer = examAnswerRepository.save(examAnswer);
+                log.info("객관식 자동 채점 완료: 답안 ID={}, 정답 여부={}, 점수={}", 
+                    examAnswer.getId(), examAnswer.getIsCorrect(), examAnswer.getScore());
+            } else {
+                log.warn("객관식 자동 채점 실패: 답안 ID={}", examAnswer.getId());
+            }
+        } else {
+            // 주관식 문제: AI 이미지 인식 수행
+            if (request.answerImageUrl() != null) {
+                try {
+                    AiImageRecognitionService.AiRecognitionResult recognitionResult = 
+                        aiImageRecognitionService.recognizeTextFromImage(request.answerImageUrl());
+                    
+                    examAnswer.updateAnswerText(recognitionResult.getRecognizedText());
+                    examAnswer = examAnswerRepository.save(examAnswer);
+                    
+                    log.info("주관식 답안 생성 및 AI 인식 완료: 답안 ID={}, 인식 결과={}", 
+                        examAnswer.getId(), recognitionResult.getRecognizedText());
+                        
+                } catch (Exception e) {
+                    log.error("AI 인식 실패: 답안 ID={}, 오류={}", examAnswer.getId(), e.getMessage());
+                }
+            }
         }
         
         return ExamAnswerResponse.from(examAnswer);
@@ -136,24 +154,34 @@ public class ExamAnswerService {
     }
     
     /**
-     * 답안 수정 (텍스트 수정)
+     * 답안 수정 (주관식은 텍스트 수정, 객관식은 선택지 변경)
      * 
      * @param request 답안 수정 요청
      * @return 수정된 답안 정보
      */
     @Transactional
     public ExamAnswerResponse updateExamAnswer(ExamAnswerUpdateRequest request) {
-        log.info("답안 수정 요청: 답안 ID={}, 수정된 답안={}", request.answerId(), request.answerText());
+        log.info("답안 수정 요청: 답안 ID={}, 수정된 답안={}, 선택 답안={}", 
+            request.answerId(), request.answerText(), request.selectedChoice());
         
         ExamAnswer examAnswer = examAnswerRepository.findById(request.answerId())
             .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 답안입니다: " + request.answerId()));
         
-        // 1단계: 답안 텍스트 업데이트
-        examAnswer.updateAnswerText(request.answerText());
-        
-        // 2단계: 정답 여부 다시 확인
+        // 1단계: 답안 정보 업데이트 (문제 유형에 따라)
         Question question = examAnswer.getQuestion();
-        if (question != null) {
+        
+        if (question.isMultipleChoice() && request.selectedChoice() != null) {
+            // 객관식: 선택 답안 업데이트
+            examAnswer.updateSelectedChoice(request.selectedChoice());
+            
+            // 자동 채점 수행
+            examAnswer.autoGradeMultipleChoice();
+            
+        } else if (!question.isMultipleChoice() && request.answerText() != null) {
+            // 주관식: 답안 텍스트 업데이트
+            examAnswer.updateAnswerText(request.answerText());
+            
+            // 수동 채점 로직 (기존 로직 유지)
             String correctAnswer = question.getAnswerKey();
             String studentAnswer = request.answerText();
             
@@ -161,11 +189,10 @@ public class ExamAnswerService {
             boolean isCorrect = correctAnswer != null && 
                 correctAnswer.trim().equalsIgnoreCase(studentAnswer.trim());
             
-            // 3단계: ExamDraftQuestion에서 해당 문제의 배점 가져오기
+            // ExamDraftQuestion에서 해당 문제의 배점 가져오기
             Integer score = 0;
             if (isCorrect) {
                 try {
-                    // ExamSubmission -> Exam -> ExamDraft -> ExamDraftQuestion 순서로 찾기
                     Long examDraftId = examAnswer.getExamSubmission().getExam().getExamDraft().getId();
                     Long questionId = question.getId();
                     
@@ -191,11 +218,12 @@ public class ExamAnswerService {
             // 채점 결과 업데이트
             examAnswer.updateGrading(isCorrect, score);
             
-            log.info("답안 채점 완료: 답안 ID={}, 학생 답안={}, 정답={}, 정답 여부={}, 점수={}", 
+            log.info("주관식 답안 채점 완료: 답안 ID={}, 학생 답안={}, 정답={}, 정답 여부={}, 점수={}", 
                 examAnswer.getId(), studentAnswer, correctAnswer, isCorrect, score);
         } else {
-            log.warn("문제 정보를 찾을 수 없습니다: 답안 ID={}", examAnswer.getId());
+            throw new IllegalArgumentException("문제 유형에 맞지 않는 답안 수정 요청입니다");
         }
+
         
         examAnswer = examAnswerRepository.save(examAnswer);
         

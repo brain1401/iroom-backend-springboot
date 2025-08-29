@@ -43,6 +43,9 @@ public record QuestionSearchResponse(
         @Schema(description = "단원명", example = "자연수와 0")
         String unitName,
         
+        @Schema(description = "문제 유형", example = "SUBJECTIVE", allowableValues = {"SUBJECTIVE", "MULTIPLE_CHOICE"})
+        String questionType,
+        
         @Schema(description = "난이도", example = "EASY", allowableValues = {"EASY", "MEDIUM", "HARD"})
         String difficulty,
         
@@ -53,6 +56,7 @@ public record QuestionSearchResponse(
             Objects.requireNonNull(questionId, "questionId은 필수입니다");
             Objects.requireNonNull(unitId, "unitId은 필수입니다");
             Objects.requireNonNull(unitName, "unitName는 필수입니다");
+            Objects.requireNonNull(questionType, "questionType은 필수입니다");
             Objects.requireNonNull(difficulty, "difficulty은 필수입니다");
             Objects.requireNonNull(stem, "stem은 필수입니다");
         }

@@ -10,7 +10,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 /**
  * 시험 답안 목록 응답 DTO
  * 
- * 시험 제출의 모든 답안 정보를 클라이언트에 전달할 때 사용됩니다.
+ * 시험 제출의 모든 답안 정보(주관식과 객관식)를 클라이언트에 전달할 때 사용됩니다.
  * 
  * @author 이룸클래스
  * @since 2025
