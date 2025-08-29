@@ -18,9 +18,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.iroomclass.springbackend.domain.admin.exam.entity.ExamDocument;
-import com.iroomclass.springbackend.domain.admin.exam.entity.ExamDraft;
+import com.iroomclass.springbackend.domain.admin.exam.entity.ExamSheet;
 import com.iroomclass.springbackend.domain.admin.exam.repository.ExamDocumentRepository;
-import com.iroomclass.springbackend.domain.admin.exam.repository.ExamDraftRepository;
+import com.iroomclass.springbackend.domain.admin.exam.repository.ExamSheetRepository;
 import com.iroomclass.springbackend.domain.admin.exam.repository.ExamRepository;
 import com.iroomclass.springbackend.domain.admin.print.dto.PrintRequest;
 import com.iroomclass.springbackend.domain.admin.print.dto.PrintResponse;
@@ -39,7 +39,7 @@ public class PrintService {
 
     private final ExamRepository examRepository;
     private final ExamDocumentRepository examDocumentRepository;
-    private final ExamDraftRepository examDraftRepository;
+    private final ExamSheetRepository examSheetRepository;
     private final PdfGenerator pdfGenerator;
     private final QrCodeGenerator qrCodeGenerator;
 
@@ -49,40 +49,40 @@ public class PrintService {
     /**
      * 인쇄 가능한 문서 목록 조회
      * 
-     * @param examDraftId 시험지 초안 ID
+     * @param examSheetId 시험지 ID
      * @return 인쇄 가능한 문서 목록
      */
-    public PrintableDocumentResponse getPrintableDocuments(Long examDraftId) {
-        log.info("인쇄 가능한 문서 목록 조회: examDraftId={}", examDraftId);
+    public PrintableDocumentResponse getPrintableDocuments(Long examSheetId) {
+        log.info("인쇄 가능한 문서 목록 조회: examSheetId={}", examSheetId);
         
-        // 1단계: 시험지 초안에 속한 문서 목록 조회
-        List<ExamDocument> documents = examDocumentRepository.findByExamDraftId(examDraftId);
+        // 1단계: 시험지에 속한 문서 목록 조회
+        List<ExamDocument> documents = examDocumentRepository.findByExamSheetId(examSheetId);
         
         if (documents.isEmpty()) {
-            log.warn("시험지 초안에 문서가 없습니다: examDraftId={}", examDraftId);
-            ExamDraft examDraft = examDraftRepository.findById(examDraftId)
-                .orElseThrow(() -> new IllegalArgumentException("시험지 초안을 찾을 수 없습니다: " + examDraftId));
+            log.warn("시험지에 문서가 없습니다: examSheetId={}", examSheetId);
+            ExamSheet examSheet = examSheetRepository.findById(examSheetId)
+                .orElseThrow(() -> new IllegalArgumentException("시험지를 찾을 수 없습니다: " + examSheetId));
             return new PrintableDocumentResponse(
-                examDraft.getId(),
-                examDraft.getExamName(),
+                examSheet.getId(),
+                examSheet.getExamName(),
                 new ArrayList<>()
             );
         }
         
-        // 2단계: 시험지 초안 정보 조회 (첫 번째 문서에서)
-        ExamDraft examDraft = documents.get(0).getExamDraft();
+        // 2단계: 시험지 정보 조회 (첫 번째 문서에서)
+        ExamSheet examSheet = documents.get(0).getExamSheet();
         
         // 3단계: 문서 정보 변환
         List<PrintableDocumentResponse.DocumentInfo> documentInfos = documents.stream()
             .map(this::convertToDocumentInfo)
             .collect(Collectors.toList());
         
-        log.info("인쇄 가능한 문서 목록 조회 완료: examDraftId={}, documentCount={}", 
-            examDraftId, documentInfos.size());
+        log.info("인쇄 가능한 문서 목록 조회 완료: examSheetId={}, documentCount={}", 
+            examSheetId, documentInfos.size());
         
         return new PrintableDocumentResponse(
-            examDraft.getId(),
-            examDraft.getExamName(),
+            examSheet.getId(),
+            examSheet.getExamName(),
             documentInfos
         );
     }
@@ -95,16 +95,16 @@ public class PrintService {
      */
     @Transactional
     public PrintResponse processPrintRequest(PrintRequest request) {
-        log.info("문서 인쇄 요청 처리: examDraftId={}, documentTypes={}", 
-            request.examDraftId(), request.documentTypes());
+        log.info("문서 인쇄 요청 처리: examSheetId={}, documentTypes={}", 
+            request.examSheetId(), request.documentTypes());
         
         // 1단계: 요청된 문서 타입들의 문서 조회
         List<ExamDocument.DocumentType> documentTypes = request.documentTypes().stream()
             .map(ExamDocument.DocumentType::valueOf)
             .collect(Collectors.toList());
         
-        // 먼저 examDraftId로 모든 문서를 가져온 후 필터링
-        List<ExamDocument> allDocuments = examDocumentRepository.findByExamDraftId(request.examDraftId());
+        // 먼저 examSheetId로 모든 문서를 가져온 후 필터링
+        List<ExamDocument> allDocuments = examDocumentRepository.findByExamSheetId(request.examSheetId());
         List<ExamDocument> documents = allDocuments.stream()
             .filter(doc -> documentTypes.contains(doc.getDocumentType()))
             .collect(Collectors.toList());
@@ -118,7 +118,7 @@ public class PrintService {
             .map(doc -> new PdfGenerator.DocumentInfo(
                 cleanHtmlContent(doc.getDocumentContent()),  // HTML 내용 정리
                 doc.getDocumentType().name(),
-                generateDocumentName(documents.get(0).getExamDraft().getExamName(), doc.getDocumentType().name()),
+                generateDocumentName(documents.get(0).getExamSheet().getExamName(), doc.getDocumentType().name()),
                 doc.getQrCodeUrl()  // QR 코드 URL 추가
             ))
             .collect(Collectors.toList());
@@ -132,14 +132,14 @@ public class PrintService {
         savePdfFile(printJobId, pdfContent);
         
         // 6단계: 파일명 생성
-        String fileName = generateFileName(documents.get(0).getExamDraft().getExamName(), request.fileName());
+        String fileName = generateFileName(documents.get(0).getExamSheet().getExamName(), request.fileName());
         
         // 7단계: 다운로드 URL 및 파일 크기 설정
         String downloadUrl = generateDownloadUrl(printJobId);
         Long fileSize = (long) pdfContent.length;
         
-        log.info("문서 인쇄 요청 처리 완료: examDraftId={}, printJobId={}, fileName={}, fileSize={}", 
-            request.examDraftId(), printJobId, fileName, pdfContent.length);
+        log.info("문서 인쇄 요청 처리 완료: examSheetId={}, printJobId={}, fileName={}, fileSize={}", 
+            request.examSheetId(), printJobId, fileName, pdfContent.length);
         
         return new PrintResponse(
             printJobId,
@@ -200,7 +200,7 @@ public class PrintService {
             document.getId(),
             document.getDocumentType().name(),
             document.getDocumentType().name(),
-            generateDocumentName(document.getExamDraft().getExamName(), document.getDocumentType().name()),
+            generateDocumentName(document.getExamSheet().getExamName(), document.getDocumentType().name()),
             document.getQrCodeUrl(),
             true
         );

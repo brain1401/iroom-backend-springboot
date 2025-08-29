@@ -2,7 +2,6 @@ package com.iroomclass.springbackend.domain.admin.exam.service;
 
 import java.util.List;
 import java.util.ArrayList;
-import java.util.UUID;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -13,9 +12,9 @@ import com.iroomclass.springbackend.domain.admin.exam.dto.ExamDetailResponse;
 import com.iroomclass.springbackend.domain.admin.exam.dto.ExamListResponse;
 import com.iroomclass.springbackend.domain.admin.exam.dto.ExamUpdateRequest;
 import com.iroomclass.springbackend.domain.admin.exam.entity.Exam;
-import com.iroomclass.springbackend.domain.admin.exam.entity.ExamDraft;
+import com.iroomclass.springbackend.domain.admin.exam.entity.ExamSheet;
 import com.iroomclass.springbackend.domain.admin.exam.entity.ExamDocument;
-import com.iroomclass.springbackend.domain.admin.exam.repository.ExamDraftRepository;
+import com.iroomclass.springbackend.domain.admin.exam.repository.ExamSheetRepository;
 import com.iroomclass.springbackend.domain.admin.exam.repository.ExamRepository;
 import com.iroomclass.springbackend.domain.admin.exam.repository.ExamDocumentRepository;
 
@@ -37,7 +36,7 @@ import lombok.extern.slf4j.Slf4j;
 public class ExamService {
     
     private final ExamRepository examRepository;
-    private final ExamDraftRepository examDraftRepository;
+    private final ExamSheetRepository examSheetRepository;
     private final ExamDocumentRepository examDocumentRepository;
     
     /**
@@ -48,20 +47,20 @@ public class ExamService {
      */
     @Transactional
     public ExamCreateResponse createExam(ExamCreateRequest request) {
-        log.info("시험 등록 요청: 시험지 초안 ID={}, 학생 수={}", request.examDraftId(), request.studentCount());
+        log.info("시험 등록 요청: 시험지 ID={}, 학생 수={}", request.examSheetId(), request.studentCount());
         
-        // 1단계: 시험지 초안 조회
-        ExamDraft examDraft = examDraftRepository.findById(request.examDraftId())
-            .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 시험지 초안입니다: " + request.examDraftId()));
+        // 1단계: 시험지 조회
+        ExamSheet examSheet = examSheetRepository.findById(request.examSheetId())
+            .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 시험지입니다: " + request.examSheetId()));
         
         // 2단계: QR 코드 URL 생성
-        String qrCodeUrl = generateQrCodeUrl(examDraft.getId());
+        String qrCodeUrl = generateQrCodeUrl(examSheet.getId());
         
         // 3단계: 시험 생성
         Exam exam = Exam.builder()
-            .examDraft(examDraft)
-            .examName(examDraft.getExamName())
-            .grade(examDraft.getGrade())
+            .examSheet(examSheet)
+            .examName(examSheet.getExamName())
+            .grade(examSheet.getGrade())
             .content(request.content())
             .studentCount(request.studentCount())
             .qrCodeUrl(qrCodeUrl)
@@ -158,13 +157,11 @@ public class ExamService {
         Exam exam = examRepository.findById(examId)
             .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 시험입니다: " + examId));
         
-        ExamDraft examDraft = exam.getExamDraft();
-        
         log.info("시험 상세 조회 완료: ID={}, 이름={}", examId, exam.getExamName());
         
         return new ExamDetailResponse(
             exam.getId(),
-            exam.getExamDraft().getId(),
+            exam.getExamSheet().getId(),
             exam.getExamName(),
             exam.getGrade(),
             exam.getContent(),
@@ -222,22 +219,22 @@ public class ExamService {
     /**
      * QR 코드 URL 생성
      */
-    private String generateQrCodeUrl(Long examDraftId) {
+    private String generateQrCodeUrl(Long examSheetId) {
         // 답안지에서 QR 코드 URL 가져오기
-        List<ExamDocument> documents = examDocumentRepository.findByExamDraftId(examDraftId);
+        List<ExamDocument> documents = examDocumentRepository.findByExamSheetId(examSheetId);
         
         // ANSWER_SHEET 타입의 문서 찾기
         ExamDocument answerSheet = documents.stream()
             .filter(doc -> doc.getDocumentType() == ExamDocument.DocumentType.ANSWER_SHEET)
             .findFirst()
-            .orElseThrow(() -> new IllegalArgumentException("해당 시험지 초안에 대한 답안지가 존재하지 않습니다: " + examDraftId));
+            .orElseThrow(() -> new IllegalArgumentException("해당 시험지에 대한 답안지가 존재하지 않습니다: " + examSheetId));
         
         String qrCodeUrl = answerSheet.getQrCodeUrl();
         if (qrCodeUrl == null || qrCodeUrl.trim().isEmpty()) {
             throw new IllegalArgumentException("답안지에 QR 코드가 생성되지 않았습니다. 먼저 시험지 문서를 생성해주세요.");
         }
         
-        log.info("답안지에서 QR 코드 URL 가져오기: examDraftId={}, qrCodeUrl={}", examDraftId, qrCodeUrl);
+        log.info("답안지에서 QR 코드 URL 가져오기: examSheetId={}, qrCodeUrl={}", examSheetId, qrCodeUrl);
         return qrCodeUrl;
     }
 }

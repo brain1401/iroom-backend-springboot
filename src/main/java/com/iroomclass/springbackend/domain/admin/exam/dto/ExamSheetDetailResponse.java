@@ -6,17 +6,17 @@ import java.util.Objects;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 /**
- * 시험지 초안 상세 조회 응답 DTO
+ * 시험지 상세 조회 응답 DTO
  * 
- * 시험지 초안 상세 정보 조회 시 사용됩니다.
+ * 시험지 상세 정보 조회 시 사용됩니다.
  * 
  * @author 이룸클래스
  * @since 2025
  */
-@Schema(description = "시험지 초안 상세 조회 응답")
-public record ExamDraftDetailResponse(
-    @Schema(description = "시험지 초안 ID", example = "1")
-    Long examDraftId,
+@Schema(description = "시험지 상세 조회 응답")
+public record ExamSheetDetailResponse(
+    @Schema(description = "시험지 ID", example = "1")
+    Long examSheetId,
     
     @Schema(description = "시험지 이름", example = "1학년 중간고사")
     String examName,
@@ -33,8 +33,8 @@ public record ExamDraftDetailResponse(
     @Schema(description = "선택된 문제 목록")
     List<QuestionInfo> questions
 ) {
-    public ExamDraftDetailResponse {
-        Objects.requireNonNull(examDraftId, "examDraftId는 필수입니다");
+    public ExamSheetDetailResponse {
+        Objects.requireNonNull(examSheetId, "examSheetId는 필수입니다");
         Objects.requireNonNull(examName, "examName은 필수입니다");
         Objects.requireNonNull(grade, "grade는 필수입니다");
         Objects.requireNonNull(totalQuestions, "totalQuestions는 필수입니다");

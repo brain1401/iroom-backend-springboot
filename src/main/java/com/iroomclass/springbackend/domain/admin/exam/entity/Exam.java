@@ -1,6 +1,7 @@
 package com.iroomclass.springbackend.domain.admin.exam.entity;
 
 import jakarta.persistence.*;
+import com.iroomclass.springbackend.domain.admin.exam.entity.ExamSheet;
 import lombok.*;
 
 import java.time.LocalDateTime;
@@ -8,7 +9,7 @@ import java.time.LocalDateTime;
 /**
  * 시험 Entity
  * 
- * 시험지 초안을 실제 시험으로 발행하여 관리합니다.
+ * 시험지를 실제 시험으로 발행하여 관리합니다.
  * 학생 수, 시험 내용 등을 포함합니다.
  * 
  * @author 이룸클래스
@@ -31,13 +32,13 @@ public class Exam {
     private Long id;
     
     /**
-     * 시험지 초안과의 관계
-     * ManyToOne: 여러 시험이 하나의 시험지 초안에서 발행될 수 있음
-     * FetchType.LAZY: 필요할 때만 시험지 초안 정보를 조회
+     * 시험지와의 관계
+     * ManyToOne: 여러 시험이 하나의 시험지에서 발행될 수 있음
+     * FetchType.LAZY: 필요할 때만 시험지 정보를 조회
      */
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "exam_draft_id", nullable = false)
-    private ExamDraft examDraft;
+    @JoinColumn(name = "exam_sheet_id", nullable = false)
+    private ExamSheet examSheet;
     
     /**
      * 시험명

@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureWebMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
@@ -21,6 +22,7 @@ import static org.hamcrest.Matchers.*;
  */
 @SpringBootTest
 @AutoConfigureWebMvc
+@ActiveProfiles("test")
 @DisplayName("시스템 컨트롤러 통합 테스트")
 class SystemControllerIntegrationTest {
 

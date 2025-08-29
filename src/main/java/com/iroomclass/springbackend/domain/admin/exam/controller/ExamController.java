@@ -50,7 +50,7 @@ public class ExamController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "존재하지 않는 시험지 초안")
     })
     public ApiResponse<ExamCreateResponse> createExam(@Valid @RequestBody ExamCreateRequest request) {
-        log.info("시험 등록 요청: 시험지 초안 ID={}, 학생 수={}", request.examDraftId(), request.studentCount());
+        log.info("시험 등록 요청: 시험지 ID={}, 학생 수={}", request.examSheetId(), request.studentCount());
 
         ExamCreateResponse response = examService.createExam(request);
 

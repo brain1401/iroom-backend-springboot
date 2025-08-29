@@ -20,8 +20,8 @@ import com.iroomclass.springbackend.domain.user.exam.entity.ExamSubmission;
 import com.iroomclass.springbackend.domain.user.exam.repository.ExamSubmissionRepository;
 import com.iroomclass.springbackend.domain.admin.question.entity.Question;
 import com.iroomclass.springbackend.domain.admin.question.repository.QuestionRepository;
-import com.iroomclass.springbackend.domain.admin.exam.entity.ExamDraftQuestion;
-import com.iroomclass.springbackend.domain.admin.exam.repository.ExamDraftQuestionRepository;
+import com.iroomclass.springbackend.domain.admin.exam.entity.ExamSheetQuestion;
+import com.iroomclass.springbackend.domain.admin.exam.repository.ExamSheetQuestionRepository;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -44,7 +44,7 @@ public class ExamAnswerService {
     private final ExamAnswerRepository examAnswerRepository;
     private final ExamSubmissionRepository examSubmissionRepository;
     private final QuestionRepository questionRepository;
-    private final ExamDraftQuestionRepository examDraftQuestionRepository;
+    private final ExamSheetQuestionRepository examSheetQuestionRepository;
     private final AiImageRecognitionService aiImageRecognitionService;
     
     /**
@@ -189,25 +189,25 @@ public class ExamAnswerService {
             boolean isCorrect = correctAnswer != null && 
                 correctAnswer.trim().equalsIgnoreCase(studentAnswer.trim());
             
-            // ExamDraftQuestion에서 해당 문제의 배점 가져오기
+            // ExamSheetQuestion에서 해당 문제의 배점 가져오기
             Integer score = 0;
             if (isCorrect) {
                 try {
-                    Long examDraftId = examAnswer.getExamSubmission().getExam().getExamDraft().getId();
+                    Long examSheetId = examAnswer.getExamSubmission().getExam().getExamSheet().getId();
                     Long questionId = question.getId();
                     
-                    ExamDraftQuestion examDraftQuestion = examDraftQuestionRepository
-                        .findByExamDraftIdAndQuestionId(examDraftId, questionId)
+                    ExamSheetQuestion examSheetQuestion = examSheetQuestionRepository
+                        .findByExamSheetIdAndQuestionId(examSheetId, questionId)
                         .orElse(null);
                     
-                    if (examDraftQuestion != null) {
-                        score = examDraftQuestion.getPoints();
-                        log.info("ExamDraftQuestion에서 배점 조회: examDraftId={}, questionId={}, points={}", 
-                            examDraftId, questionId, score);
+                    if (examSheetQuestion != null) {
+                        score = examSheetQuestion.getPoints();
+                        log.info("ExamSheetQuestion에서 배점 조회: examSheetId={}, questionId={}, points={}", 
+                            examSheetId, questionId, score);
                     } else {
                         score = 5; // 기본값
-                        log.warn("ExamDraftQuestion을 찾을 수 없어 기본 배점 사용: examDraftId={}, questionId={}", 
-                            examDraftId, questionId);
+                        log.warn("ExamSheetQuestion을 찾을 수 없어 기본 배점 사용: examSheetId={}, questionId={}", 
+                            examSheetId, questionId);
                     }
                 } catch (Exception e) {
                     score = 5; // 기본값

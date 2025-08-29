@@ -1,6 +1,7 @@
 package com.iroomclass.springbackend.domain.admin.exam.entity;
 
 import jakarta.persistence.*;
+import com.iroomclass.springbackend.domain.admin.exam.entity.ExamSheet;
 import lombok.*;
 
 /**
@@ -31,13 +32,13 @@ public class ExamDocument {
     private Long id;
     
     /**
-     * 시험지 초안과의 관계
-     * ManyToOne: 여러 문서가 하나의 시험지 초안에 속함
-     * FetchType.LAZY: 필요할 때만 시험지 초안 정보를 조회
+     * 시험지와의 관계
+     * ManyToOne: 여러 문서가 하나의 시험지에 속함
+     * FetchType.LAZY: 필요할 때만 시험지 정보를 조회
      */
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "exam_draft_id", nullable = false)
-    private ExamDraft examDraft;
+    @JoinColumn(name = "exam_sheet_id", nullable = false)
+    private ExamSheet examSheet;
     
     /**
      * 문서 종류

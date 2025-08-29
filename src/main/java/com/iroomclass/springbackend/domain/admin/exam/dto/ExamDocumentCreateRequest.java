@@ -15,11 +15,11 @@ import io.swagger.v3.oas.annotations.media.Schema;
  */
 @Schema(description = "시험지 문서 생성 요청")
 public record ExamDocumentCreateRequest(
-    @NotNull(message = "시험지 초안 ID는 필수입니다.")
-    @Schema(description = "시험지 초안 ID", example = "1", requiredMode = Schema.RequiredMode.REQUIRED)
-    Long examDraftId
+    @NotNull(message = "시험지 ID는 필수입니다.")
+    @Schema(description = "시험지 ID", example = "1", requiredMode = Schema.RequiredMode.REQUIRED)
+    Long examSheetId
 ) {
     public ExamDocumentCreateRequest {
-        Objects.requireNonNull(examDraftId, "examDraftId는 필수입니다");
+        Objects.requireNonNull(examSheetId, "examSheetId는 필수입니다");
     }
 }

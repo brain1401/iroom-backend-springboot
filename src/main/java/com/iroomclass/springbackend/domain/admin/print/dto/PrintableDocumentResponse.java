@@ -7,8 +7,8 @@ import java.util.Objects;
 
 @Schema(description = "인쇄 가능한 문서 목록 응답")
 public record PrintableDocumentResponse(
-    @Schema(description = "시험지 초안 ID", example = "1")
-    Long examDraftId,
+    @Schema(description = "시험지 ID", example = "1")
+    Long examSheetId,
     
     @Schema(description = "시험명", example = "1학년 중간고사")
     String examName,
@@ -17,7 +17,7 @@ public record PrintableDocumentResponse(
     List<DocumentInfo> documents
 ) {
     public PrintableDocumentResponse {
-        Objects.requireNonNull(examDraftId, "examDraftId은 필수입니다");
+        Objects.requireNonNull(examSheetId, "examSheetId은 필수입니다");
         Objects.requireNonNull(examName, "examName는 필수입니다");
         Objects.requireNonNull(documents, "documents은 필수입니다");
     }

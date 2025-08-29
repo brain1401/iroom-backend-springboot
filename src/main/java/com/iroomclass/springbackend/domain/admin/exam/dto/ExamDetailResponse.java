@@ -16,8 +16,8 @@ public record ExamDetailResponse(
     @Schema(description = "시험 ID", example = "1")
     Long examId,
     
-    @Schema(description = "시험지 초안 ID", example = "1")
-    Long examDraftId,
+    @Schema(description = "시험지 ID", example = "1")
+    Long examSheetId,
     
     @Schema(description = "시험명", example = "1학년 중간고사")
     String examName,
@@ -39,7 +39,7 @@ public record ExamDetailResponse(
 ) {
     public ExamDetailResponse {
         Objects.requireNonNull(examId, "examId는 필수입니다");
-        Objects.requireNonNull(examDraftId, "examDraftId는 필수입니다");
+        Objects.requireNonNull(examSheetId, "examSheetId는 필수입니다");
         Objects.requireNonNull(examName, "examName은 필수입니다");
         Objects.requireNonNull(grade, "grade는 필수입니다");
         Objects.requireNonNull(studentCount, "studentCount는 필수입니다");

@@ -27,20 +27,20 @@ public class PrintController {
 
     private final PrintService printService;
 
-    @GetMapping("/exam/{examDraftId}/documents")
-    @Operation(summary = "인쇄 가능한 문서 목록 조회", description = "해당 시험지 초안의 인쇄 가능한 문서 목록을 조회합니다.")
+    @GetMapping("/exam/{examSheetId}/documents")
+    @Operation(summary = "인쇄 가능한 문서 목록 조회", description = "해당 시험지의 인쇄 가능한 문서 목록을 조회합니다.")
     @io.swagger.v3.oas.annotations.responses.ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "✅ 문서 목록 조회 성공", content = @Content(schema = @Schema(implementation = PrintableDocumentResponse.class))),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "❌ 리소스 없음 - 존재하지 않는 시험지 초안")
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "❌ 리소스 없음 - 존재하지 않는 시험지")
     })
     public ApiResponse<PrintableDocumentResponse> getPrintableDocuments(
-            @Parameter(description = "시험지 초안 ID", example = "1") @PathVariable Long examDraftId) {
+            @Parameter(description = "시험지 ID", example = "1") @PathVariable Long examSheetId) {
 
-        log.info("인쇄 가능한 문서 목록 조회 요청: examDraftId={}", examDraftId);
+        log.info("인쇄 가능한 문서 목록 조회 요청: examSheetId={}", examSheetId);
 
-        PrintableDocumentResponse response = printService.getPrintableDocuments(examDraftId);
-        log.info("인쇄 가능한 문서 목록 조회 성공: examDraftId={}, documentCount={}",
-                examDraftId, response.documents().size());
+        PrintableDocumentResponse response = printService.getPrintableDocuments(examSheetId);
+        log.info("인쇄 가능한 문서 목록 조회 성공: examSheetId={}, documentCount={}",
+                examSheetId, response.documents().size());
 
         return ApiResponse.success("인쇄 가능한 문서 목록 조회 성공", response);
     }
@@ -55,12 +55,12 @@ public class PrintController {
     public ApiResponse<PrintResponse> printDocuments(
             @Valid @RequestBody PrintRequest request) {
 
-        log.info("문서 인쇄 요청: examDraftId={}, documentTypes={}",
-                request.examDraftId(), request.documentTypes());
+        log.info("문서 인쇄 요청: examSheetId={}, documentTypes={}",
+                request.examSheetId(), request.documentTypes());
 
         PrintResponse response = printService.processPrintRequest(request);
-        log.info("문서 인쇄 요청 성공: examDraftId={}, printJobId={}, fileName={}",
-                request.examDraftId(), response.printJobId(), response.fileName());
+        log.info("문서 인쇄 요청 성공: examSheetId={}, printJobId={}, fileName={}",
+                request.examSheetId(), response.printJobId(), response.fileName());
 
         return ApiResponse.success("문서 인쇄 요청 성공", response);
     }

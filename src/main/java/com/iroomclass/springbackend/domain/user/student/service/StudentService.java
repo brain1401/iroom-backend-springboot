@@ -15,8 +15,8 @@ import com.iroomclass.springbackend.domain.user.exam.answer.entity.ExamAnswer;
 import com.iroomclass.springbackend.domain.user.exam.answer.repository.ExamAnswerRepository;
 import com.iroomclass.springbackend.domain.admin.question.entity.Question;
 import com.iroomclass.springbackend.domain.admin.question.repository.QuestionRepository;
-import com.iroomclass.springbackend.domain.admin.exam.entity.ExamDraftQuestion;
-import com.iroomclass.springbackend.domain.admin.exam.repository.ExamDraftQuestionRepository;
+import com.iroomclass.springbackend.domain.admin.exam.entity.ExamSheetQuestion;
+import com.iroomclass.springbackend.domain.admin.exam.repository.ExamSheetQuestionRepository;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -38,7 +38,7 @@ public class StudentService {
     private final ExamSubmissionRepository examSubmissionRepository;
     private final ExamAnswerRepository examAnswerRepository;
     private final QuestionRepository questionRepository;
-    private final ExamDraftQuestionRepository examDraftQuestionRepository;
+    private final ExamSheetQuestionRepository examSheetQuestionRepository;
     
     /**
      * 학생별 시험 제출 이력 조회
@@ -126,10 +126,10 @@ public class StudentService {
     }
     
     /**
-     * ExamDraftQuestion 조회 (문제 번호와 배점 정보)
+     * ExamSheetQuestion 조회 (문제 번호와 배점 정보)
      */
-    private ExamDraftQuestion getExamDraftQuestion(Long examDraftId, Long questionId) {
-        return examDraftQuestionRepository.findByExamDraftIdAndQuestionId(examDraftId, questionId)
+    private ExamSheetQuestion getExamSheetQuestion(Long examSheetId, Long questionId) {
+        return examSheetQuestionRepository.findByExamSheetIdAndQuestionId(examSheetId, questionId)
             .orElse(null);
     }
 
@@ -162,9 +162,9 @@ public class StudentService {
         // 3단계: 문제 정보 조회
         Question question = answer.getQuestion();
         
-        // 4단계: ExamDraftQuestion 조회 (문제 번호와 배점)
-        ExamDraftQuestion examDraftQuestion = getExamDraftQuestion(
-            submission.getExam().getExamDraft().getId(), questionId);
+        // 4단계: ExamSheetQuestion 조회 (문제 번호와 배점)
+        ExamSheetQuestion examSheetQuestion = getExamSheetQuestion(
+            submission.getExam().getExamSheet().getId(), questionId);
         
         log.info("문제별 결과 조회 완료: 제출 ID={}, 문제 ID={}, 정답 여부={}, 점수={}", 
             submissionId, questionId, answer.getIsCorrect(), answer.getScore());
@@ -172,11 +172,11 @@ public class StudentService {
         return new QuestionResultResponse(
             submissionId,
             questionId,
-            examDraftQuestion != null ? examDraftQuestion.getSeqNo() : 0,
+            examSheetQuestion != null ? examSheetQuestion.getSeqNo() : 0,
             question.getQuestionTextAsHtml(),
             answer.getIsCorrect(),
             answer.getScore(),
-            examDraftQuestion != null ? examDraftQuestion.getPoints() : 0,
+            examSheetQuestion != null ? examSheetQuestion.getPoints() : 0,
             question.getUnit().getUnitName(),
             question.getUnit().getSubcategory().getSubcategoryName(),
             question.getUnit().getSubcategory().getCategory().getCategoryName(),
@@ -216,16 +216,16 @@ public class StudentService {
     private ExamResultDetailResponse.QuestionResult convertToQuestionResult(ExamAnswer answer) {
         Question question = answer.getQuestion();
         
-        // ExamDraftQuestion 조회 (문제 번호와 배점)
-        ExamDraftQuestion examDraftQuestion = getExamDraftQuestion(
-            answer.getExamSubmission().getExam().getExamDraft().getId(), question.getId());
+        // ExamSheetQuestion 조회 (문제 번호와 배점)
+        ExamSheetQuestion examSheetQuestion = getExamSheetQuestion(
+            answer.getExamSubmission().getExam().getExamSheet().getId(), question.getId());
         
         return new ExamResultDetailResponse.QuestionResult(
             question.getId(),
-            examDraftQuestion != null ? examDraftQuestion.getSeqNo() : 0,
+            examSheetQuestion != null ? examSheetQuestion.getSeqNo() : 0,
             answer.getIsCorrect(),
             answer.getScore(),
-            examDraftQuestion != null ? examDraftQuestion.getPoints() : 0,
+            examSheetQuestion != null ? examSheetQuestion.getPoints() : 0,
             question.getUnit().getUnitName(),
             question.getDifficulty().name(),
             answer.getAnswerText(),

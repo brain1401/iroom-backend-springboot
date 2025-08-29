@@ -14,9 +14,9 @@ import io.swagger.v3.oas.annotations.media.Schema;
  */
 @Schema(description = "시험 등록 요청")
 public record ExamCreateRequest(
-    @NotNull(message = "시험지 초안 ID는 필수입니다.")
-    @Schema(description = "시험지 초안 ID", example = "1", requiredMode = Schema.RequiredMode.REQUIRED)
-    Long examDraftId,
+    @NotNull(message = "시험지 ID는 필수입니다.")
+    @Schema(description = "시험지 ID", example = "1", requiredMode = Schema.RequiredMode.REQUIRED)
+    Long examSheetId,
     
     @Schema(description = "시험 관련 메모/설명", example = "1학년 중간고사 - 자연수와 0 단원")
     String content,
@@ -27,7 +27,7 @@ public record ExamCreateRequest(
     Integer studentCount
 ) {
     public ExamCreateRequest {
-        Objects.requireNonNull(examDraftId, "examDraftId은 필수입니다");
+        Objects.requireNonNull(examSheetId, "examSheetId은 필수입니다");
         Objects.requireNonNull(studentCount, "studentCount은 필수입니다");
     }
 }

@@ -1,14 +1,15 @@
 package com.iroomclass.springbackend.domain.admin.exam.entity;
 
+import com.iroomclass.springbackend.domain.admin.exam.entity.ExamSheet;
 import com.iroomclass.springbackend.domain.admin.unit.entity.Unit;
 
 import jakarta.persistence.*;
 import lombok.*;
 
 /**
- * 시험지 초안 - 선택 단원 Entity
+ * 시험지 - 선택 단원 Entity
  * 
- * 시험지 초안에 선택된 단원들을 관리합니다.
+ * 시험지에 선택된 단원들을 관리합니다.
  * 하나의 시험지에 여러 단원을 선택할 수 있으며, 중복 선택도 가능합니다.
  * 
  * @author 이룸클래스
@@ -31,13 +32,13 @@ public class ExamSelectedUnit {
     private Long id;
 
     /**
-     * 시험지 초안과의 관계
-     * ManyToOne: 여러 선택 단원이 하나의 시험지 초안에 속함
-     * FetchType.LAZY: 필요할 때만 시험지 초안 정보를 조회
+     * 시험지와의 관계
+     * ManyToOne: 여러 선택 단원이 하나의 시험지에 속함
+     * FetchType.LAZY: 필요할 때만 시험지 정보를 조회
      */
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "exam_draft_id", nullable = false)
-    private ExamDraft examDraft;
+    @JoinColumn(name = "exam_sheet_id", nullable = false)
+    private ExamSheet examSheet;
 
     /**
      * 선택된 단원과의 관계

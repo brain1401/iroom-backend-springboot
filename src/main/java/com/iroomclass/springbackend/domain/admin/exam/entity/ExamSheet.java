@@ -4,24 +4,24 @@ import jakarta.persistence.*;
 import lombok.*;
 
 /**
- * 시험지 초안 Entity
+ * 시험지 Entity
  * 
- * 시험지 작성을 위한 초안 정보를 관리합니다.
+ * 시험지 생성을 위한 정보를 관리합니다.
  * 총점은 100점으로 고정되며, 최대 30문제까지 설정 가능합니다.
  * 
  * @author 이룸클래스
  * @since 2025
  */
 @Entity
-@Table(name = "exam_draft")
+@Table(name = "exam_sheet")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Builder
-public class ExamDraft {
+public class ExamSheet {
 
     /**
-     * 시험지 초안 고유 ID
+     * 시험지 고유 ID
      * 자동 증가하는 기본키
      */
     @Id

@@ -20,25 +20,25 @@ public class QrCodeGenerationService {
     /**
      * 답안지용 QR 코드 생성
      * 
-     * @param examDraftId 시험 초안 ID
+     * @param examSheetId 시험지 ID
      * @return Base64로 인코딩된 QR 코드 이미지
      */
-    public String generateAnswerSheetQrCode(Long examDraftId) {
+    public String generateAnswerSheetQrCode(Long examSheetId) {
         try {
-            log.info("답안지 QR 코드 생성 시작: examDraftId={}", examDraftId);
+            log.info("답안지 QR 코드 생성 시작: examSheetId={}", examSheetId);
             
             // 시험별 고유 QR 코드 내용 생성 (짧게)
-            String qrContent = String.format("E%d", examDraftId);
+            String qrContent = String.format("E%d", examSheetId);
             
             // QR 코드 생성
             String qrCodeBase64 = qrCodeGenerator.generateQrCodeBase64(qrContent);
             
-            log.info("답안지 QR 코드 생성 완료: examDraftId={}, qrContent={}", examDraftId, qrContent);
+            log.info("답안지 QR 코드 생성 완료: examSheetId={}, qrContent={}", examSheetId, qrContent);
             
             return qrCodeBase64;
             
         } catch (Exception e) {
-            log.error("답안지 QR 코드 생성 실패: examDraftId={}", examDraftId, e);
+            log.error("답안지 QR 코드 생성 실패: examSheetId={}", examSheetId, e);
             throw new RuntimeException("QR 코드 생성에 실패했습니다", e);
         }
     }
@@ -46,11 +46,11 @@ public class QrCodeGenerationService {
     /**
      * 시험별 고유 QR 코드 URL 생성
      * 
-     * @param examDraftId 시험 초안 ID
+     * @param examSheetId 시험지 ID
      * @return QR 코드 URL (Base64 데이터 URL)
      */
-    public String generateAnswerSheetQrCodeUrl(Long examDraftId) {
-        String qrCodeBase64 = generateAnswerSheetQrCode(examDraftId);
+    public String generateAnswerSheetQrCodeUrl(Long examSheetId) {
+        String qrCodeBase64 = generateAnswerSheetQrCode(examSheetId);
         return "data:image/png;base64," + qrCodeBase64;
     }
 }

@@ -12,11 +12,11 @@ import com.iroomclass.springbackend.domain.admin.exam.dto.ExamDocumentCreateResp
 import com.iroomclass.springbackend.domain.admin.exam.dto.ExamDocumentDetailResponse;
 import com.iroomclass.springbackend.domain.admin.exam.dto.ExamDocumentListResponse;
 import com.iroomclass.springbackend.domain.admin.exam.entity.ExamDocument;
-import com.iroomclass.springbackend.domain.admin.exam.entity.ExamDraft;
-import com.iroomclass.springbackend.domain.admin.exam.entity.ExamDraftQuestion;
+import com.iroomclass.springbackend.domain.admin.exam.entity.ExamSheet;
+import com.iroomclass.springbackend.domain.admin.exam.entity.ExamSheetQuestion;
 import com.iroomclass.springbackend.domain.admin.exam.repository.ExamDocumentRepository;
-import com.iroomclass.springbackend.domain.admin.exam.repository.ExamDraftQuestionRepository;
-import com.iroomclass.springbackend.domain.admin.exam.repository.ExamDraftRepository;
+import com.iroomclass.springbackend.domain.admin.exam.repository.ExamSheetQuestionRepository;
+import com.iroomclass.springbackend.domain.admin.exam.repository.ExamSheetRepository;
 import com.iroomclass.springbackend.domain.admin.print.service.QrCodeGenerationService;
 import com.iroomclass.springbackend.domain.admin.exam.repository.ExamRepository;
 
@@ -37,9 +37,9 @@ import lombok.extern.slf4j.Slf4j;
 @Transactional(readOnly = true)
 public class ExamDocumentService {
 
-    private final ExamDraftRepository examDraftRepository;
+    private final ExamSheetRepository examSheetRepository;
     private final ExamDocumentRepository examDocumentRepository;
-    private final ExamDraftQuestionRepository examDraftQuestionRepository;
+    private final ExamSheetQuestionRepository examSheetQuestionRepository;
     private final QrCodeGenerationService qrCodeGenerationService;
     private final ExamRepository examRepository;
 
@@ -51,40 +51,40 @@ public class ExamDocumentService {
      */
     @Transactional
     public ExamDocumentCreateResponse createExamDocuments(ExamDocumentCreateRequest request) {
-        log.info("시험지 문서 생성 요청: 시험지 초안 ID={}", request.examDraftId());
+        log.info("시험지 문서 생성 요청: 시험지 ID={}", request.examSheetId());
 
-        // 1단계: 시험지 초안 조회
-        ExamDraft examDraft = examDraftRepository.findById(request.examDraftId())
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 시험지 초안입니다: " + request.examDraftId()));
+        // 1단계: 시험지 조회
+        ExamSheet examSheet = examSheetRepository.findById(request.examSheetId())
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 시험지입니다: " + request.examSheetId()));
 
         // 2단계: 기존 문서 삭제 (재생성 시)
-        List<ExamDocument> existingDocuments = examDocumentRepository.findByExamDraftId(request.examDraftId());
+        List<ExamDocument> existingDocuments = examDocumentRepository.findByExamSheetId(request.examSheetId());
         if (!existingDocuments.isEmpty()) {
             examDocumentRepository.deleteAll(existingDocuments);
             log.info("기존 시험지 문서 {}개 삭제", existingDocuments.size());
         }
 
-        // 3단계: 시험지 초안의 문제들 조회
-        List<ExamDraftQuestion> examDraftQuestions = examDraftQuestionRepository
-                .findByExamDraftIdOrderBySeqNo(request.examDraftId());
+        // 3단계: 시험지의 문제들 조회
+        List<ExamSheetQuestion> examSheetQuestions = examSheetQuestionRepository
+                .findByExamSheetIdOrderBySeqNo(request.examSheetId());
 
-        if (examDraftQuestions.isEmpty()) {
-            throw new IllegalArgumentException("시험지 초안에 문제가 없습니다.");
+        if (examSheetQuestions.isEmpty()) {
+            throw new IllegalArgumentException("시험지에 문제가 없습니다.");
         }
 
         // 4단계: 문서 생성
         List<ExamDocument> documents = new ArrayList<>();
 
         // 4-1. 답안지 생성
-        ExamDocument answerSheet = createAnswerSheet(examDraft, examDraftQuestions);
+        ExamDocument answerSheet = createAnswerSheet(examSheet, examSheetQuestions);
         documents.add(answerSheet);
 
         // 4-2. 문제지 생성
-        ExamDocument questionPaper = createQuestionPaper(examDraft, examDraftQuestions);
+        ExamDocument questionPaper = createQuestionPaper(examSheet, examSheetQuestions);
         documents.add(questionPaper);
 
         // 4-3. 답안 생성
-        ExamDocument answerKey = createAnswerKey(examDraft, examDraftQuestions);
+        ExamDocument answerKey = createAnswerKey(examSheet, examSheetQuestions);
         documents.add(answerKey);
 
         // 5단계: 문서 저장
@@ -93,28 +93,28 @@ public class ExamDocumentService {
         log.info("시험지 문서 생성 완료: 답안지, 문제지, 답안 생성됨");
 
         return new ExamDocumentCreateResponse(
-                examDraft.getId(),
-                examDraft.getExamName(),
-                examDraft.getGrade(),
-                examDraft.getTotalQuestions(),
+                examSheet.getId(),
+                examSheet.getExamName(),
+                examSheet.getGrade(),
+                examSheet.getTotalQuestions(),
                 documents.size());
     }
 
     /**
-     * 시험지 초안별 문서 목록 조회
+     * 시험지별 문서 목록 조회
      * 
-     * @param examDraftId 시험지 초안 ID
-     * @return 해당 시험지 초안의 문서 목록
+     * @param examSheetId 시험지 ID
+     * @return 해당 시험지의 문서 목록
      */
-    public ExamDocumentListResponse getExamDocumentsByDraft(Long examDraftId) {
-        log.info("시험지 초안 {} 문서 목록 조회 요청", examDraftId);
+    public ExamDocumentListResponse getExamDocumentsBySheet(Long examSheetId) {
+        log.info("시험지 {} 문서 목록 조회 요청", examSheetId);
 
-        // 1단계: 시험지 초안 존재 확인
-        ExamDraft examDraft = examDraftRepository.findById(examDraftId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 시험지 초안입니다: " + examDraftId));
+        // 1단계: 시험지 존재 확인
+        ExamSheet examSheet = examSheetRepository.findById(examSheetId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 시험지입니다: " + examSheetId));
 
         // 2단계: 문서 목록 조회
-        List<ExamDocument> documents = examDocumentRepository.findByExamDraftId(examDraftId);
+        List<ExamDocument> documents = examDocumentRepository.findByExamSheetId(examSheetId);
 
         List<ExamDocumentListResponse.DocumentInfo> documentInfos = new ArrayList<>();
         for (ExamDocument document : documents) {
@@ -126,12 +126,12 @@ public class ExamDocumentService {
             documentInfos.add(documentInfo);
         }
 
-        log.info("시험지 초안 {} 문서 목록 조회 완료: {}개", examDraftId, documentInfos.size());
+        log.info("시험지 {} 문서 목록 조회 완료: {}개", examSheetId, documentInfos.size());
 
         return new ExamDocumentListResponse(
-                examDraft.getId(),
-                examDraft.getExamName(),
-                examDraft.getGrade(),
+                examSheet.getId(),
+                examSheet.getExamName(),
+                examSheet.getGrade(),
                 documentInfos,
                 documentInfos.size());
     }
@@ -148,15 +148,15 @@ public class ExamDocumentService {
         ExamDocument document = examDocumentRepository.findById(documentId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 시험지 문서입니다: " + documentId));
 
-        ExamDraft examDraft = document.getExamDraft();
+        ExamSheet examSheet = document.getExamSheet();
 
         log.info("시험지 문서 {} 상세 조회 완료: 타입={}", documentId, document.getDocumentType());
 
         return new ExamDocumentDetailResponse(
                 document.getId(),
-                examDraft.getId(),
-                examDraft.getExamName(),
-                examDraft.getGrade(),
+                examSheet.getId(),
+                examSheet.getExamName(),
+                examSheet.getGrade(),
                 document.getDocumentType().name(),
                 document.getDocumentType().name(),
                 document.getDocumentContent(),
@@ -166,35 +166,35 @@ public class ExamDocumentService {
     /**
      * 시험지 문서 삭제 (시험지 목록에서 삭제)
      * 
-     * @param examDraftId 시험지 초안 ID
+     * @param examSheetId 시험지 ID
      */
     @Transactional
-    public void deleteExamDocuments(Long examDraftId) {
-        log.info("시험지 문서 삭제 요청: 시험지 초안 ID={}", examDraftId);
+    public void deleteExamDocuments(Long examSheetId) {
+        log.info("시험지 문서 삭제 요청: 시험지 ID={}", examSheetId);
 
-        // 1단계: 시험지 초안 존재 확인
-        ExamDraft examDraft = examDraftRepository.findById(examDraftId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 시험지 초안입니다: " + examDraftId));
+        // 1단계: 시험지 존재 확인
+        ExamSheet examSheet = examSheetRepository.findById(examSheetId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 시험지입니다: " + examSheetId));
 
         // 2단계: 연관된 모든 문서 삭제
-        List<ExamDocument> documents = examDocumentRepository.findByExamDraftId(examDraftId);
+        List<ExamDocument> documents = examDocumentRepository.findByExamSheetId(examSheetId);
 
         if (!documents.isEmpty()) {
             examDocumentRepository.deleteAll(documents);
-            log.info("시험지 문서 {}개 삭제 완료: 시험지 초안 ID={}", documents.size(), examDraftId);
+            log.info("시험지 문서 {}개 삭제 완료: 시험지 ID={}", documents.size(), examSheetId);
         } else {
-            log.info("삭제할 시험지 문서가 없습니다: 시험지 초안 ID={}", examDraftId);
+            log.info("삭제할 시험지 문서가 없습니다: 시험지 ID={}", examSheetId);
         }
 
-        // 3단계: 시험지 초안과 관련된 모든 데이터 삭제 (CASCADE로 자동 삭제됨)
-        examDraftRepository.delete(examDraft);
-        log.info("시험지 초안 및 관련 데이터 삭제 완료: 시험지 초안 ID={}", examDraftId);
+        // 3단계: 시험지와 관련된 모든 데이터 삭제 (CASCADE로 자동 삭제됨)
+        examSheetRepository.delete(examSheet);
+        log.info("시험지 및 관련 데이터 삭제 완료: 시험지 ID={}", examSheetId);
     }
 
     /**
      * 답안지 생성
      */
-    private ExamDocument createAnswerSheet(ExamDraft examDraft, List<ExamDraftQuestion> questions) {
+    private ExamDocument createAnswerSheet(ExamSheet examSheet, List<ExamSheetQuestion> questions) {
         StringBuilder content = new StringBuilder();
 
         // 답안지 시작
@@ -204,7 +204,7 @@ public class ExamDocumentService {
         // 답안 작성란
         content.append("<div style='margin-top: 30px;'>");
 
-        for (ExamDraftQuestion question : questions) {
+        for (ExamSheetQuestion question : questions) {
             content.append(
                     "<div style='margin: 15px 0; border: 1px solid #000; display: flex; align-items: stretch;'>");
 
@@ -231,11 +231,11 @@ public class ExamDocumentService {
         content.append("</div>");
 
         // 답안지용 QR 코드 생성
-        String qrCodeUrl = qrCodeGenerationService.generateAnswerSheetQrCodeUrl(examDraft.getId());
-        log.info("답안지 QR 코드 생성: examDraftId={}, qrCodeUrl={}", examDraft.getId(), qrCodeUrl);
+        String qrCodeUrl = qrCodeGenerationService.generateAnswerSheetQrCodeUrl(examSheet.getId());
+        log.info("답안지 QR 코드 생성: examSheetId={}, qrCodeUrl={}", examSheet.getId(), qrCodeUrl);
 
         return ExamDocument.builder()
-                .examDraft(examDraft)
+                .examSheet(examSheet)
                 .documentType(ExamDocument.DocumentType.ANSWER_SHEET)
                 .documentContent(content.toString())
                 .qrCodeUrl(qrCodeUrl) // 새로 생성한 QR 코드 URL 사용
@@ -245,7 +245,7 @@ public class ExamDocumentService {
     /**
      * 문제지 생성
      */
-    private ExamDocument createQuestionPaper(ExamDraft examDraft, List<ExamDraftQuestion> questions) {
+    private ExamDocument createQuestionPaper(ExamSheet examSheet, List<ExamSheetQuestion> questions) {
         StringBuilder content = new StringBuilder();
 
         // 문제지 시작
@@ -255,7 +255,7 @@ public class ExamDocumentService {
         // 문제들
         content.append("<div style='margin-top: 30px;'>");
 
-        for (ExamDraftQuestion question : questions) {
+        for (ExamSheetQuestion question : questions) {
             content.append(
                     "<div style='margin: 25px 0; border: 2px solid #000; display: flex; align-items: stretch;'>");
 
@@ -292,7 +292,7 @@ public class ExamDocumentService {
         content.append("</div>");
 
         return ExamDocument.builder()
-                .examDraft(examDraft)
+                .examSheet(examSheet)
                 .documentType(ExamDocument.DocumentType.QUESTION_PAPER)
                 .documentContent(content.toString())
                 .build();
@@ -301,7 +301,7 @@ public class ExamDocumentService {
     /**
      * 답안 생성
      */
-    private ExamDocument createAnswerKey(ExamDraft examDraft, List<ExamDraftQuestion> questions) {
+    private ExamDocument createAnswerKey(ExamSheet examSheet, List<ExamSheetQuestion> questions) {
         StringBuilder content = new StringBuilder();
 
         // 답안 시작
@@ -311,7 +311,7 @@ public class ExamDocumentService {
         // 답안들
         content.append("<div style='margin-top: 30px;'>");
 
-        for (ExamDraftQuestion question : questions) {
+        for (ExamSheetQuestion question : questions) {
             content.append(
                     "<div style='margin: 25px 0; border: 2px solid #000; display: flex; align-items: stretch;'>");
 
@@ -337,7 +337,7 @@ public class ExamDocumentService {
         content.append("</div>");
 
         return ExamDocument.builder()
-                .examDraft(examDraft)
+                .examSheet(examSheet)
                 .documentType(ExamDocument.DocumentType.ANSWER_KEY)
                 .documentContent(content.toString())
                 .build();
@@ -346,10 +346,10 @@ public class ExamDocumentService {
     /**
      * QR 코드 URL 생성
      */
-    private String generateQrCodeUrl(Long examDraftId) {
+    private String generateQrCodeUrl(Long examSheetId) {
         // 실제로는 QR 코드 이미지를 생성하고 저장해야 하지만,
         // 여기서는 임시 URL을 반환합니다.
-        return "https://example.com/qr/" + examDraftId + "/" + UUID.randomUUID().toString();
+        return "https://example.com/qr/" + examSheetId + "/" + UUID.randomUUID().toString();
     }
 
     /**

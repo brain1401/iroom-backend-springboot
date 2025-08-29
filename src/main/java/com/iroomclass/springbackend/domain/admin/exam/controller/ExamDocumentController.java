@@ -55,36 +55,36 @@ public class ExamDocumentController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "존재하지 않는 시험지 초안")
     })
     public ApiResponse<ExamDocumentCreateResponse> createExamDocuments(@Valid @RequestBody ExamDocumentCreateRequest request) {
-        log.info("시험지 문서 생성 요청: 시험지 초안 ID={}", request.examDraftId());
+        log.info("시험지 문서 생성 요청: 시험지 ID={}", request.examSheetId());
 
         ExamDocumentCreateResponse response = examDocumentService.createExamDocuments(request);
 
-        log.info("시험지 문서 생성 성공: 시험지 초안 ID={}, 문서={}개",
-                response.examDraftId(), response.documentCount());
+        log.info("시험지 문서 생성 성공: 시험지 ID={}, 문서={}개",
+                response.examSheetId(), response.documentCount());
 
         return ApiResponse.success("성공", response);
     }
 
     /**
-     * 시험지 초안별 문서 목록 조회
+     * 시험지별 문서 목록 조회
      * 
-     * @param examDraftId 시험지 초안 ID
-     * @return 해당 시험지 초안의 문서 목록
+     * @param examSheetId 시험지 ID
+     * @return 해당 시험지의 문서 목록
      */
-    @GetMapping("/draft/{examDraftId}")
-    @Operation(summary = "시험지 초안별 문서 목록 조회", description = "특정 시험지 초안의 모든 문서 목록을 조회합니다. 답안지, 문제지, 답안을 포함합니다.")
+    @GetMapping("/sheet/{examSheetId}")
+    @Operation(summary = "시험지별 문서 목록 조회", description = "특정 시험지의 모든 문서 목록을 조회합니다. 답안지, 문제지, 답안을 포함합니다.")
     @io.swagger.v3.oas.annotations.responses.ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "조회 성공"),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "잘못된 시험지 초안 ID"),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "존재하지 않는 시험지 초안")
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "잘못된 시험지 ID"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "존재하지 않는 시험지")
     })
-    public ApiResponse<ExamDocumentListResponse> getExamDocumentsByDraft(
-            @Parameter(description = "시험지 초안 ID", example = "1") @PathVariable Long examDraftId) {
-        log.info("시험지 초안 {} 문서 목록 조회 요청", examDraftId);
+    public ApiResponse<ExamDocumentListResponse> getExamDocumentsBySheet(
+            @Parameter(description = "시험지 ID", example = "1") @PathVariable Long examSheetId) {
+        log.info("시험지 {} 문서 목록 조회 요청", examSheetId);
 
-        ExamDocumentListResponse response = examDocumentService.getExamDocumentsByDraft(examDraftId);
+        ExamDocumentListResponse response = examDocumentService.getExamDocumentsBySheet(examSheetId);
 
-        log.info("시험지 초안 {} 문서 목록 조회 성공: {}개", examDraftId, response.totalCount());
+        log.info("시험지 {} 문서 목록 조회 성공: {}개", examSheetId, response.totalCount());
 
         return ApiResponse.success("성공", response);
     }
@@ -116,23 +116,23 @@ public class ExamDocumentController {
     /**
      * 시험지 문서 삭제 (시험지 목록에서 삭제)
      * 
-     * @param examDraftId 시험지 초안 ID
+     * @param examSheetId 시험지 ID
      * @return 삭제 성공 여부
      */
-    @DeleteMapping("/draft/{examDraftId}")
-    @Operation(summary = "시험지 문서 삭제", description = "시험지 초안과 연관된 모든 문서(답안지, 문제지, 답안)를 삭제합니다. 시험지 목록에서 제거됩니다.")
+    @DeleteMapping("/sheet/{examSheetId}")
+    @Operation(summary = "시험지 문서 삭제", description = "시험지와 연관된 모든 문서(답안지, 문제지, 답안)를 삭제합니다. 시험지 목록에서 제거됩니다.")
     @io.swagger.v3.oas.annotations.responses.ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "삭제 성공"),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "잘못된 시험지 초안 ID"),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "존재하지 않는 시험지 초안")
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "잘못된 시험지 ID"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "존재하지 않는 시험지")
     })
     public ApiResponse<String> deleteExamDocuments(
-            @Parameter(description = "시험지 초안 ID", example = "1") @PathVariable Long examDraftId) {
-        log.info("시험지 문서 삭제 요청: 시험지 초안 ID={}", examDraftId);
+            @Parameter(description = "시험지 ID", example = "1") @PathVariable Long examSheetId) {
+        log.info("시험지 문서 삭제 요청: 시험지 ID={}", examSheetId);
 
-        examDocumentService.deleteExamDocuments(examDraftId);
+        examDocumentService.deleteExamDocuments(examSheetId);
 
-        log.info("시험지 문서 삭제 성공: 시험지 초안 ID={}", examDraftId);
+        log.info("시험지 문서 삭제 성공: 시험지 ID={}", examSheetId);
 
         return ApiResponse.success("성공", "삭제 성공");
     }
