@@ -6,6 +6,7 @@ import com.iroomclass.springbackend.domain.user.info.entity.User;
 
 import java.util.List;
 import java.util.Optional;
+import java.time.LocalDate;
 
 /**
  * 사용자 Repository
@@ -61,4 +62,17 @@ public interface UserRepository extends JpaRepository<User, Long> {
      * @return 존재 여부 (true: 존재함, false: 존재하지 않음)
      */
     boolean existsByPhone(String phone);
+
+    /**
+     * 이름, 전화번호, 생년월일로 사용자 조회 (3-factor 인증)
+     * 
+     * 사용처: 학생 로그인 시 3단계 본인 확인
+     * 예시: "김철수" + "010-1234-5678" + "2008-03-15" → 해당 학생 정보 조회
+     * 
+     * @param name 사용자 이름
+     * @param phone 사용자 전화번호
+     * @param birthDate 사용자 생년월일
+     * @return 해당 사용자 정보 (Optional)
+     */
+    Optional<User> findByNameAndPhoneAndBirthDate(String name, String phone, LocalDate birthDate);
 }

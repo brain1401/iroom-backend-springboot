@@ -2,6 +2,8 @@ package com.iroomclass.springbackend.domain.admin.question.repository;
 
 import java.util.List;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -96,4 +98,16 @@ public interface QuestionRepository extends JpaRepository<Question, Long> {
      * @return 해당 단원들에 속한 문제의 총 개수
      */
     long countByUnitIdIn(List<Long> unitIds);
+    
+    /**
+     * 단원별 문제 목록 조회 (페이징 지원)
+     * 
+     * 사용처: 문제 직접 선택 시스템에서 특정 단원의 문제 목록을 페이징으로 표시
+     * 예시: "정수의 덧셈" 단원 선택 → 20개씩 페이징하여 문제 목록 표시
+     * 
+     * @param unitId 단원 ID
+     * @param pageable 페이징 정보
+     * @return 페이징된 문제 목록
+     */
+    Page<Question> findByUnitId(Long unitId, Pageable pageable);
 }

@@ -1,5 +1,7 @@
 package com.iroomclass.springbackend.domain.admin.unit.repository;
 
+import java.util.List;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -16,6 +18,10 @@ import com.iroomclass.springbackend.domain.admin.unit.entity.UnitCategory;
 @Repository
 public interface UnitCategoryRepository extends JpaRepository<UnitCategory, Long> {
 
-    // UnitCategory는 대분류이므로 학년 정보가 없습니다.
-    // 학년별 조회는 Unit 엔티티에서 처리합니다.
+    /**
+     * 모든 대분류를 표시 순서로 조회
+     * 
+     * @return 표시 순서로 정렬된 대분류 목록
+     */
+    List<UnitCategory> findAllByOrderByDisplayOrder();
 }

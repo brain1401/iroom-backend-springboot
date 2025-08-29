@@ -157,8 +157,46 @@ public class QuestionService {
             question.getId(), 
             unit.getId(), 
             unit.getUnitName(), 
-            question.getQuestionType().name(),
-            question.getDifficulty().name(), 
+            question.getDifficulty().name(),
+            question.getQuestionType().name(), 
+            question.getQuestionTextAsHtml(), 
+            question.getAnswerKey(),
+            question.getChoicesAsMap(),
+            question.getCorrectChoice());
+    }
+    
+    /**
+     * 문제 미리보기 조회
+     * 
+     * 문제 직접 선택 시스템에서 특정 문제를 미리보기할 때 사용됩니다.
+     * getQuestionDetail과 동일한 정보를 제공하지만 용도가 다릅니다.
+     * 
+     * @param questionId 문제 ID
+     * @return 문제 미리보기 정보
+     */
+    public QuestionDetailResponse getQuestionPreview(Long questionId) {
+        log.info("문제 {} 미리보기 조회 요청", questionId);
+        
+        // 1단계: 문제 조회
+        Optional<Question> questionOpt = questionRepository.findById(questionId);
+        if (questionOpt.isEmpty()) {
+            throw new IllegalArgumentException("존재하지 않는 문제입니다: " + questionId);
+        }
+        
+        Question question = questionOpt.get();
+        
+        // 2단계: 단원 정보 조회
+        Unit unit = question.getUnit();
+        
+        log.info("문제 {} 미리보기 조회 완료 - 유형: {}, 난이도: {}", 
+                questionId, question.getQuestionType().name(), question.getDifficulty().name());
+        
+        return new QuestionDetailResponse(
+            question.getId(), 
+            unit.getId(), 
+            unit.getUnitName(), 
+            question.getDifficulty().name(),
+            question.getQuestionType().name(), 
             question.getQuestionTextAsHtml(), 
             question.getAnswerKey(),
             question.getChoicesAsMap(),

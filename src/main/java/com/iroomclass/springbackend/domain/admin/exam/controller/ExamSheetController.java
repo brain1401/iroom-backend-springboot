@@ -16,6 +16,7 @@ import com.iroomclass.springbackend.domain.admin.exam.dto.ExamSheetCreateRespons
 import com.iroomclass.springbackend.domain.admin.exam.dto.ExamSheetDetailResponse;
 import com.iroomclass.springbackend.domain.admin.exam.dto.ExamSheetListResponse;
 import com.iroomclass.springbackend.domain.admin.exam.dto.ExamSheetUpdateRequest;
+import com.iroomclass.springbackend.domain.admin.exam.dto.QuestionReplaceRequest;
 import com.iroomclass.springbackend.domain.admin.exam.service.ExamSheetService;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -34,7 +35,7 @@ import lombok.extern.slf4j.Slf4j;
  * @since 2025
  */
 @RestController
-@RequestMapping("/exam-sheet")
+@RequestMapping("/admin/exam-sheets")
 @RequiredArgsConstructor
 @Slf4j
 @Tag(name = "관리자 - 시험지 관리", description = "시험지 생성, 조회, 수정, 삭제 API")
@@ -158,5 +159,50 @@ public class ExamSheetController {
         log.info("시험지 {} 수정 성공: 문제={}번 교체 완료", examSheetId, request.seqNo());
 
         return ApiResponse.success("성공", response);
+    }
+    
+    /**
+     * 시험지 문제 교체 (직접 선택)
+     * 
+     * 문제 직접 선택 시스템에서 특정 문제를 다른 문제로 교체합니다.
+     * 기존 문제의 순서와 배점은 그대로 유지됩니다.
+     * 
+     * @param examSheetId 시험지 ID
+     * @param request 문제 교체 요청
+     * @return 교체 완료된 시험지 정보
+     */
+    @PostMapping("/{examSheetId}/questions/replace")
+    @Operation(
+        summary = "시험지 문제 교체",
+        description = """
+            특정 문제를 다른 문제로 교체합니다.
+            
+            문제 직접 선택 시스템에서 사용됩니다.
+            기존 문제의 순서와 배점은 그대로 유지되며, 문제 내용만 교체됩니다.
+            
+            제약 조건:
+            - 기존 문제는 시험지에 포함되어 있어야 함
+            - 새로운 문제는 존재해야 하고, 시험지에 중복되지 않아야 함
+            """
+    )
+    @io.swagger.v3.oas.annotations.responses.ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "교체 성공"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "잘못된 요청 (중복 문제, 존재하지 않는 문제 등)"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "시험지 또는 문제를 찾을 수 없음")
+    })
+    public ApiResponse<ExamSheetDetailResponse> replaceQuestion(
+            @Parameter(description = "시험지 ID", example = "1", required = true) 
+            @PathVariable Long examSheetId,
+            @Valid @RequestBody QuestionReplaceRequest request) {
+        
+        log.info("시험지 {} 문제 교체 요청: {} → {}", 
+                examSheetId, request.oldQuestionId(), request.newQuestionId());
+        
+        ExamSheetDetailResponse response = examSheetService.replaceQuestion(examSheetId, request);
+        
+        log.info("시험지 {} 문제 교체 성공: {} → {}", 
+                examSheetId, request.oldQuestionId(), request.newQuestionId());
+        
+        return ApiResponse.success("문제 교체가 완료되었습니다", response);
     }
 }

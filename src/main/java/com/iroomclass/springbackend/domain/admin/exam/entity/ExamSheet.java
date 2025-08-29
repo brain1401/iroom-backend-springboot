@@ -3,6 +3,8 @@ package com.iroomclass.springbackend.domain.admin.exam.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.LocalDateTime;
+
 /**
  * 시험지 Entity
  * 
@@ -52,4 +54,39 @@ public class ExamSheet {
     @Column(nullable = false)
     private Integer totalQuestions;
     
+    /**
+     * 생성일시
+     * 시험지가 생성된 날짜와 시간
+     * 자동으로 현재 시간이 설정됩니다.
+     */
+    @Column(nullable = false)
+    private LocalDateTime createdAt;
+    
+    /**
+     * 수정일시
+     * 시험지가 마지막으로 수정된 날짜와 시간
+     * 자동으로 현재 시간이 설정됩니다.
+     */
+    @Column(nullable = false)
+    private LocalDateTime updatedAt;
+    
+    /**
+     * Entity 저장 전 실행되는 메서드
+     * 생성일시와 수정일시를 자동으로 설정합니다.
+     */
+    @PrePersist
+    protected void onCreate() {
+        LocalDateTime now = LocalDateTime.now();
+        createdAt = now;
+        updatedAt = now;
+    }
+    
+    /**
+     * Entity 업데이트 전 실행되는 메서드
+     * 수정일시를 자동으로 설정합니다.
+     */
+    @PreUpdate
+    protected void onUpdate() {
+        updatedAt = LocalDateTime.now();
+    }
 }

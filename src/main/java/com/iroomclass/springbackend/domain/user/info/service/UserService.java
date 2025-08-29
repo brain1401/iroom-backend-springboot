@@ -28,24 +28,32 @@ public class UserService {
     private final UserRepository userRepository;
     
     /**
-     * 학생 로그인
+     * 학생 로그인 (3-factor 인증)
+     * 이름, 전화번호, 생년월일로 본인 확인
      * 
-     * @param request 학생 로그인 요청
+     * @param request 학생 로그인 요청 (이름 + 전화번호 + 생년월일)
      * @return 로그인 성공 정보
      */
     public UserLoginResponse login(UserLoginRequest request) {
-        log.info("학생 로그인 요청: 이름={}, 전화번호={}", request.name(), request.phone());
+        log.info("3-factor 로그인 시도: 이름={}, 전화번호={}, 생년월일={}", 
+                request.name(), request.phone(), request.birthDate());
         
-        // 1단계: 학생 존재 확인
-        User user = userRepository.findByNameAndPhone(request.name(), request.phone())
-            .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 학생입니다. 이름과 전화번호를 확인해주세요."));
+        // 3-factor 인증: 이름 + 전화번호 + 생년월일
+        User user = userRepository.findByNameAndPhoneAndBirthDate(
+            request.name(), request.phone(), request.birthDate()
+        ).orElseThrow(() -> new IllegalArgumentException(
+            "이름, 전화번호, 생년월일이 일치하지 않습니다."
+        ));
         
-        log.info("학생 로그인 성공: ID={}, 이름={}", user.getId(), user.getName());
+        log.info("학생 로그인 성공: ID={}, 이름={}, 학년={}", 
+                user.getId(), user.getName(), user.getGrade());
         
         return new UserLoginResponse(
             user.getId(),
             user.getName(),
             user.getPhone(),
+            user.getGrade(),
+            user.getBirthDate(),
             "로그인에 성공했습니다."
         );
     }

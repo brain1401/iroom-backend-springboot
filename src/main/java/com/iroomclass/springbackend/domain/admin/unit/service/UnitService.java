@@ -3,14 +3,22 @@ package com.iroomclass.springbackend.domain.admin.unit.service;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.iroomclass.springbackend.domain.admin.question.entity.Question;
 import com.iroomclass.springbackend.domain.admin.question.repository.QuestionRepository;
 import com.iroomclass.springbackend.domain.admin.unit.dto.UnitListResponse;
 import com.iroomclass.springbackend.domain.admin.unit.dto.UnitStatisticsResponse;
+import com.iroomclass.springbackend.domain.admin.unit.dto.UnitTreeResponse;
 import com.iroomclass.springbackend.domain.admin.unit.entity.Unit;
+import com.iroomclass.springbackend.domain.admin.unit.entity.UnitCategory;
+import com.iroomclass.springbackend.domain.admin.unit.entity.UnitSubcategory;
 import com.iroomclass.springbackend.domain.admin.unit.repository.UnitRepository;
+import com.iroomclass.springbackend.domain.admin.unit.repository.UnitCategoryRepository;
+import com.iroomclass.springbackend.domain.admin.unit.repository.UnitSubcategoryRepository;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -30,6 +38,8 @@ import lombok.extern.slf4j.Slf4j;
 public class UnitService {
     
     private final UnitRepository unitRepository;
+    private final UnitCategoryRepository unitCategoryRepository;
+    private final UnitSubcategoryRepository unitSubcategoryRepository;
     private final QuestionRepository questionRepository;
     
     /**
@@ -149,4 +159,112 @@ public class UnitService {
             totalStat
         );
     }
+    
+    /**
+     * 전체 단원 트리 구조 조회
+     * 
+     * 대분류 → 중분류 → 세부단원의 계층 구조를 반환합니다.
+     * 문제 직접 선택 시스템에서 사용됩니다.
+     * 
+     * @return 전체 단원 트리 구조
+     */
+    public List<UnitTreeResponse> getUnitTree() {
+        log.info("단원 트리 구조 조회 시작");
+        
+        // 1단계: 모든 대분류를 표시 순서로 조회
+        List<UnitCategory> categories = unitCategoryRepository.findAllByOrderByDisplayOrder();
+        
+        List<UnitTreeResponse> treeResponse = categories.stream()
+            .map(category -> {
+                // 2단계: 해당 대분류의 모든 중분류 조회
+                List<UnitSubcategory> subcategories = unitSubcategoryRepository
+                    .findByCategoryOrderByDisplayOrder(category);
+                
+                List<UnitTreeResponse.UnitSubcategoryNode> subcategoryNodes = subcategories.stream()
+                    .map(subcategory -> {
+                        // 3단계: 해당 중분류의 모든 세부단원 조회
+                        List<Unit> units = unitRepository
+                            .findBySubcategoryOrderByDisplayOrder(subcategory);
+                        
+                        List<UnitTreeResponse.UnitNode> unitNodes = units.stream()
+                            .map(unit -> new UnitTreeResponse.UnitNode(
+                                unit.getId(),
+                                unit.getUnitName(),
+                                unit.getUnitCode(),
+                                unit.getGrade(),
+                                unit.getDisplayOrder(),
+                                unit.getDescription()
+                            ))
+                            .collect(Collectors.toList());
+                        
+                        return new UnitTreeResponse.UnitSubcategoryNode(
+                            subcategory.getId(),
+                            subcategory.getSubcategoryName(),
+                            subcategory.getDisplayOrder(),
+                            subcategory.getDescription(),
+                            unitNodes
+                        );
+                    })
+                    .collect(Collectors.toList());
+                
+                return new UnitTreeResponse(
+                    category.getId(),
+                    category.getCategoryName(),
+                    category.getDisplayOrder(),
+                    category.getDescription(),
+                    subcategoryNodes
+                );
+            })
+            .collect(Collectors.toList());
+        
+        log.info("단원 트리 구조 조회 완료: {}개 대분류", treeResponse.size());
+        
+        return treeResponse;
+    }
+    
+    /**
+     * 특정 단원의 문제 목록 조회 (페이징 지원)
+     * 
+     * 문제 직접 선택 시스템에서 사용됩니다.
+     * 
+     * @param unitId 단원 ID
+     * @param pageable 페이징 정보
+     * @return 페이징된 문제 목록
+     */
+    public Page<UnitQuestionInfo> getUnitQuestions(Long unitId, Pageable pageable) {
+        log.info("단원 {} 문제 목록 조회 시작 (페이지: {}, 크기: {})", 
+                unitId, pageable.getPageNumber(), pageable.getPageSize());
+        
+        // 1단계: 단원 정보 확인
+        Unit unit = unitRepository.findById(unitId)
+            .orElseThrow(() -> new RuntimeException("단원을 찾을 수 없습니다: " + unitId));
+        
+        // 2단계: 페이징된 문제 목록 조회
+        Page<Question> questions = questionRepository.findByUnitId(unitId, pageable);
+        
+        // 3단계: DTO 변환
+        Page<UnitQuestionInfo> result = questions.map(question -> new UnitQuestionInfo(
+            question.getId(),
+            question.getQuestionType().name(),
+            question.getDifficulty().name(),
+            unit.getUnitName(),
+            unit.getId()
+        ));
+        
+        log.info("단원 {} 문제 목록 조회 완료: {}개 문제 (전체 {}개 중 {}페이지)", 
+                unitId, result.getNumberOfElements(), result.getTotalElements(), result.getNumber() + 1);
+        
+        return result;
+    }
+    
+    /**
+     * 단원별 문제 정보 DTO
+     */
+    public record UnitQuestionInfo(
+        Long questionId,
+        String questionType,
+        String difficulty,
+        String unitName,
+        Long unitId
+    ) {}
 }

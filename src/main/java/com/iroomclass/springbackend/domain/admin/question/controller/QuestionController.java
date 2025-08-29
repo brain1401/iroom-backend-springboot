@@ -29,7 +29,7 @@ import lombok.extern.slf4j.Slf4j;
  * @since 2025
  */
 @RestController
-@RequestMapping("/question")
+@RequestMapping("/admin/questions")
 @RequiredArgsConstructor
 @Slf4j
 @Tag(name = "관리자 - 문제 관리", description = "문제 목록 조회, 상세 조회, 통계, 검색 API")
@@ -158,5 +158,43 @@ public class QuestionController {
         log.info("문제 검색 성공: {}개 결과", response.totalResults());
 
         return ApiResponse.success("조회 성공", response);
+    }
+    
+    /**
+     * 문제 미리보기
+     * 
+     * @param questionId 문제 ID
+     * @return 문제 미리보기 정보
+     */
+    @GetMapping("/{questionId}/preview")
+    @Operation(
+        summary = "문제 미리보기",
+        description = """
+            특정 문제의 미리보기 정보를 조회합니다.
+            
+            문제 직접 선택 시스템에서 사용됩니다.
+            조회 가능한 정보:
+            - 문제 내용 (HTML 형식)
+            - 문제 유형 (주관식/객관식)
+            - 객관식인 경우 선택지 정보
+            - 난이도 및 단원 정보
+            """
+    )
+    @io.swagger.v3.oas.annotations.responses.ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "조회 성공"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "잘못된 문제 ID"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "문제를 찾을 수 없음")
+    })
+    public ApiResponse<QuestionDetailResponse> getQuestionPreview(
+            @Parameter(description = "문제 ID", example = "1", required = true) 
+            @PathVariable Long questionId) {
+        log.info("문제 {} 미리보기 조회 요청", questionId);
+
+        QuestionDetailResponse response = questionService.getQuestionPreview(questionId);
+
+        log.info("문제 {} 미리보기 조회 성공 - 유형: {}, 난이도: {}", 
+                questionId, response.questionType(), response.difficulty());
+
+        return ApiResponse.success("문제 미리보기 조회 성공", response);
     }
 }

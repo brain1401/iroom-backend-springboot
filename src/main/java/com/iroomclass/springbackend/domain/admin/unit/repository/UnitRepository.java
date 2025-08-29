@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import com.iroomclass.springbackend.domain.admin.unit.entity.Unit;
+import com.iroomclass.springbackend.domain.admin.unit.entity.UnitSubcategory;
 
 /**
  * 세부단원 Repository
@@ -50,4 +51,14 @@ public interface UnitRepository extends JpaRepository<Unit, Long> {
      * @return 해당 중분류에 속한 세부단원 목록 (표시 순서대로 정렬)
      */
     List<Unit> findBySubcategoryIdOrderByDisplayOrder(Long subcategoryId);
+    
+    /**
+     * 중분류 엔티티로 세부단원 조회
+     * 
+     * 트리 구조 조회에 사용됩니다.
+     * 
+     * @param subcategory 중분류 엔티티
+     * @return 해당 중분류에 속한 세부단원 목록 (표시 순서대로 정렬)
+     */
+    List<Unit> findBySubcategoryOrderByDisplayOrder(UnitSubcategory subcategory);
 }

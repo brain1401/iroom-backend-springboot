@@ -6,11 +6,15 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.format.annotation.DateTimeFormat;
 
 import com.iroomclass.springbackend.domain.user.student.dto.StudentSubmissionHistoryResponse;
 import com.iroomclass.springbackend.domain.user.student.dto.ExamResultDetailResponse;
 import com.iroomclass.springbackend.domain.user.student.dto.QuestionResultResponse;
+import com.iroomclass.springbackend.domain.user.student.dto.StudentProfileResponse;
 import com.iroomclass.springbackend.domain.user.student.service.StudentService;
+
+import java.time.LocalDate;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -31,10 +35,39 @@ import lombok.extern.slf4j.Slf4j;
 @RequestMapping("/user/student")
 @RequiredArgsConstructor
 @Slf4j
-@Tag(name = "학생 결과 조회", description = "학생 시험 이력 조회, 결과 상세 조회 API")
+@Tag(name = "학생 API", description = "학생 마이페이지, 시험 이력 조회, 결과 상세 조회 API")
 public class StudentController {
 
     private final StudentService studentService;
+
+    /**
+     * 학생 마이페이지 조회
+     * 
+     * @param name 학생 이름
+     * @param phone 학생 전화번호
+     * @param birthDate 학생 생년월일
+     * @return 학생 기본 정보
+     */
+    @GetMapping("/profile")
+    @Operation(summary = "학생 마이페이지 조회", description = "학생의 기본 정보를 조회합니다. 3-factor 인증 사용.")
+    @io.swagger.v3.oas.annotations.responses.ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "조회 성공"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "잘못된 입력값"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "존재하지 않는 학생")
+    })
+    public ApiResponse<StudentProfileResponse> getProfile(
+            @Parameter(description = "학생 이름", example = "김철수") @RequestParam String name,
+            @Parameter(description = "학생 전화번호", example = "010-1234-5678") @RequestParam String phone,
+            @Parameter(description = "학생 생년월일", example = "2008-03-15") 
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate birthDate) {
+        log.info("학생 마이페이지 조회 요청: 이름={}, 전화번호={}, 생년월일={}", name, phone, birthDate);
+
+        StudentProfileResponse response = studentService.getProfile(name, phone, birthDate);
+
+        log.info("학생 마이페이지 조회 성공: 이름={}, 학년={}", response.name(), response.grade());
+
+        return ApiResponse.success("프로필 조회 성공", response);
+    }
 
     /**
      * 학생별 시험 제출 이력 조회

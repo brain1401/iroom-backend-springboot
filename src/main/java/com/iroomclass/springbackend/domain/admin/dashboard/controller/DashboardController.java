@@ -3,6 +3,7 @@ package com.iroomclass.springbackend.domain.admin.dashboard.controller;
 import com.iroomclass.springbackend.common.ApiResponse;
 import com.iroomclass.springbackend.domain.admin.dashboard.dto.GradeSubmissionStatusResponse;
 import com.iroomclass.springbackend.domain.admin.dashboard.dto.GradeScoreDistributionResponse;
+import com.iroomclass.springbackend.domain.admin.dashboard.dto.OverallStatisticsResponse;
 import com.iroomclass.springbackend.domain.admin.dashboard.service.DashboardService;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -29,6 +30,27 @@ import org.springframework.web.bind.annotation.RestController;
 public class DashboardController {
 
     private final DashboardService dashboardService;
+
+    /**
+     * 전체 학년 통합 통계 조회
+     * 
+     * @return 모든 학년의 통합 통계 정보
+     */
+    @Operation(
+        summary = "전체 학년 통합 통계 조회",
+        description = "모든 학년의 통합 통계 정보를 조회합니다"
+    )
+    @GetMapping("/overall-statistics")
+    public ApiResponse<OverallStatisticsResponse> getOverallStatistics() {
+        log.info("전체 학년 통합 통계 조회 요청");
+        
+        OverallStatisticsResponse response = dashboardService.getOverallStatistics();
+        
+        log.info("전체 학년 통합 통계 조회 완료: 전체 학생 수={}, 평균 성적={}", 
+                response.totalStudentCount(), response.overallAverageScore());
+        
+        return ApiResponse.success("전체 학년 통합 통계 조회 성공", response);
+    }
 
     /**
      * 학년별 시험 제출 현황 조회

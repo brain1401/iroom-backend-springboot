@@ -2,6 +2,7 @@ package com.iroomclass.springbackend.domain.user.info.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Objects;
+import java.time.LocalDate;
 
 /**
  * 학생 로그인 응답 DTO
@@ -19,6 +20,12 @@ public record UserLoginResponse(
 
     @Schema(description = "학생 전화번호", example = "010-1234-5678")
     String phone,
+    
+    @Schema(description = "학년", example = "1")
+    Integer grade,
+    
+    @Schema(description = "생년월일", example = "2008-03-15")
+    LocalDate birthDate,
 
     @Schema(description = "로그인 성공 메시지", example = "로그인에 성공했습니다.")
     String message
@@ -30,6 +37,8 @@ public record UserLoginResponse(
         Objects.requireNonNull(userId, "userId는 필수입니다");
         Objects.requireNonNull(name, "name은 필수입니다");
         Objects.requireNonNull(phone, "phone은 필수입니다");
+        Objects.requireNonNull(grade, "grade는 필수입니다");
+        Objects.requireNonNull(birthDate, "birthDate는 필수입니다");
         Objects.requireNonNull(message, "message는 필수입니다");
     }
 }

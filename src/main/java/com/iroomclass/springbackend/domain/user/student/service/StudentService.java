@@ -2,6 +2,7 @@ package com.iroomclass.springbackend.domain.user.student.service;
 
 import java.util.List;
 import java.util.stream.Collectors;
+import java.time.LocalDate;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -9,6 +10,9 @@ import org.springframework.transaction.annotation.Transactional;
 import com.iroomclass.springbackend.domain.user.student.dto.StudentSubmissionHistoryResponse;
 import com.iroomclass.springbackend.domain.user.student.dto.ExamResultDetailResponse;
 import com.iroomclass.springbackend.domain.user.student.dto.QuestionResultResponse;
+import com.iroomclass.springbackend.domain.user.student.dto.StudentProfileResponse;
+import com.iroomclass.springbackend.domain.user.info.entity.User;
+import com.iroomclass.springbackend.domain.user.info.repository.UserRepository;
 import com.iroomclass.springbackend.domain.user.exam.entity.ExamSubmission;
 import com.iroomclass.springbackend.domain.user.exam.repository.ExamSubmissionRepository;
 import com.iroomclass.springbackend.domain.user.exam.answer.entity.ExamAnswer;
@@ -39,6 +43,34 @@ public class StudentService {
     private final ExamAnswerRepository examAnswerRepository;
     private final QuestionRepository questionRepository;
     private final ExamSheetQuestionRepository examSheetQuestionRepository;
+    private final UserRepository userRepository;
+    
+    /**
+     * 학생 프로필 조회 (3-factor 인증)
+     * 이름, 전화번호, 생년월일로 본인 확인 후 기본 정보 반환
+     * 
+     * @param name 학생 이름
+     * @param phone 학생 전화번호  
+     * @param birthDate 학생 생년월일
+     * @return 학생 기본 정보
+     */
+    public StudentProfileResponse getProfile(String name, String phone, LocalDate birthDate) {
+        log.info("학생 프로필 조회 요청: 이름={}, 전화번호={}, 생년월일={}", name, phone, birthDate);
+        
+        // 3-factor 인증: 이름 + 전화번호 + 생년월일
+        User user = userRepository.findByNameAndPhoneAndBirthDate(name, phone, birthDate)
+            .orElseThrow(() -> new IllegalArgumentException(
+                "이름, 전화번호, 생년월일이 일치하지 않습니다."));
+        
+        log.info("학생 프로필 조회 성공: ID={}, 이름={}, 학년={}", user.getId(), user.getName(), user.getGrade());
+        
+        return new StudentProfileResponse(
+            user.getName(),
+            user.getPhone(),
+            user.getBirthDate(),
+            user.getGrade()
+        );
+    }
     
     /**
      * 학생별 시험 제출 이력 조회

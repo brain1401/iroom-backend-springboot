@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.iroomclass.springbackend.domain.admin.dashboard.dto.GradeSubmissionStatusResponse;
 import com.iroomclass.springbackend.domain.admin.dashboard.dto.GradeScoreDistributionResponse;
+import com.iroomclass.springbackend.domain.admin.dashboard.dto.OverallStatisticsResponse;
 import com.iroomclass.springbackend.domain.admin.exam.entity.Exam;
 import com.iroomclass.springbackend.domain.admin.exam.repository.ExamRepository;
 import com.iroomclass.springbackend.domain.user.exam.entity.ExamSubmission;
@@ -31,6 +32,64 @@ public class DashboardService {
     private final ExamRepository examRepository;
     private final ExamSubmissionRepository examSubmissionRepository;
 
+    /**
+     * 전체 학년 통합 통계 조회
+     * 모든 학년의 통합 통계 정보를 제공합니다.
+     * 
+     * @return 전체 통합 통계 정보
+     */
+    public OverallStatisticsResponse getOverallStatistics() {
+        log.info("전체 학년 통합 통계 조회 시작");
+        
+        // 1단계: 전체 학년의 시험 제출 데이터 수집
+        List<ExamSubmission> allSubmissions = examSubmissionRepository.findAll();
+        
+        if (allSubmissions.isEmpty()) {
+            log.info("시험 제출 데이터가 없습니다");
+            return createEmptyOverallStatistics();
+        }
+        
+        // 2단계: 전체 학생 수 및 평균 성적 계산
+        Map<String, List<ExamSubmission>> allStudentSubmissions = allSubmissions.stream()
+            .collect(Collectors.groupingBy(submission -> 
+                submission.getStudentName() + "_" + submission.getStudentPhone()));
+        
+        List<Double> allStudentAverageScores = new ArrayList<>();
+        for (List<ExamSubmission> studentSubmissionList : allStudentSubmissions.values()) {
+            double averageScore = studentSubmissionList.stream()
+                .filter(submission -> submission.getTotalScore() != null)
+                .mapToInt(submission -> submission.getTotalScore())
+                .average()
+                .orElse(0.0);
+            
+            if (averageScore > 0) {
+                allStudentAverageScores.add(averageScore);
+            }
+        }
+        
+        // 3단계: 전체 평균 성적 계산
+        double overallAverageScore = allStudentAverageScores.stream()
+            .mapToDouble(Double::doubleValue)
+            .average()
+            .orElse(0.0);
+        
+        // 4단계: 전체 상/중/하위권 분포 계산
+        OverallStatisticsResponse.OverallRankDistribution rankDistribution = calculateOverallRankDistribution(allStudentAverageScores);
+        
+        // 5단계: 학년별 세부 통계 계산
+        List<OverallStatisticsResponse.GradeStatistics> gradeStatistics = calculateGradeStatistics(allSubmissions);
+        
+        log.info("전체 학년 통합 통계 조회 완료: 전체 학생 수={}, 평균 성적={}", 
+                allStudentSubmissions.size(), overallAverageScore);
+        
+        return new OverallStatisticsResponse(
+            allStudentSubmissions.size(),
+            Math.round(overallAverageScore * 10.0) / 10.0,
+            rankDistribution,
+            gradeStatistics
+        );
+    }
+    
     /**
      * 학년별 시험 제출 현황 조회
      * 
@@ -213,6 +272,111 @@ public class DashboardService {
         );
     }
 
+    /**
+     * 전체 학년 상/중/하위권 분포 계산
+     */
+    private OverallStatisticsResponse.OverallRankDistribution calculateOverallRankDistribution(List<Double> scores) {
+        long highRankCount = scores.stream().filter(score -> score >= 80).count();
+        long middleRankCount = scores.stream().filter(score -> score >= 60 && score < 80).count();
+        long lowRankCount = scores.stream().filter(score -> score < 60).count();
+        
+        double totalCount = scores.size();
+        double highRankPercentage = totalCount > 0 ? (double) highRankCount / totalCount * 100 : 0.0;
+        double middleRankPercentage = totalCount > 0 ? (double) middleRankCount / totalCount * 100 : 0.0;
+        double lowRankPercentage = totalCount > 0 ? (double) lowRankCount / totalCount * 100 : 0.0;
+        
+        return new OverallStatisticsResponse.OverallRankDistribution(
+            (int) highRankCount,
+            (int) middleRankCount,
+            (int) lowRankCount,
+            Math.round(highRankPercentage * 10.0) / 10.0,
+            Math.round(middleRankPercentage * 10.0) / 10.0,
+            Math.round(lowRankPercentage * 10.0) / 10.0
+        );
+    }
+    
+    /**
+     * 학년별 세부 통계 계산
+     */
+    private List<OverallStatisticsResponse.GradeStatistics> calculateGradeStatistics(List<ExamSubmission> allSubmissions) {
+        List<OverallStatisticsResponse.GradeStatistics> gradeStatistics = new ArrayList<>();
+        
+        // 학년별로 그룹핑
+        Map<Integer, List<ExamSubmission>> submissionsByGrade = allSubmissions.stream()
+            .collect(Collectors.groupingBy(submission -> submission.getExam().getGrade()));
+        
+        for (Map.Entry<Integer, List<ExamSubmission>> entry : submissionsByGrade.entrySet()) {
+            Integer grade = entry.getKey();
+            List<ExamSubmission> gradeSubmissions = entry.getValue();
+            
+            // 해당 학년의 학생별 평균 성적 계산
+            Map<String, List<ExamSubmission>> studentSubmissions = gradeSubmissions.stream()
+                .collect(Collectors.groupingBy(submission -> 
+                    submission.getStudentName() + "_" + submission.getStudentPhone()));
+            
+            List<Double> gradeAverageScores = new ArrayList<>();
+            for (List<ExamSubmission> studentSubmissionList : studentSubmissions.values()) {
+                double averageScore = studentSubmissionList.stream()
+                    .filter(submission -> submission.getTotalScore() != null)
+                    .mapToInt(submission -> submission.getTotalScore())
+                    .average()
+                    .orElse(0.0);
+                
+                if (averageScore > 0) {
+                    gradeAverageScores.add(averageScore);
+                }
+            }
+            
+            if (!gradeAverageScores.isEmpty()) {
+                // 해당 학년의 통계 계산
+                double averageScore = gradeAverageScores.stream()
+                    .mapToDouble(Double::doubleValue)
+                    .average()
+                    .orElse(0.0);
+                
+                int maxScore = (int) gradeAverageScores.stream()
+                    .mapToDouble(Double::doubleValue)
+                    .max()
+                    .orElse(0.0);
+                
+                int minScore = (int) gradeAverageScores.stream()
+                    .mapToDouble(Double::doubleValue)
+                    .min()
+                    .orElse(0.0);
+                
+                gradeStatistics.add(new OverallStatisticsResponse.GradeStatistics(
+                    grade,
+                    studentSubmissions.size(),
+                    Math.round(averageScore * 10.0) / 10.0,
+                    maxScore,
+                    minScore
+                ));
+            }
+        }
+        
+        // 학년순으로 정렬
+        gradeStatistics.sort((a, b) -> Integer.compare(a.grade(), b.grade()));
+        
+        return gradeStatistics;
+    }
+    
+    /**
+     * 빈 전체 통계 생성 (데이터가 없을 때)
+     */
+    private OverallStatisticsResponse createEmptyOverallStatistics() {
+        OverallStatisticsResponse.OverallRankDistribution emptyRankDistribution = 
+            new OverallStatisticsResponse.OverallRankDistribution(
+                0, 0, 0, 0.0, 0.0, 0.0
+            );
+        
+        return new OverallStatisticsResponse(
+            0,
+            0.0,
+            emptyRankDistribution,
+            new ArrayList<>()
+        );
+    }
+    
     /**
      * 빈 성적 분포도 생성 (데이터가 없을 때)
      */

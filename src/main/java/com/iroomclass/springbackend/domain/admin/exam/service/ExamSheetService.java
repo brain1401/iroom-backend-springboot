@@ -11,6 +11,7 @@ import com.iroomclass.springbackend.domain.admin.exam.dto.ExamSheetCreateRespons
 import com.iroomclass.springbackend.domain.admin.exam.dto.ExamSheetDetailResponse;
 import com.iroomclass.springbackend.domain.admin.exam.dto.ExamSheetListResponse;
 import com.iroomclass.springbackend.domain.admin.exam.dto.ExamSheetUpdateRequest;
+import com.iroomclass.springbackend.domain.admin.exam.dto.QuestionReplaceRequest;
 import com.iroomclass.springbackend.domain.admin.exam.entity.ExamSheet;
 import com.iroomclass.springbackend.domain.admin.exam.entity.ExamSheetQuestion;
 import com.iroomclass.springbackend.domain.admin.exam.entity.ExamSelectedUnit;
@@ -282,6 +283,64 @@ public class ExamSheetService {
         log.info("시험지 {} 문제 교체 완료: {}번 문제", examSheetId, request.seqNo());
 
         // 5단계: 수정된 시험지 상세 정보 반환
+        return getExamSheetDetail(examSheetId);
+    }
+    
+    /**
+     * 시험지 문제 교체 (명시적)
+     * 
+     * 문제 직접 선택 시스템에서 특정 문제를 다른 문제로 교체합니다.
+     * 
+     * @param examSheetId 시험지 ID
+     * @param request 문제 교체 요청
+     * @return 교체 완료된 시험지 정보
+     */
+    @Transactional
+    public ExamSheetDetailResponse replaceQuestion(Long examSheetId, QuestionReplaceRequest request) {
+        log.info("시험지 {} 문제 교체 요청: {} → {}", 
+                examSheetId, request.oldQuestionId(), request.newQuestionId());
+        
+        // 1단계: 시험지 존재 확인
+        ExamSheet examSheet = examSheetRepository.findById(examSheetId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 시험지입니다: " + examSheetId));
+        
+        // 2단계: 기존 문제가 시험지에 포함되어 있는지 확인
+        ExamSheetQuestion currentExamSheetQuestion = examSheetQuestionRepository
+                .findByExamSheetIdAndQuestionId(examSheetId, request.oldQuestionId())
+                .orElseThrow(() -> new IllegalArgumentException(
+                    "시험지에 포함되지 않은 문제입니다: " + request.oldQuestionId()));
+        
+        // 3단계: 새로운 문제 존재 확인
+        Question newQuestion = questionRepository.findById(request.newQuestionId())
+                .orElseThrow(() -> new IllegalArgumentException(
+                    "존재하지 않는 문제입니다: " + request.newQuestionId()));
+        
+        // 4단계: 새로운 문제가 이미 시험지에 포함되어 있지 않은지 확인
+        boolean newQuestionExists = examSheetQuestionRepository
+                .findByExamSheetIdAndQuestionId(examSheetId, request.newQuestionId())
+                .isPresent();
+        
+        if (newQuestionExists) {
+            throw new IllegalArgumentException("새로운 문제가 이미 시험지에 포함되어 있습니다: " + request.newQuestionId());
+        }
+        
+        // 5단계: 문제 교체 - 기존 문제 정보 유지하면서 Question 참조만 변경
+        ExamSheetQuestion updatedExamSheetQuestion = ExamSheetQuestion.builder()
+                .examSheet(currentExamSheetQuestion.getExamSheet())
+                .question(newQuestion)
+                .seqNo(currentExamSheetQuestion.getSeqNo())
+                .points(currentExamSheetQuestion.getPoints())
+                .build();
+        
+        // 6단계: 기존 문제 삭제 후 새 문제 저장
+        examSheetQuestionRepository.delete(currentExamSheetQuestion);
+        examSheetQuestionRepository.save(updatedExamSheetQuestion);
+        
+        log.info("시험지 {} 문제 교체 완료: {} → {} ({}번 문제)", 
+                examSheetId, request.oldQuestionId(), request.newQuestionId(), 
+                currentExamSheetQuestion.getSeqNo());
+        
+        // 7단계: 수정된 시험지 상세 정보 반환
         return getExamSheetDetail(examSheetId);
     }
 
