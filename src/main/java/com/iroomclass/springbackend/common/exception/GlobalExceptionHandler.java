@@ -1,6 +1,7 @@
 package com.iroomclass.springbackend.common.exception;
 
 import com.iroomclass.springbackend.common.ApiResponse;
+import com.iroomclass.springbackend.common.ResultStatus;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
@@ -16,8 +17,10 @@ import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -34,19 +37,30 @@ public class GlobalExceptionHandler {
      * Validation 실패 예외 처리 (@RequestBody @Valid)
      */
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ApiResponse<Void>> handleMethodArgumentNotValid(
+    public ResponseEntity<ApiResponse<Map<String, String>>> handleMethodArgumentNotValid(
             MethodArgumentNotValidException ex, HttpServletRequest request) {
         
         List<FieldError> fieldErrors = ex.getBindingResult().getFieldErrors();
+        Map<String, String> errorDetails = fieldErrors.stream()
+                .collect(Collectors.toMap(
+                    FieldError::getField,
+                    FieldError::getDefaultMessage,
+                    (existing, replacement) -> existing
+                ));
+        
         String errorMessage = fieldErrors.stream()
                 .map(error -> error.getField() + ": " + error.getDefaultMessage())
                 .collect(Collectors.joining(", "));
         
         log.warn("Validation 실패: {}", errorMessage);
-        return createErrorResponse(
-                "입력 데이터 검증에 실패했습니다: " + errorMessage, 
-                HttpStatus.BAD_REQUEST
+        
+        ApiResponse<Map<String, String>> errorResponse = new ApiResponse<>(
+            ResultStatus.ERROR,
+            "입력 데이터 검증에 실패했습니다",
+            errorDetails
         );
+        
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
     }
 
     /**
@@ -161,6 +175,20 @@ public class GlobalExceptionHandler {
         }
         
         return createErrorResponse(message, HttpStatus.CONFLICT);
+    }
+
+    /**
+     * NoResourceFoundException 처리 (404 에러)
+     */
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<ApiResponse<Void>> handleNoResourceFound(
+            NoResourceFoundException ex, HttpServletRequest request) {
+        
+        log.warn("존재하지 않는 리소스: {}", ex.getResourcePath());
+        return createErrorResponse(
+                "존재하지 않는 엔드포인트입니다: " + ex.getResourcePath(),
+                HttpStatus.NOT_FOUND
+        );
     }
 
     /**
