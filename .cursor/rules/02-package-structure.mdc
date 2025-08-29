@@ -1,0 +1,208 @@
+---
+description: Domain-Driven Design 기반 패키지 구조 규칙
+globs: src/main/java/**/*.java
+alwaysApply: false
+---
+
+# 패키지 구조 규칙 (Domain-Driven Design)
+
+## 📦 기본 패키지 구조
+
+```
+com.iroomclass.springbackend/
+├── domain/                    # 도메인별 패키지
+│   ├── {domain}/             # user, admin, system
+│   │   ├── controller/       # REST API 컨트롤러
+│   │   ├── service/          # 비즈니스 로직
+│   │   ├── repository/       # 데이터 접근 계층
+│   │   ├── entity/           # JPA 엔티티
+│   │   └── dto/              # 데이터 전송 객체
+├── common/                   # 공통 유틸리티
+│   ├── ApiResponse.java      # 표준 응답 래퍼
+│   ├── ResultStatus.java     # 응답 상태
+│   └── exception/            # 공통 예외 처리
+└── config/                   # 설정 클래스
+    ├── SecurityConfig.java
+    ├── OpenApiConfig.java
+    └── WebConfig.java
+```
+
+## 🎯 도메인 분류
+
+### User Domain (학생 영역)
+```
+domain/user/
+├── info/                     # 학생 정보 관리
+│   ├── controller/UserController.java
+│   ├── service/UserService.java
+│   ├── repository/UserRepository.java
+│   ├── entity/User.java
+│   └── dto/
+│       ├── UserLoginRequest.java
+│       └── UserLoginResponse.java
+├── exam/                     # 시험 응시
+│   └── answer/              # 답안 관리
+├── student/                  # 학생 결과 조회
+```
+
+### Admin Domain (관리자 영역)
+```
+domain/admin/
+├── info/                     # 관리자 정보
+├── question/                 # 문제 관리
+├── exam/                     # 시험 관리
+├── unit/                     # 단원 관리
+├── print/                    # 인쇄 관리
+├── dashboard/                # 대시보드
+├── submission/               # 제출물 관리
+└── statistics/               # 통계 분석
+```
+
+### System Domain (시스템 영역)
+```
+domain/system/
+├── controller/
+│   ├── HealthController.java
+│   ├── EchoController.java
+│   └── GreetingController.java
+├── service/SystemService.java
+└── dto/
+    ├── SystemHealthDto.java
+    ├── EchoDto.java
+    └── GreetingDto.java
+```
+
+## 📋 패키지 명명 규칙
+
+### 도메인 패키지
+- **소문자, 단수형** 사용: `user`, `admin`, `system`
+- **비즈니스 의미** 반영: `question` (문제), `exam` (시험)
+
+### 계층 패키지  
+- **복수형** 사용: `controllers`, `services`, `repositories`
+- **표준 이름** 고수: `dto`, `entity`, `exception`
+
+### 서브 도메인
+- **기능별 분리**: `user.info`, `user.exam`, `admin.question`
+- **논리적 그룹핑**: 관련 기능끼리 묶음
+
+## 🔄 계층별 책임
+
+### Controller 계층
+- HTTP 요청/응답 처리
+- 입력 데이터 검증 (`@Valid`)
+- 인증/인가 처리 (`@PreAuthorize`)
+- API 문서화 (`@Tag`, `@Operation`)
+
+### Service 계층  
+- 비즈니스 로직 실행
+- 트랜잭션 경계 관리 (`@Transactional`)
+- 도메인 객체 조작
+- 외부 서비스 연동
+
+### Repository 계층
+- 데이터 접근 추상화
+- 쿼리 실행 및 최적화
+- JPA Repository 패턴 활용
+
+### Entity 계층
+- 도메인 모델 표현
+- 비즈니스 규칙 캡슐화
+- 데이터 무결성 보장
+
+### DTO 계층
+- 계층 간 데이터 전송
+- 입출력 데이터 구조 정의
+- Validation 규칙 포함
+
+## ✅ 패키지 생성 규칙
+
+### 새 도메인 추가 시
+1. `domain/{domain_name}/` 디렉터리 생성
+2. 표준 계층 패키지 생성 (controller, service, repository, entity, dto)
+3. 도메인별 README 작성 (선택사항)
+
+### 새 기능 추가 시  
+1. 기존 도메인에 포함되는지 판단
+2. 새 서브 도메인이 필요한지 평가
+3. 적절한 계층에 클래스 배치
+
+## ❌ 피해야 할 패턴
+
+### 계층별 패키지 구조 (금지)
+```
+❌ 잘못된 구조
+com.iroomclass.springbackend/
+├── controller/               # 계층별 분리 금지
+├── service/
+├── repository/
+└── dto/
+```
+
+### 기술적 분류 (지양)
+```  
+❌ 지양할 구조
+├── rest/                     # 기술적 분류
+├── jpa/
+└── validation/
+```
+
+## 🎯 도메인 간 통신 규칙
+
+### ✅ 허용되는 의존성
+```java
+// Service 간 통신 (DTO 사용)
+@Service
+public class ExamService {
+    private final UserService userService;  // 다른 도메인 서비스
+    
+    public ExamDto createExam(CreateExamRequest request) {
+        UserDto user = userService.findById(request.userId());  // DTO 교환
+        // 시험 생성 로직
+    }
+}
+```
+
+### ❌ 금지되는 의존성
+```java
+// Entity 직접 참조 금지
+@Service  
+public class ExamService {
+    private final UserRepository userRepository;  // 다른 도메인 Repository 직접 사용 금지
+    
+    public ExamDto createExam(CreateExamRequest request) {
+        User user = userRepository.findById(request.userId());  // 금지!
+    }
+}
+```
+
+## 📝 파일 명명 규칙
+
+### Controller
+- `{도메인}Controller.java`: `UserController.java`
+- `Admin{기능}Controller.java`: `AdminExamController.java`
+
+### Service
+- `{도메인}Service.java`: `UserService.java`
+- 특수 서비스: `AiImageRecognitionService.java`
+
+### Repository
+- `{엔티티}Repository.java`: `UserRepository.java`
+
+### Entity
+- 단수형 명사: `User.java`, `Exam.java`, `Question.java`
+
+### DTO  
+- 목적 명시: `UserLoginRequest.java`, `ExamCreateResponse.java`
+- Record 형태: `public record UserDto(...) {}`
+
+## 🔍 패키지 검증 체크리스트
+
+새 클래스 생성 시 확인사항:
+- [ ] 올바른 도메인 패키지에 위치
+- [ ] 적절한 계층 패키지 선택  
+- [ ] 명명 규칙 준수
+- [ ] 도메인 경계 위반 없음
+- [ ] 순환 의존성 없음
+
+이 구조를 따라 일관되고 확장 가능한 코드베이스를 유지하세요.

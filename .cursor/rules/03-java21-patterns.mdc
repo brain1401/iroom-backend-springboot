@@ -1,0 +1,358 @@
+---
+description: Java 21 현대적 기능 활용 규칙 (Record, Pattern Matching, Text Blocks)
+globs: **/dto/*.java, **/*Request.java, **/*Response.java, **/*Dto.java
+alwaysApply: false
+---
+
+# Java 21 현대적 패턴 활용
+
+## 🎯 Java 21 핵심 기능 활용
+
+### Record 활용 (필수)
+- **모든 DTO는 Record로 구현**
+- **불변성과 간결성** 확보  
+- **Compact Constructor** 활용
+
+### Pattern Matching
+- **Switch Expression** 적극 활용
+- **instanceof 패턴** 활용
+
+### Text Blocks  
+- **긴 문자열** 가독성 향상
+- **SQL 쿼리, JSON 템플릿** 등
+
+## 📋 Record 사용 규칙
+
+### ✅ 기본 Record 패턴
+```java
+/**
+ * 사용자 로그인 요청 DTO
+ */
+@Schema(description = "학생 로그인 요청")
+public record UserLoginRequest(
+    @NotBlank(message = "학생 이름은 필수입니다.")
+    @Schema(description = "학생 이름", example = "김철수")
+    String name,
+    
+    @NotBlank(message = "학생 전화번호는 필수입니다.")
+    @Pattern(regexp = "^01[0-9]-[0-9]{3,4}-[0-9]{4}$", 
+             message = "올바른 전화번호 형식이 아닙니다.")
+    @Schema(description = "학생 전화번호", example = "010-1234-5678")
+    String phone
+) {
+    /**
+     * Compact Constructor - 입력 검증 수행
+     */
+    public UserLoginRequest {
+        Objects.requireNonNull(name, "name은 필수입니다");
+        Objects.requireNonNull(phone, "phone은 필수입니다");
+    }
+}
+```
+
+### ✅ 정적 팩토리 메서드 제공
+```java
+/**
+ * 시스템 헬스체크 응답 DTO
+ */
+public record SystemHealthDto(
+    @Schema(description = "상태") String status,
+    @Schema(description = "타임스탬프") LocalDateTime timestamp,
+    @Schema(description = "메시지") String message,
+    @Schema(description = "서비스별 상태") Map<String, ServiceHealthDto> services
+) {
+    /**
+     * 정상 상태 헬스체크 응답 생성
+     */
+    public static SystemHealthDto up(String message, Map<String, ServiceHealthDto> services) {
+        return new SystemHealthDto("UP", LocalDateTime.now(), message, services);
+    }
+    
+    /**
+     * 오류 상태 헬스체크 응답 생성
+     */
+    public static SystemHealthDto down(String message, Map<String, ServiceHealthDto> services) {
+        return new SystemHealthDto("DOWN", LocalDateTime.now(), message, services);
+    }
+    
+    /**
+     * 중첩 Record - 서비스별 헬스체크 정보
+     */
+    public record ServiceHealthDto(
+        @Schema(description = "서비스 상태") String status,
+        @Schema(description = "상태 메시지") String message,
+        @Schema(description = "응답 시간") Long responseTimeMs
+    ) {
+        public static ServiceHealthDto up(String message, Long responseTime) {
+            return new ServiceHealthDto("UP", message, responseTime);
+        }
+        
+        public static ServiceHealthDto down(String message) {
+            return new ServiceHealthDto("DOWN", message, null);
+        }
+    }
+}
+```
+
+### ✅ Entity에서 DTO 변환 패턴
+```java
+/**
+ * 사용자 응답 DTO
+ */
+public record UserDto(
+    @Schema(description = "사용자 ID", example = "1") 
+    Long id,
+    
+    @Schema(description = "사용자명", example = "김철수") 
+    String name,
+    
+    @Schema(description = "전화번호", example = "010-1234-5678")
+    String phone,
+    
+    @Schema(description = "등록일시")
+    LocalDateTime createdAt
+) {
+    /**
+     * Entity에서 DTO로 변환하는 정적 팩토리 메서드
+     */
+    public static UserDto from(User user) {
+        return new UserDto(
+            user.getId(),
+            user.getName(),
+            user.getPhone(),
+            user.getCreatedAt()
+        );
+    }
+    
+    /**
+     * List<Entity>를 List<DTO>로 변환
+     */
+    public static List<UserDto> from(List<User> users) {
+        return users.stream()
+            .map(UserDto::from)
+            .toList();
+    }
+}
+```
+
+### ✅ 복합 데이터 구조 Record
+```java
+/**
+ * 시험 답안 처리 응답 DTO
+ */
+public record ExamAnswerSheetProcessResponse(
+    @Schema(description = "처리된 이미지 수") 
+    Integer processedImageCount,
+    
+    @Schema(description = "생성된 답안 수")
+    Integer createdAnswerCount,
+    
+    @Schema(description = "답안 목록")
+    List<ExamAnswerResponse> answers,
+    
+    @Schema(description = "처리 상태")
+    ProcessStatus status,
+    
+    @Schema(description = "결과 메시지")
+    String message
+) {
+    /**
+     * 처리 상태 열거형
+     */
+    public enum ProcessStatus {
+        COMPLETED, PARTIAL, FAILED
+    }
+    
+    /**
+     * 성공적인 처리 결과 생성
+     */
+    public static ExamAnswerSheetProcessResponse success(
+            int imageCount, 
+            List<ExamAnswerResponse> answers) {
+        return new ExamAnswerSheetProcessResponse(
+            imageCount,
+            answers.size(),
+            answers,
+            ProcessStatus.COMPLETED,
+            "답안지 처리가 완료되었습니다."
+        );
+    }
+}
+```
+
+## 🔄 Pattern Matching 활용
+
+### ✅ Switch Expression 사용
+```java
+/**
+ * 결과 상태에 따른 메시지 생성
+ */
+public String getStatusMessage(ResultStatus status) {
+    return switch (status) {
+        case SUCCESS -> "처리 성공";
+        case ERROR -> "처리 실패";
+        case PENDING -> "처리 대기 중";
+        case IN_PROGRESS -> "처리 진행 중";
+    };
+}
+
+/**
+ * 시험 난이도에 따른 점수 계산
+ */
+public int calculateScore(Question.Difficulty difficulty, boolean isCorrect) {
+    if (!isCorrect) return 0;
+    
+    return switch (difficulty) {
+        case 하 -> 3;
+        case 중 -> 5; 
+        case 상 -> 7;
+    };
+}
+```
+
+### ✅ instanceof 패턴 매칭
+```java
+/**
+ * 예외 타입에 따른 처리
+ */
+public ApiResponse<Void> handleException(Exception e) {
+    return switch (e) {
+        case UserNotFoundException unf -> 
+            ApiResponse.error("사용자를 찾을 수 없습니다: " + unf.getMessage());
+        case ValidationException ve -> 
+            ApiResponse.error("입력 데이터가 올바르지 않습니다: " + ve.getMessage());
+        case BusinessException be -> 
+            ApiResponse.error("비즈니스 규칙 위반: " + be.getMessage());
+        case Exception ge -> 
+            ApiResponse.error("서버 내부 오류가 발생했습니다");
+    };
+}
+```
+
+## 📝 Text Blocks 활용
+
+### ✅ 복잡한 쿼리문
+```java
+/**
+ * 복합 조건 쿼리
+ */
+private static final String COMPLEX_SEARCH_QUERY = """
+    SELECT u.id, u.name, u.phone, 
+           COUNT(es.id) as submission_count,
+           AVG(es.score) as average_score
+    FROM users u
+    LEFT JOIN exam_submissions es ON u.id = es.user_id
+    WHERE u.active = true
+    AND u.created_at >= :startDate
+    AND u.created_at <= :endDate
+    GROUP BY u.id, u.name, u.phone
+    HAVING COUNT(es.id) > 0
+    ORDER BY average_score DESC
+    """;
+```
+
+### ✅ JSON 템플릿
+```java
+/**
+ * AI 서버 요청 JSON 생성
+ */
+public String createAiRecognitionRequest(String imageUrl, String examType) {
+    return """
+        {
+            "image_url": "%s",
+            "exam_type": "%s",
+            "recognition_options": {
+                "language": "ko",
+                "format": "handwritten",
+                "confidence_threshold": 0.8
+            },
+            "response_format": {
+                "include_confidence": true,
+                "include_coordinates": false
+            }
+        }
+        """.formatted(imageUrl, examType);
+}
+```
+
+### ✅ HTML 템플릿
+```java
+/**
+ * 문제 HTML 변환
+ */
+public String generateQuestionHtml(Question question) {
+    return """
+        <div class="question-container">
+            <div class="question-header">
+                <h3>문제 %d번</h3>
+                <span class="difficulty %s">난이도: %s</span>
+            </div>
+            <div class="question-content">
+                %s
+            </div>
+            <div class="answer-section">
+                <label>정답: </label>
+                <span class="answer-key">%s</span>
+            </div>
+        </div>
+        """.formatted(
+            question.getId(),
+            question.getDifficulty().name().toLowerCase(),
+            question.getDifficulty(),
+            question.getQuestionTextAsHtml(),
+            question.getAnswerKey()
+        );
+}
+```
+
+## ❌ 피해야 할 패턴
+
+### ❌ DTO에 일반 클래스 사용
+```java
+// 잘못된 방식 - 사용 금지
+public class UserDto {
+    private Long id;
+    private String name;
+    private String email;
+    
+    // getter, setter, equals, hashCode, toString...
+    // Record를 사용하면 자동 생성됨
+}
+```
+
+### ❌ 기존 switch 문 사용
+```java
+// 구식 방식 - 지양
+public String getStatusMessage(ResultStatus status) {
+    switch (status) {
+        case SUCCESS:
+            return "처리 성공";
+        case ERROR:
+            return "처리 실패";
+        default:
+            return "알 수 없음";
+    }
+}
+```
+
+### ❌ 긴 문자열 연결
+```java
+// 가독성이 떨어지는 방식 - 지양
+String query = "SELECT u.id, u.name, u.phone " +
+               "FROM users u " +
+               "WHERE u.active = true " +
+               "AND u.created_at >= ? " +
+               "ORDER BY u.name";
+```
+
+## 🎯 Java 21 활용 체크리스트
+
+새 클래스 작성 시:
+- [ ] DTO는 Record로 구현했는가?
+- [ ] Compact Constructor에서 검증을 수행하는가?
+- [ ] 정적 팩토리 메서드를 제공하는가?
+- [ ] Switch Expression을 활용했는가?
+- [ ] Text Blocks를 적절히 사용했는가?
+- [ ] 패턴 매칭을 활용했는가?
+
+Java 21의 현대적 기능을 적극 활용하여 간결하고 읽기 쉬운 코드를 작성하세요.

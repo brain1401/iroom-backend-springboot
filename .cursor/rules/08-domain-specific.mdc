@@ -1,0 +1,516 @@
+---
+description: iRoom 교육 시스템 도메인 특화 기능 및 패턴
+globs: **/domain/**/*.java, **/service/**/*AI*.java,  **/service/**/*Pdf*.java, **/service/**/*Qr*.java, **/controller/**/*Exam*.java, **/controller/**/*Question*.java,**/entity/**/*Question*.java, **/entity/**/*Answer*.java
+
+tags: [domain, education, ai, pdf, qrcode]
+---
+
+# iRoom 교육 시스템 도메인 특화 규칙
+
+## 교육 도메인 핵심 엔티티
+
+### 시험 및 문제 엔티티
+```java
+/**
+ * 시험 문제 엔티티 - 다양한 문제 유형 지원
+ */
+@Entity
+@Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
+@Builder
+public class Question {
+    
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+    
+    /**
+     * 문제 유형 (객관식, 주관식, 서술형)
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private QuestionType type;
+    
+    /**
+     * 문제 텍스트 (마크다운 지원)
+     */
+    @Column(nullable = false, columnDefinition = "TEXT")
+    private String content;
+    
+    /**
+     * AI 이미지 인식 기능 활성화 여부
+     */
+    @Column(name = "ai_image_enabled", nullable = false)
+    private Boolean aiImageEnabled = false;
+    
+    // 비즈니스 메서드
+    public boolean isAiImageQuestion() {
+        return this.aiImageEnabled && this.type == QuestionType.IMAGE_RECOGNITION;
+    }
+}
+```
+
+### 답변 처리 엔티티
+```java
+/**
+ * 학생 답변 엔티티 - AI 채점 지원
+ */
+@Entity
+@Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+public class Answer {
+    
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+    
+    /**
+     * 학생 답변 내용
+     */
+    @Column(columnDefinition = "TEXT")
+    private String content;
+    
+    /**
+     * AI 채점 점수 (0.0 ~ 100.0)
+     */
+    @Column(name = "ai_score", precision = 5, scale = 2)
+    private BigDecimal aiScore;
+    
+    /**
+     * AI 채점 피드백
+     */
+    @Column(name = "ai_feedback", columnDefinition = "TEXT")
+    private String aiFeedback;
+    
+    /**
+     * 첨부된 이미지 파일 경로
+     */
+    @Column(name = "image_path")
+    private String imagePath;
+    
+    // AI 채점 결과 업데이트 메서드
+    public void updateAiGrading(BigDecimal score, String feedback) {
+        this.aiScore = Objects.requireNonNull(score, "AI 점수는 필수입니다");
+        this.aiFeedback = feedback;
+        this.gradedAt = LocalDateTime.now();
+    }
+}
+```
+
+## AI 통합 서비스 패턴
+
+### AI 이미지 인식 서비스
+```java
+/**
+ * AI 이미지 인식 서비스
+ * - OpenAI Vision API 통합
+ * - 이미지 전처리 및 검증
+ * - 결과 캐싱
+ */
+@Service
+@RequiredArgsConstructor
+@Transactional(readOnly = true)
+@Slf4j
+public class AiImageRecognitionService {
+    
+    private final OpenAiClient openAiClient;
+    private final ImageValidator imageValidator;
+    private final CacheManager cacheManager;
+    
+    /**
+     * 이미지 내용 분석 및 텍스트 추출
+     * 
+     * @param imageFile 분석할 이미지 파일
+     * @param prompt AI 분석 프롬프트
+     * @return 분석 결과 DTO
+     * @throws AiProcessingException AI 처리 실패 시
+     */
+    @Cacheable(value = "ai-image-results", key = "#imageFile.name + '_' + #prompt.hashCode()")
+    public AiImageAnalysisResult analyzeImage(MultipartFile imageFile, String prompt) {
+        log.info("AI 이미지 분석 시작: 파일={}, 크기={}KB", 
+                imageFile.getOriginalFilename(), 
+                imageFile.getSize() / 1024);
+        
+        try {
+            // 이미지 검증
+            imageValidator.validateImage(imageFile);
+            
+            // AI 분석 실행
+            AiImageAnalysisResult result = openAiClient.analyzeImage(imageFile, prompt);
+            
+            log.info("AI 이미지 분석 완료: 신뢰도={}%, 처리시간={}ms", 
+                    result.confidence(), result.processingTimeMs());
+            
+            return result;
+            
+        } catch (Exception e) {
+            log.error("AI 이미지 분석 실패: 파일={}, 오류={}", 
+                     imageFile.getOriginalFilename(), e.getMessage(), e);
+            throw new AiProcessingException("이미지 분석 중 오류가 발생했습니다: " + e.getMessage(), e);
+        }
+    }
+}
+```
+
+### AI 채점 서비스 패턴
+```java
+/**
+ * AI 자동 채점 서비스
+ */
+@Service
+@RequiredArgsConstructor
+@Transactional
+public class AiGradingService {
+    
+    private final OpenAiClient openAiClient;
+    private final GradingPromptTemplate gradingPromptTemplate;
+    
+    /**
+     * 서술형 답변 AI 채점
+     */
+    @Async
+    @Retryable(value = {AiServiceException.class}, maxAttempts = 3, backoff = @Backoff(delay = 1000))
+    public CompletableFuture<AiGradingResult> gradeEssayAnswer(
+            String question, 
+            String modelAnswer, 
+            String studentAnswer) {
+        
+        log.info("AI 채점 시작: 문제 길이={}, 학생답변 길이={}", 
+                question.length(), studentAnswer.length());
+        
+        try {
+            String prompt = gradingPromptTemplate.createGradingPrompt(question, modelAnswer, studentAnswer);
+            
+            AiGradingResult result = openAiClient.gradeAnswer(prompt);
+            
+            log.info("AI 채점 완료: 점수={}, 신뢰도={}%", 
+                    result.score(), result.confidence());
+            
+            return CompletableFuture.completedFuture(result);
+            
+        } catch (Exception e) {
+            log.error("AI 채점 실패: 오류={}", e.getMessage(), e);
+            throw new AiServiceException("AI 채점 중 오류가 발생했습니다", e);
+        }
+    }
+}
+```
+
+## PDF 생성 및 QR 코드 처리 패턴
+
+### PDF 생성 서비스
+```java
+/**
+ * PDF 문서 생성 서비스
+ * - iText 라이브러리 활용
+ * - 한글 폰트 지원
+ * - QR 코드 삽입
+ */
+@Service
+@RequiredArgsConstructor
+@Slf4j
+public class PdfGenerationService {
+    
+    private final QrCodeService qrCodeService;
+    
+    /**
+     * 시험 결과 PDF 생성
+     * 
+     * @param examResult 시험 결과 데이터
+     * @return 생성된 PDF 파일 경로
+     */
+    public String generateExamResultPdf(ExamResultDto examResult) {
+        log.info("시험 결과 PDF 생성 시작: 학생={}, 시험={}", 
+                examResult.studentName(), examResult.examTitle());
+        
+        String fileName = String.format("exam_result_%s_%s.pdf", 
+                examResult.studentId(), 
+                LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss")));
+        
+        try (PdfWriter writer = new PdfWriter(fileName);
+             PdfDocument pdfDoc = new PdfDocument(writer);
+             Document document = new Document(pdfDoc)) {
+            
+            // 한글 폰트 설정
+            PdfFont font = PdfFontFactory.createFont("fonts/NanumGothic.ttf", 
+                                                   PdfEncodings.IDENTITY_H, 
+                                                   EmbeddingStrategy.FORCE_EMBEDDED);
+            
+            // PDF 내용 생성
+            addHeaderSection(document, font, examResult);
+            addScoreSection(document, font, examResult);
+            addQrCodeSection(document, examResult);
+            
+            log.info("시험 결과 PDF 생성 완료: 파일={}", fileName);
+            
+            return fileName;
+            
+        } catch (Exception e) {
+            log.error("PDF 생성 실패: 오류={}", e.getMessage(), e);
+            throw new PdfGenerationException("PDF 생성 중 오류가 발생했습니다", e);
+        }
+    }
+    
+    private void addQrCodeSection(Document document, ExamResultDto examResult) {
+        // QR 코드 생성 및 PDF 삽입
+        byte[] qrCodeBytes = qrCodeService.generateQrCode(examResult.resultUrl());
+        // QR 코드를 PDF에 삽입하는 로직
+    }
+}
+```
+
+### QR 코드 서비스 패턴
+```java
+/**
+ * QR 코드 생성 및 처리 서비스
+ */
+@Service
+@Slf4j
+public class QrCodeService {
+    
+    private static final int QR_CODE_SIZE = 200;
+    private static final ErrorCorrectionLevel ERROR_CORRECTION_LEVEL = ErrorCorrectionLevel.M;
+    
+    /**
+     * QR 코드 생성
+     * 
+     * @param data QR 코드에 포함할 데이터
+     * @return PNG 형식의 QR 코드 바이트 배열
+     */
+    public byte[] generateQrCode(String data) {
+        log.info("QR 코드 생성 시작: 데이터 길이={}", data.length());
+        
+        try {
+            QRCodeWriter qrCodeWriter = new QRCodeWriter();
+            BitMatrix bitMatrix = qrCodeWriter.encode(data, BarcodeFormat.QR_CODE, 
+                                                    QR_CODE_SIZE, QR_CODE_SIZE);
+            
+            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+            MatrixToImageWriter.writeToStream(bitMatrix, "PNG", outputStream);
+            
+            byte[] qrCodeBytes = outputStream.toByteArray();
+            
+            log.info("QR 코드 생성 완료: 크기={}KB", qrCodeBytes.length / 1024);
+            
+            return qrCodeBytes;
+            
+        } catch (Exception e) {
+            log.error("QR 코드 생성 실패: 데이터={}, 오류={}", data, e.getMessage(), e);
+            throw new QrCodeGenerationException("QR 코드 생성 중 오류가 발생했습니다", e);
+        }
+    }
+    
+    /**
+     * 시험 접속 URL QR 코드 생성
+     */
+    public byte[] generateExamAccessQrCode(Long examId, String examCode) {
+        String accessUrl = String.format("https://iroom.example.com/exam/%d?code=%s", examId, examCode);
+        return generateQrCode(accessUrl);
+    }
+}
+```
+
+## 도메인 특화 DTO 패턴
+
+### AI 분석 결과 DTO
+```java
+/**
+ * AI 이미지 분석 결과 DTO
+ */
+public record AiImageAnalysisResult(
+    @Schema(description = "분석된 텍스트 내용", example = "방정식: x + 2 = 5")
+    String extractedText,
+    
+    @Schema(description = "분석 신뢰도 (0-100)", example = "85.5")
+    BigDecimal confidence,
+    
+    @Schema(description = "처리 시간 (밀리초)", example = "1500")
+    Long processingTimeMs,
+    
+    @Schema(description = "AI 모델 버전", example = "gpt-4-vision-preview")
+    String modelVersion
+) {
+    public AiImageAnalysisResult {
+        Objects.requireNonNull(extractedText, "추출된 텍스트는 필수입니다");
+        Objects.requireNonNull(confidence, "신뢰도는 필수입니다");
+        if (confidence.compareTo(BigDecimal.ZERO) < 0 || confidence.compareTo(new BigDecimal("100")) > 0) {
+            throw new IllegalArgumentException("신뢰도는 0-100 범위여야 합니다");
+        }
+    }
+    
+    public boolean isHighConfidence() {
+        return confidence.compareTo(new BigDecimal("80")) >= 0;
+    }
+}
+```
+
+### 채점 결과 DTO
+```java
+/**
+ * AI 채점 결과 DTO
+ */
+public record AiGradingResult(
+    @Schema(description = "채점 점수 (0-100)", example = "87.5")
+    BigDecimal score,
+    
+    @Schema(description = "채점 피드백", example = "답변이 정확하나 설명이 부족합니다")
+    String feedback,
+    
+    @Schema(description = "채점 신뢰도", example = "92.3")
+    BigDecimal confidence,
+    
+    @Schema(description = "세부 채점 기준별 점수")
+    Map<String, BigDecimal> detailedScores
+) {
+    public AiGradingResult {
+        Objects.requireNonNull(score, "점수는 필수입니다");
+        Objects.requireNonNull(feedback, "피드백은 필수입니다");
+        if (score.compareTo(BigDecimal.ZERO) < 0 || score.compareTo(new BigDecimal("100")) > 0) {
+            throw new IllegalArgumentException("점수는 0-100 범위여야 합니다");
+        }
+    }
+}
+```
+
+## 도메인 특화 예외 처리
+
+### AI 서비스 예외
+```java
+/**
+ * AI 서비스 관련 예외
+ */
+public class AiServiceException extends RuntimeException {
+    public AiServiceException(String message) {
+        super(message);
+    }
+    
+    public AiServiceException(String message, Throwable cause) {
+        super(message, cause);
+    }
+}
+
+/**
+ * PDF 생성 예외
+ */
+public class PdfGenerationException extends RuntimeException {
+    public PdfGenerationException(String message) {
+        super(message);
+    }
+    
+    public PdfGenerationException(String message, Throwable cause) {
+        super(message, cause);
+    }
+}
+```
+
+## 교육 도메인 검증 규칙
+
+### 커스텀 검증 어노테이션
+```java
+/**
+ * 이미지 파일 검증 어노테이션
+ */
+@Target({ElementType.FIELD, ElementType.PARAMETER})
+@Retention(RetentionPolicy.RUNTIME)
+@Constraint(validatedBy = ImageFileValidator.class)
+public @interface ValidImageFile {
+    String message() default "유효하지 않은 이미지 파일입니다";
+    Class<?>[] groups() default {};
+    Class<? extends Payload>[] payload() default {};
+    
+    String[] allowedTypes() default {"image/jpeg", "image/png", "image/gif"};
+    long maxSizeBytes() default 5 * 1024 * 1024; // 5MB
+}
+
+/**
+ * 시험 코드 검증 어노테이션
+ */
+@Target({ElementType.FIELD})
+@Retention(RetentionPolicy.RUNTIME)
+@Constraint(validatedBy = ExamCodeValidator.class)
+public @interface ValidExamCode {
+    String message() default "시험 코드는 6자리 영숫자여야 합니다";
+    Class<?>[] groups() default {};
+    Class<? extends Payload>[] payload() default {};
+}
+```
+
+## 비동기 처리 패턴
+
+### AI 처리 비동기 설정
+```java
+/**
+ * AI 관련 비동기 처리 설정
+ */
+@Configuration
+@EnableAsync
+public class AiAsyncConfig {
+    
+    @Bean(name = "aiTaskExecutor")
+    public TaskExecutor aiTaskExecutor() {
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        executor.setCorePoolSize(4);
+        executor.setMaxPoolSize(8);
+        executor.setQueueCapacity(100);
+        executor.setThreadNamePrefix("AI-Task-");
+        executor.setRejectedExecutionHandler(new ThreadPoolExecutor.CallerRunsPolicy());
+        executor.initialize();
+        return executor;
+    }
+}
+```
+
+## 성능 최적화 패턴
+
+### AI 결과 캐싱
+```java
+/**
+ * AI 결과 캐싱 설정
+ */
+@Configuration
+@EnableCaching
+public class AiCacheConfig {
+    
+    @Bean
+    public CacheManager aiCacheManager() {
+        RedisCacheManager.Builder builder = RedisCacheManager.RedisCacheManagerBuilder
+            .fromConnectionFactory(redisConnectionFactory())
+            .cacheDefaults(cacheConfiguration());
+        
+        return builder.build();
+    }
+    
+    private RedisCacheConfiguration cacheConfiguration() {
+        return RedisCacheConfiguration.defaultCacheConfig()
+            .entryTtl(Duration.ofHours(24)) // AI 결과 24시간 캐싱
+            .serializeKeysWith(RedisSerializationContext.SerializationPair
+                .fromSerializer(new StringRedisSerializer()))
+            .serializeValuesWith(RedisSerializationContext.SerializationPair
+                .fromSerializer(new GenericJackson2JsonRedisSerializer()));
+    }
+}
+```
+
+## 로깅 및 모니터링
+
+### 도메인 특화 로깅
+```java
+/**
+ * AI 서비스 로깅 설정
+ */
+@Slf4j
+public abstract class BaseAiService {
+    
+    protected void logAiOperation(String operation, String details, long durationMs) {
+        log.info("AI 작업 완료 - 작업: {}, 세부사항: {}, 소요시간: {}ms", 
+                operation, details, durationMs);
+    }
+    
+    protected void logAiError(String operation, String error, Exception e) {
+        log.error("AI 작업 실패 - 작업: {}, 오류: {}", operation, error, e);
+    }
+}
+```
+
+이 MDC 파일은 iRoom 교육 시스템의 핵심 도메인 기능들(AI 통합, PDF 생성, QR 코드 처리)에 대한 구체적인 구현 패턴과 규칙을 정의합니다.

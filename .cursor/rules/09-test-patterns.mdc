@@ -1,0 +1,807 @@
+---
+description: Spring Boot 테스트 패턴 및 모범 사례
+globs:  **/test/**/*.java, **/test/**/*.java, **/*Test.java, **/*TestConfig.java, **/test/resources/**/*.yml, **/test/resources/**/*.sql
+
+tags: [test, junit, mockito, spring-boot-test]
+---
+
+# Spring Boot 테스트 패턴 가이드
+
+## 테스트 계층별 패턴
+
+### Unit Test - Service 계층 테스트
+```java
+/**
+ * Service 계층 단위 테스트 - Mockito 사용
+ */
+@ExtendWith(MockitoExtension.class)
+class UserServiceTest {
+    
+    @Mock
+    private UserRepository userRepository;
+    
+    @Mock
+    private PasswordEncoder passwordEncoder;
+    
+    @InjectMocks
+    private UserService userService;
+    
+    @Test
+    @DisplayName("사용자 ID로 조회 - 성공")
+    void findById_Success() {
+        // Given
+        Long userId = 1L;
+        User user = createTestUser(userId, "홍길동", "hong@example.com");
+        
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+        
+        // When
+        UserDto result = userService.findById(userId);
+        
+        // Then
+        assertAll(
+            () -> assertThat(result).isNotNull(),
+            () -> assertThat(result.id()).isEqualTo(userId),
+            () -> assertThat(result.name()).isEqualTo("홍길동"),
+            () -> assertThat(result.email()).isEqualTo("hong@example.com")
+        );
+        
+        verify(userRepository).findById(userId);
+    }
+    
+    @Test
+    @DisplayName("사용자 ID로 조회 - 사용자 없음 예외")
+    void findById_UserNotFound() {
+        // Given
+        Long userId = 999L;
+        when(userRepository.findById(userId)).thenReturn(Optional.empty());
+        
+        // When & Then
+        assertThatThrownBy(() -> userService.findById(userId))
+            .isInstanceOf(UserNotFoundException.class)
+            .hasMessage("사용자를 찾을 수 없습니다: " + userId);
+        
+        verify(userRepository).findById(userId);
+    }
+    
+    @Test
+    @DisplayName("사용자 생성 - 성공")
+    void createUser_Success() {
+        // Given
+        CreateUserRequest request = createUserRequest("김철수", "kim@example.com", "password123");
+        User userToSave = User.builder()
+            .name("김철수")
+            .email("kim@example.com")
+            .password("encodedPassword")
+            .build();
+        User savedUser = createTestUser(1L, "김철수", "kim@example.com");
+        
+        when(passwordEncoder.encode("password123")).thenReturn("encodedPassword");
+        when(userRepository.save(any(User.class))).thenReturn(savedUser);
+        
+        // When
+        UserDto result = userService.createUser(request);
+        
+        // Then
+        assertThat(result.name()).isEqualTo("김철수");
+        assertThat(result.email()).isEqualTo("kim@example.com");
+        
+        verify(passwordEncoder).encode("password123");
+        verify(userRepository).save(argThat(user -> 
+            user.getName().equals("김철수") && 
+            user.getEmail().equals("kim@example.com") &&
+            user.getPassword().equals("encodedPassword")));
+    }
+    
+    // 테스트 데이터 생성 헬퍼 메서드
+    private User createTestUser(Long id, String name, String email) {
+        return User.builder()
+            .id(id)
+            .name(name)
+            .email(email)
+            .password("encodedPassword")
+            .active(true)
+            .createdAt(LocalDateTime.now())
+            .build();
+    }
+    
+    private CreateUserRequest createUserRequest(String name, String email, String password) {
+        return new CreateUserRequest(name, email, password);
+    }
+}
+```
+
+### Integration Test - Controller 계층 테스트
+```java
+/**
+ * Controller 통합 테스트 - WebMvcTest + MockBean 사용
+ */
+@WebMvcTest(UserController.class)
+@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
+class UserControllerTest {
+    
+    @Autowired
+    private MockMvc mockMvc;
+    
+    @MockBean
+    private UserService userService;
+    
+    @Autowired
+    private ObjectMapper objectMapper;
+    
+    @Test
+    @DisplayName("사용자 조회 API - 성공")
+    void getUser_Success() throws Exception {
+        // Given
+        Long userId = 1L;
+        UserDto userDto = new UserDto(userId, "홍길동", "hong@example.com", true, LocalDateTime.now());
+        
+        when(userService.findById(userId)).thenReturn(userDto);
+        
+        // When & Then
+        mockMvc.perform(get("/api/users/{id}", userId)
+                .contentType(MediaType.APPLICATION_JSON))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.result").value("SUCCESS"))
+                .andExpect(jsonPath("$.message").value("사용자 조회 성공"))
+                .andExpect(jsonPath("$.data.id").value(userId))
+                .andExpect(jsonPath("$.data.name").value("홍길동"))
+                .andExpect(jsonPath("$.data.email").value("hong@example.com"));
+        
+        verify(userService).findById(userId);
+    }
+    
+    @Test
+    @DisplayName("사용자 생성 API - 성공")
+    void createUser_Success() throws Exception {
+        // Given
+        CreateUserRequest request = new CreateUserRequest("김철수", "kim@example.com", "password123");
+        UserDto createdUser = new UserDto(1L, "김철수", "kim@example.com", true, LocalDateTime.now());
+        
+        when(userService.createUser(any(CreateUserRequest.class))).thenReturn(createdUser);
+        
+        // When & Then
+        mockMvc.perform(post("/api/users")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andDo(print())
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.result").value("SUCCESS"))
+                .andExpect(jsonPath("$.message").value("사용자 생성 성공"))
+                .andExpect(jsonPath("$.data.name").value("김철수"));
+        
+        verify(userService).createUser(any(CreateUserRequest.class));
+    }
+    
+    @Test
+    @DisplayName("사용자 생성 API - 검증 실패")
+    void createUser_ValidationFailed() throws Exception {
+        // Given - 잘못된 요청 데이터
+        CreateUserRequest invalidRequest = new CreateUserRequest("", "invalid-email", "123");
+        
+        // When & Then
+        mockMvc.perform(post("/api/users")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(invalidRequest)))
+                .andDo(print())
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.result").value("ERROR"))
+                .andExpect(jsonPath("$.message").exists());
+        
+        verify(userService, never()).createUser(any(CreateUserRequest.class));
+    }
+    
+    @Test
+    @DisplayName("사용자 조회 API - 사용자 없음")
+    void getUser_UserNotFound() throws Exception {
+        // Given
+        Long userId = 999L;
+        when(userService.findById(userId)).thenThrow(new UserNotFoundException("사용자를 찾을 수 없습니다: " + userId));
+        
+        // When & Then
+        mockMvc.perform(get("/api/users/{id}", userId)
+                .contentType(MediaType.APPLICATION_JSON))
+                .andDo(print())
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.result").value("ERROR"))
+                .andExpect(jsonPath("$.message").value("사용자를 찾을 수 없습니다: " + userId));
+    }
+}
+```
+
+### Repository 계층 테스트
+```java
+/**
+ * Repository 계층 테스트 - @DataJpaTest 사용
+ */
+@DataJpaTest
+@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
+class UserRepositoryTest {
+    
+    @Autowired
+    private TestEntityManager entityManager;
+    
+    @Autowired
+    private UserRepository userRepository;
+    
+    @Test
+    @DisplayName("사용자명으로 조회 - 성공")
+    void findByUsername_Success() {
+        // Given
+        User user = User.builder()
+            .username("testuser")
+            .name("테스트사용자")
+            .email("test@example.com")
+            .password("password")
+            .active(true)
+            .build();
+        
+        entityManager.persistAndFlush(user);
+        
+        // When
+        Optional<User> found = userRepository.findByUsername("testuser");
+        
+        // Then
+        assertThat(found).isPresent();
+        assertThat(found.get().getUsername()).isEqualTo("testuser");
+        assertThat(found.get().getName()).isEqualTo("테스트사용자");
+    }
+    
+    @Test
+    @DisplayName("활성 사용자 페이징 조회 - 성공")
+    void findByActiveTrue_WithPaging() {
+        // Given
+        createTestUsers(15); // 15명의 활성 사용자 생성
+        Pageable pageable = PageRequest.of(0, 10, Sort.by("createdAt").descending());
+        
+        // When
+        Page<User> result = userRepository.findByActiveTrue(pageable);
+        
+        // Then
+        assertThat(result.getContent()).hasSize(10);
+        assertThat(result.getTotalElements()).isEqualTo(15);
+        assertThat(result.getTotalPages()).isEqualTo(2);
+        assertThat(result.isFirst()).isTrue();
+        assertThat(result.hasNext()).isTrue();
+    }
+    
+    @Test
+    @DisplayName("이메일로 활성 사용자 조회 - EntityGraph 적용")
+    void findActiveUserByEmail_WithEntityGraph() {
+        // Given
+        User user = createUserWithProfile("test@example.com");
+        entityManager.persistAndFlush(user);
+        
+        // When
+        Optional<User> found = userRepository.findActiveUserByEmail("test@example.com");
+        
+        // Then
+        assertThat(found).isPresent();
+        // EntityGraph로 로딩되었는지 확인
+        assertThat(Hibernate.isInitialized(found.get().getProfile())).isTrue();
+    }
+    
+    private void createTestUsers(int count) {
+        for (int i = 1; i <= count; i++) {
+            User user = User.builder()
+                .username("user" + i)
+                .name("사용자" + i)
+                .email("user" + i + "@example.com")
+                .password("password")
+                .active(true)
+                .build();
+            entityManager.persist(user);
+        }
+        entityManager.flush();
+    }
+    
+    private User createUserWithProfile(String email) {
+        UserProfile profile = UserProfile.builder()
+            .phoneNumber("010-1234-5678")
+            .address("서울시 강남구")
+            .build();
+        
+        return User.builder()
+            .username("testuser")
+            .name("테스트사용자")
+            .email(email)
+            .password("password")
+            .active(true)
+            .profile(profile)
+            .build();
+    }
+}
+```
+
+## 도메인 특화 테스트 패턴
+
+### AI 서비스 테스트
+```java
+/**
+ * AI 서비스 테스트 - 외부 API 모킹
+ */
+@ExtendWith(MockitoExtension.class)
+class AiImageRecognitionServiceTest {
+    
+    @Mock
+    private OpenAiClient openAiClient;
+    
+    @Mock
+    private ImageValidator imageValidator;
+    
+    @Mock
+    private CacheManager cacheManager;
+    
+    @InjectMocks
+    private AiImageRecognitionService aiImageRecognitionService;
+    
+    @Test
+    @DisplayName("이미지 분석 - 성공")
+    void analyzeImage_Success() throws IOException {
+        // Given
+        MockMultipartFile imageFile = new MockMultipartFile(
+            "image", 
+            "test.jpg", 
+            "image/jpeg", 
+            "test image content".getBytes()
+        );
+        String prompt = "이 이미지에서 수학 공식을 찾아주세요";
+        
+        AiImageAnalysisResult expectedResult = new AiImageAnalysisResult(
+            "x + 2 = 5",
+            new BigDecimal("85.5"),
+            1500L,
+            "gpt-4-vision-preview"
+        );
+        
+        doNothing().when(imageValidator).validateImage(imageFile);
+        when(openAiClient.analyzeImage(imageFile, prompt)).thenReturn(expectedResult);
+        
+        // When
+        AiImageAnalysisResult result = aiImageRecognitionService.analyzeImage(imageFile, prompt);
+        
+        // Then
+        assertAll(
+            () -> assertThat(result.extractedText()).isEqualTo("x + 2 = 5"),
+            () -> assertThat(result.confidence()).isEqualByComparingTo(new BigDecimal("85.5")),
+            () -> assertThat(result.processingTimeMs()).isEqualTo(1500L),
+            () -> assertThat(result.isHighConfidence()).isTrue()
+        );
+        
+        verify(imageValidator).validateImage(imageFile);
+        verify(openAiClient).analyzeImage(imageFile, prompt);
+    }
+    
+    @Test
+    @DisplayName("이미지 분석 - 검증 실패")
+    void analyzeImage_ValidationFailed() {
+        // Given
+        MockMultipartFile imageFile = new MockMultipartFile(
+            "image", 
+            "invalid.txt", 
+            "text/plain", 
+            "not an image".getBytes()
+        );
+        String prompt = "분석 요청";
+        
+        doThrow(new ImageValidationException("지원하지 않는 파일 형식입니다"))
+            .when(imageValidator).validateImage(imageFile);
+        
+        // When & Then
+        assertThatThrownBy(() -> aiImageRecognitionService.analyzeImage(imageFile, prompt))
+            .isInstanceOf(AiProcessingException.class)
+            .hasMessageContaining("이미지 분석 중 오류가 발생했습니다");
+        
+        verify(imageValidator).validateImage(imageFile);
+        verify(openAiClient, never()).analyzeImage(any(), any());
+    }
+}
+```
+
+### 비동기 처리 테스트
+```java
+/**
+ * 비동기 AI 채점 서비스 테스트
+ */
+@ExtendWith(MockitoExtension.class)
+class AiGradingServiceTest {
+    
+    @Mock
+    private OpenAiClient openAiClient;
+    
+    @Mock
+    private GradingPromptTemplate gradingPromptTemplate;
+    
+    @InjectMocks
+    private AiGradingService aiGradingService;
+    
+    @Test
+    @DisplayName("서술형 답변 AI 채점 - 비동기 성공")
+    void gradeEssayAnswer_AsyncSuccess() throws Exception {
+        // Given
+        String question = "지구온난화의 원인을 설명하세요";
+        String modelAnswer = "온실가스 증가로 인한 온실효과 강화";
+        String studentAnswer = "이산화탄소 증가로 인한 온실효과";
+        
+        String generatedPrompt = "채점용 프롬프트...";
+        AiGradingResult expectedResult = new AiGradingResult(
+            new BigDecimal("75.0"),
+            "부분적으로 정확하나 설명이 부족합니다",
+            new BigDecimal("88.5"),
+            Map.of("정확성", new BigDecimal("80"), "완성도", new BigDecimal("70"))
+        );
+        
+        when(gradingPromptTemplate.createGradingPrompt(question, modelAnswer, studentAnswer))
+            .thenReturn(generatedPrompt);
+        when(openAiClient.gradeAnswer(generatedPrompt)).thenReturn(expectedResult);
+        
+        // When
+        CompletableFuture<AiGradingResult> future = aiGradingService.gradeEssayAnswer(
+            question, modelAnswer, studentAnswer);
+        
+        AiGradingResult result = future.get(5, TimeUnit.SECONDS);
+        
+        // Then
+        assertAll(
+            () -> assertThat(result.score()).isEqualByComparingTo(new BigDecimal("75.0")),
+            () -> assertThat(result.feedback()).contains("부분적으로 정확"),
+            () -> assertThat(result.confidence()).isEqualByComparingTo(new BigDecimal("88.5")),
+            () -> assertThat(result.detailedScores()).hasSize(2)
+        );
+        
+        verify(gradingPromptTemplate).createGradingPrompt(question, modelAnswer, studentAnswer);
+        verify(openAiClient).gradeAnswer(generatedPrompt);
+    }
+}
+```
+
+## 통합 테스트 패턴
+
+### 전체 애플리케이션 통합 테스트
+```java
+/**
+ * 전체 애플리케이션 통합 테스트
+ */
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
+@TestMethodOrder(OrderAnnotation.class)
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
+class UserIntegrationTest {
+    
+    @Autowired
+    private TestRestTemplate restTemplate;
+    
+    @Autowired
+    private UserRepository userRepository;
+    
+    @LocalServerPort
+    private int port;
+    
+    private String baseUrl;
+    
+    @BeforeAll
+    void setUp() {
+        baseUrl = "http://localhost:" + port + "/api";
+    }
+    
+    @Test
+    @Order(1)
+    @DisplayName("사용자 생성 - 전체 플로우 통합 테스트")
+    void createUser_IntegrationTest() {
+        // Given
+        CreateUserRequest request = new CreateUserRequest("홍길동", "hong@example.com", "password123");
+        
+        // When
+        ResponseEntity<ApiResponse<UserDto>> response = restTemplate.postForEntity(
+            baseUrl + "/users",
+            request,
+            new ParameterizedTypeReference<ApiResponse<UserDto>>() {}
+        );
+        
+        // Then - HTTP 응답 검증
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().result()).isEqualTo("SUCCESS");
+        assertThat(response.getBody().data().name()).isEqualTo("홍길동");
+        
+        // Then - 데이터베이스 검증
+        Optional<User> savedUser = userRepository.findByEmail("hong@example.com");
+        assertThat(savedUser).isPresent();
+        assertThat(savedUser.get().getName()).isEqualTo("홍길동");
+        assertThat(savedUser.get().isActive()).isTrue();
+    }
+    
+    @Test
+    @Order(2)
+    @DisplayName("사용자 조회 - 생성된 사용자 조회")
+    void getUser_AfterCreation() {
+        // Given - 이전 테스트에서 생성된 사용자
+        User user = userRepository.findByEmail("hong@example.com").orElseThrow();
+        
+        // When
+        ResponseEntity<ApiResponse<UserDto>> response = restTemplate.getForEntity(
+            baseUrl + "/users/" + user.getId(),
+            new ParameterizedTypeReference<ApiResponse<UserDto>>() {}
+        );
+        
+        // Then
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody().data().name()).isEqualTo("홍길동");
+        assertThat(response.getBody().data().email()).isEqualTo("hong@example.com");
+    }
+    
+    @Test
+    @Order(3)
+    @DisplayName("사용자 목록 조회 - 페이징")
+    void getUsers_WithPaging() {
+        // Given
+        createAdditionalTestUsers(5);
+        
+        // When
+        ResponseEntity<ApiResponse<PageImpl<UserDto>>> response = restTemplate.getForEntity(
+            baseUrl + "/users?page=0&size=3&sort=createdAt,desc",
+            new ParameterizedTypeReference<ApiResponse<PageImpl<UserDto>>>() {}
+        );
+        
+        // Then
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        
+        PageImpl<UserDto> page = response.getBody().data();
+        assertThat(page.getContent()).hasSize(3);
+        assertThat(page.getTotalElements()).isGreaterThanOrEqualTo(6);
+        assertThat(page.getNumber()).isEqualTo(0);
+    }
+    
+    private void createAdditionalTestUsers(int count) {
+        for (int i = 1; i <= count; i++) {
+            CreateUserRequest request = new CreateUserRequest(
+                "사용자" + i, 
+                "user" + i + "@example.com", 
+                "password123"
+            );
+            
+            restTemplate.postForEntity(
+                baseUrl + "/users",
+                request,
+                new ParameterizedTypeReference<ApiResponse<UserDto>>() {}
+            );
+        }
+    }
+}
+```
+
+## 테스트 설정 및 유틸리티
+
+### 테스트 전용 설정
+```java
+/**
+ * 테스트 전용 설정 클래스
+ */
+@TestConfiguration
+public class TestConfig {
+    
+    @Bean
+    @Primary
+    @Profile("test")
+    public Clock testClock() {
+        return Clock.fixed(Instant.parse("2024-08-17T10:30:00Z"), ZoneId.of("Asia/Seoul"));
+    }
+    
+    @Bean
+    @Primary
+    @Profile("test")
+    public PasswordEncoder testPasswordEncoder() {
+        // 테스트용 간단한 인코더
+        return new PasswordEncoder() {
+            @Override
+            public String encode(CharSequence rawPassword) {
+                return "encoded_" + rawPassword;
+            }
+            
+            @Override
+            public boolean matches(CharSequence rawPassword, String encodedPassword) {
+                return encodedPassword.equals("encoded_" + rawPassword);
+            }
+        };
+    }
+}
+```
+
+### 테스트 데이터 빌더
+```java
+/**
+ * 테스트 데이터 생성을 위한 빌더 패턴
+ */
+public class TestDataBuilder {
+    
+    public static class UserTestDataBuilder {
+        private String username = "testuser";
+        private String name = "테스트사용자";
+        private String email = "test@example.com";
+        private String password = "password123";
+        private boolean active = true;
+        
+        public UserTestDataBuilder username(String username) {
+            this.username = username;
+            return this;
+        }
+        
+        public UserTestDataBuilder name(String name) {
+            this.name = name;
+            return this;
+        }
+        
+        public UserTestDataBuilder email(String email) {
+            this.email = email;
+            return this;
+        }
+        
+        public UserTestDataBuilder inactive() {
+            this.active = false;
+            return this;
+        }
+        
+        public User buildEntity() {
+            return User.builder()
+                .username(username)
+                .name(name)
+                .email(email)
+                .password("encoded_" + password)
+                .active(active)
+                .createdAt(LocalDateTime.now())
+                .build();
+        }
+        
+        public CreateUserRequest buildRequest() {
+            return new CreateUserRequest(name, email, password);
+        }
+        
+        public UserDto buildDto(Long id) {
+            return new UserDto(id, name, email, active, LocalDateTime.now());
+        }
+    }
+    
+    public static UserTestDataBuilder user() {
+        return new UserTestDataBuilder();
+    }
+    
+    // 사용 예시:
+    // User user = TestDataBuilder.user().name("홍길동").email("hong@test.com").buildEntity();
+    // CreateUserRequest request = TestDataBuilder.user().name("김철수").buildRequest();
+}
+```
+
+### 커스텀 테스트 어노테이션
+```java
+/**
+ * 통합 테스트용 커스텀 어노테이션
+ */
+@Target(ElementType.TYPE)
+@Retention(RetentionPolicy.RUNTIME)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
+@ActiveProfiles("test")
+@Transactional
+@Rollback
+public @interface IntegrationTest {
+}
+
+/**
+ * Repository 테스트용 커스텀 어노테이션
+ */
+@Target(ElementType.TYPE)
+@Retention(RetentionPolicy.RUNTIME)
+@DataJpaTest
+@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
+@ActiveProfiles("test")
+public @interface RepositoryTest {
+}
+
+// 사용 예시:
+// @IntegrationTest
+// class UserServiceIntegrationTest { ... }
+//
+// @RepositoryTest
+// class UserRepositoryTest { ... }
+```
+
+## 성능 테스트 패턴
+
+### 부하 테스트 기본 패턴
+```java
+/**
+ * 성능 테스트 - 대용량 데이터 처리
+ */
+@SpringBootTest
+@TestMethodOrder(OrderAnnotation.class)
+class PerformanceTest {
+    
+    @Autowired
+    private UserService userService;
+    
+    @Test
+    @Order(1)
+    @DisplayName("대용량 사용자 생성 - 성능 테스트")
+    void createManyUsers_PerformanceTest() {
+        // Given
+        int userCount = 1000;
+        List<CreateUserRequest> requests = IntStream.range(1, userCount + 1)
+            .mapToObj(i -> new CreateUserRequest("사용자" + i, "user" + i + "@test.com", "password"))
+            .toList();
+        
+        // When
+        long startTime = System.currentTimeMillis();
+        
+        requests.parallelStream().forEach(request -> {
+            try {
+                userService.createUser(request);
+            } catch (Exception e) {
+                // 에러 로깅
+            }
+        });
+        
+        long endTime = System.currentTimeMillis();
+        long executionTime = endTime - startTime;
+        
+        // Then
+        System.out.printf("사용자 %d명 생성 완료: %dms (평균 %.2fms/건)%n", 
+                         userCount, executionTime, (double) executionTime / userCount);
+        
+        // 성능 임계값 검증 (예: 평균 50ms 이하)
+        double averageTime = (double) executionTime / userCount;
+        assertThat(averageTime).isLessThan(50.0);
+    }
+}
+```
+
+## 테스트 품질 관리
+
+### 테스트 커버리지 확인
+```gradle
+// build.gradle - Jacoco 플러그인
+plugins {
+    id 'jacoco'
+}
+
+jacocoTestReport {
+    reports {
+        xml.required = true
+        html.required = true
+    }
+}
+
+jacocoTestCoverageVerification {
+    violationRules {
+        rule {
+            limit {
+                minimum = 0.80  // 80% 커버리지 요구
+            }
+        }
+    }
+}
+```
+
+### 테스트 실행 프로파일
+```yaml
+# application-test.yml
+spring:
+  profiles:
+    active: test
+  datasource:
+    url: jdbc:h2:mem:testdb
+    driver-class-name: org.h2.Driver
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: true
+  redis:
+    host: localhost  # TestContainers 사용 시 동적 설정
+
+logging:
+  level:
+    "[com.iroomclass.spring_backend]": DEBUG
+    "[org.springframework.test]": DEBUG
+```
+
+이 MDC 파일은 Spring Boot 애플리케이션의 모든 계층에 대한 포괄적인 테스트 패턴과 모범 사례를 제공합니다.

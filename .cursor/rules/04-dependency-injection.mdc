@@ -1,0 +1,384 @@
+---
+description: 생성자 주입 및 의존성 관리 패턴
+globs: **/controller/*.java, **/service/*.java, **/config/*.java
+alwaysApply: false
+---
+
+# 의존성 주입 패턴
+
+## 🎯 의존성 주입 원칙
+
+### 생성자 주입 (Constructor Injection) 필수
+- **@RequiredArgsConstructor** 활용
+- **final** 키워드로 불변성 보장
+- **필드 주입 금지** (@Autowired 사용 금지)
+
+### 의존성 역전 원칙 (DIP) 준수
+- 추상화(인터페이스)에 의존
+- 구체 클래스가 아닌 추상화에 의존
+
+## 🏗️ Controller 계층 패턴
+
+### ✅ 표준 Controller 구조
+```java
+/**
+ * 사용자 관리 컨트롤러
+ * 
+ * 학생 로그인, 정보 조회 등의 기능을 제공합니다.
+ */
+@RestController
+@RequestMapping("/api/users")
+@RequiredArgsConstructor  // Lombok으로 생성자 자동 생성
+@Tag(name = "사용자 API", description = "사용자 관리 관련 API")
+@Validated
+public class UserController {
+    
+    // final로 불변성 보장
+    private final UserService userService;
+    
+    /**
+     * 사용자 로그인
+     */
+    @PostMapping("/login")
+    @Operation(summary = "사용자 로그인", description = "이름과 전화번호로 로그인합니다")
+    public ApiResponse<UserLoginResponse> login(
+            @Valid @RequestBody UserLoginRequest request) {
+        
+        UserLoginResponse response = userService.login(request);
+        return ApiResponse.success("로그인 성공", response);
+    }
+}
+```
+
+### ✅ 다중 의존성 주입
+```java
+/**
+ * 시험 답안 관리 컨트롤러
+ */
+@RestController
+@RequestMapping("/api/exam-answers")
+@RequiredArgsConstructor
+@Tag(name = "시험 답안 API", description = "답안 제출 및 관리 API")
+public class ExamAnswerController {
+    
+    // 여러 서비스 의존성 주입
+    private final ExamAnswerService examAnswerService;
+    private final ExamSubmissionService examSubmissionService;
+    private final AiImageRecognitionService aiImageRecognitionService;
+    
+    /**
+     * 답안 생성 (AI 인식 포함)
+     */
+    @PostMapping
+    public ApiResponse<ExamAnswerResponse> createAnswer(
+            @Valid @RequestBody ExamAnswerCreateRequest request) {
+        
+        ExamAnswerResponse response = examAnswerService.createExamAnswer(request);
+        return ApiResponse.success("답안 생성 성공", response);
+    }
+}
+```
+
+## 🔧 Service 계층 패턴
+
+### ✅ 표준 Service 구조
+```java
+/**
+ * 사용자 관리 서비스
+ * 
+ * 사용자 로그인, 정보 관리 등의 비즈니스 로직을 처리합니다.
+ */
+@Service
+@RequiredArgsConstructor
+@Slf4j
+@Transactional(readOnly = true)  // 기본적으로 읽기 전용
+public class UserService {
+    
+    // Repository 의존성 주입
+    private final UserRepository userRepository;
+    
+    /**
+     * 사용자 로그인 처리
+     */
+    public UserLoginResponse login(UserLoginRequest request) {
+        log.info("사용자 로그인 요청: 이름={}, 전화번호={}", 
+                request.name(), request.phone());
+        
+        User user = userRepository.findByNameAndPhone(request.name(), request.phone())
+            .orElseThrow(() -> new IllegalArgumentException(
+                "존재하지 않는 학생입니다. 이름과 전화번호를 확인해주세요."));
+        
+        log.info("사용자 로그인 성공: ID={}, 이름={}", user.getId(), user.getName());
+        
+        return new UserLoginResponse(
+            user.getId(),
+            user.getName(),
+            user.getPhone(),
+            "로그인에 성공했습니다."
+        );
+    }
+}
+```
+
+### ✅ 외부 서비스 연동 패턴
+```java
+/**
+ * AI 이미지 인식 서비스
+ */
+@Service
+@RequiredArgsConstructor
+@Slf4j
+public class AiImageRecognitionService {
+    
+    // 외부 서비스 통신을 위한 RestTemplate 주입
+    private final RestTemplate restTemplate;
+    // 설정값 주입
+    @Value("${ai.server.url}")
+    private final String aiServerUrl;
+    @Value("${ai.server.timeout:5000}")
+    private final int timeoutMs;
+    
+    /**
+     * 이미지에서 텍스트 인식
+     */
+    public AiRecognitionResult recognizeTextFromImage(String imageUrl) {
+        log.info("AI 이미지 인식 시작: 이미지 URL={}", imageUrl);
+        
+        try {
+            String requestUrl = aiServerUrl + "/recognize";
+            AiRecognitionRequest request = new AiRecognitionRequest(imageUrl);
+            
+            AiRecognitionResult result = restTemplate.postForObject(
+                requestUrl, request, AiRecognitionResult.class);
+            
+            log.info("AI 이미지 인식 완료: 인식 결과={}", result.getRecognizedText());
+            return result;
+            
+        } catch (Exception e) {
+            log.error("AI 이미지 인식 실패: 이미지 URL={}, 오류={}", 
+                     imageUrl, e.getMessage(), e);
+            throw new AiRecognitionException("AI 인식에 실패했습니다: " + e.getMessage());
+        }
+    }
+}
+```
+
+### ✅ 서비스 간 의존성 패턴
+```java
+/**
+ * 시험 답안 관리 서비스
+ */
+@Service
+@RequiredArgsConstructor
+@Slf4j
+@Transactional(readOnly = true)
+public class ExamAnswerService {
+    
+    // Repository 의존성
+    private final ExamAnswerRepository examAnswerRepository;
+    private final ExamSubmissionRepository examSubmissionRepository;
+    private final QuestionRepository questionRepository;
+    
+    // 다른 Service 의존성 (DTO 통신)
+    private final AiImageRecognitionService aiImageRecognitionService;
+    
+    /**
+     * 답안 생성 (AI 인식 포함)
+     */
+    @Transactional
+    public ExamAnswerResponse createExamAnswer(ExamAnswerCreateRequest request) {
+        log.info("답안 생성 요청: 제출 ID={}, 문제 ID={}", 
+                request.examSubmissionId(), request.questionId());
+        
+        // 1단계: 엔티티 조회 및 검증
+        ExamSubmission submission = findExamSubmissionById(request.examSubmissionId());
+        Question question = findQuestionById(request.questionId());
+        
+        // 2단계: 답안 생성
+        ExamAnswer answer = createAnswerEntity(submission, question, request);
+        ExamAnswer savedAnswer = examAnswerRepository.save(answer);
+        
+        // 3단계: AI 서비스 호출 (다른 서비스와 통신)
+        processAiRecognition(savedAnswer, request.answerImageUrl());
+        
+        return ExamAnswerResponse.from(savedAnswer);
+    }
+    
+    private void processAiRecognition(ExamAnswer answer, String imageUrl) {
+        try {
+            // 다른 서비스 호출
+            AiRecognitionResult result = aiImageRecognitionService
+                .recognizeTextFromImage(imageUrl);
+            
+            answer.updateAnswerText(result.getRecognizedText());
+            examAnswerRepository.save(answer);
+            
+        } catch (Exception e) {
+            log.error("AI 인식 실패: 답안 ID={}", answer.getId(), e);
+            // AI 실패해도 답안은 저장된 상태로 유지
+        }
+    }
+}
+```
+
+## ⚙️ Configuration 계층 패턴
+
+### ✅ Bean 정의 및 주입
+```java
+/**
+ * 웹 설정 구성
+ */
+@Configuration
+@RequiredArgsConstructor
+public class WebConfig {
+    
+    /**
+     * RestTemplate Bean 정의
+     */
+    @Bean
+    public RestTemplate restTemplate() {
+        RestTemplate restTemplate = new RestTemplate();
+        
+        // 타임아웃 설정
+        HttpComponentsClientHttpRequestFactory factory = 
+            new HttpComponentsClientHttpRequestFactory();
+        factory.setConnectTimeout(5000);
+        factory.setReadTimeout(10000);
+        restTemplate.setRequestFactory(factory);
+        
+        return restTemplate;
+    }
+    
+    /**
+     * ObjectMapper 커스터마이징
+     */
+    @Bean
+    @Primary
+    public ObjectMapper objectMapper() {
+        return new ObjectMapper()
+            .registerModule(new JavaTimeModule())
+            .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
+            .setPropertyNamingStrategy(PropertyNamingStrategies.SNAKE_CASE);
+    }
+}
+```
+
+### ✅ 조건부 Bean 생성
+```java
+/**
+ * 개발/운영 환경별 설정
+ */
+@Configuration
+public class EnvironmentConfig {
+    
+    /**
+     * 개발 환경용 Bean
+     */
+    @Bean
+    @Profile("dev")
+    public DataSource devDataSource() {
+        HikariDataSource dataSource = new HikariDataSource();
+        dataSource.setJdbcUrl("jdbc:mysql://localhost:3306/iroom_dev");
+        dataSource.setUsername("dev_user");
+        dataSource.setPassword("dev_password");
+        return dataSource;
+    }
+    
+    /**
+     * 운영 환경용 Bean
+     */
+    @Bean
+    @Profile("prod")
+    public DataSource prodDataSource() {
+        HikariDataSource dataSource = new HikariDataSource();
+        dataSource.setJdbcUrl("${database.url}");
+        dataSource.setUsername("${database.username}");
+        dataSource.setPassword("${database.password}");
+        dataSource.setMaximumPoolSize(20);
+        return dataSource;
+    }
+}
+```
+
+## ❌ 피해야 할 패턴
+
+### ❌ 필드 주입 사용 금지
+```java
+// 잘못된 방식 - 사용 금지
+@RestController
+public class UserController {
+    
+    @Autowired
+    private UserService userService;  // 필드 주입 금지!
+    
+    @Autowired
+    private ExamService examService;  // 필드 주입 금지!
+}
+```
+
+### ❌ Setter 주입 지양
+```java
+// 지양하는 방식
+@Service
+public class UserService {
+    
+    private UserRepository userRepository;
+    
+    @Autowired
+    public void setUserRepository(UserRepository userRepository) {
+        this.userRepository = userRepository;  // Setter 주입 지양
+    }
+}
+```
+
+### ❌ 순환 의존성
+```java
+// 문제가 있는 구조
+@Service
+public class UserService {
+    private final ExamService examService;  // ExamService가 UserService를 의존하면 순환 의존성
+}
+
+@Service  
+public class ExamService {
+    private final UserService userService;  // 순환 의존성 발생!
+}
+```
+
+## 🔍 의존성 주입 체크리스트
+
+새 클래스 작성 시:
+- [ ] @RequiredArgsConstructor 사용했는가?
+- [ ] 모든 의존성 필드를 final로 선언했는가?
+- [ ] @Autowired 필드 주입을 사용하지 않았는가?
+- [ ] 순환 의존성이 없는가?
+- [ ] 인터페이스에 의존하고 있는가? (가능한 경우)
+- [ ] Bean 스코프를 적절히 설정했는가?
+
+## 🎯 의존성 관리 모범 사례
+
+### Interface 기반 의존성 (권장)
+```java
+// 인터페이스 정의
+public interface NotificationService {
+    void sendNotification(String to, String message);
+}
+
+// 구현체
+@Service
+public class EmailNotificationService implements NotificationService {
+    @Override
+    public void sendNotification(String to, String message) {
+        // 이메일 발송 로직
+    }
+}
+
+// 사용처 (인터페이스에 의존)
+@Service
+@RequiredArgsConstructor
+public class UserService {
+    private final NotificationService notificationService;  // 인터페이스에 의존
+}
+```
+
+이러한 패턴을 따라 유지보수가 용이하고 테스트하기 쉬운 코드를 작성하세요.

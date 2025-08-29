@@ -1,0 +1,598 @@
+---
+description: JPA Entity 설계 및 연관관계 패턴
+globs: **/entity/*.java, **/*Entity.java
+alwaysApply: false
+---
+
+# JPA Entity 설계 패턴
+
+## 🎯 Entity 설계 원칙
+
+### Lombok 활용 규칙
+- **@Getter** 사용 (필드 접근용)
+- **@Data 사용 금지** (equals/hashCode 순환 참조 위험)
+- **@NoArgsConstructor(access = AccessLevel.PROTECTED)** (JPA 요구사항)
+- **@AllArgsConstructor(access = AccessLevel.PRIVATE)** (Builder 전용)
+- **@Builder** 사용 (객체 생성)
+
+### 감사(Audit) 기능
+- **@EntityListeners(AuditingEntityListener.class)** 활용
+- **@CreatedDate**, **@LastModifiedDate** 사용
+
+## 🏗️ 기본 Entity 패턴
+
+### ✅ 표준 Entity 구조
+```java
+/**
+ * 사용자 엔티티
+ * 
+ * 시험을 치르는 학생들의 기본 정보를 관리합니다.
+ * 이름과 전화번호로 로그인하는 간단한 구조입니다.
+ */
+@Entity
+@Table(name = "user")
+@Getter  // @Data 사용 금지 (equals/hashCode 순환 참조 위험)
+@NoArgsConstructor(access = AccessLevel.PROTECTED)  // JPA 요구사항
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
+@Builder
+@EntityListeners(AuditingEntityListener.class)  // 감사 기능
+public class User {
+    
+    /**
+     * 사용자 고유 식별자
+     * 자동 증가하는 기본키
+     */
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+    
+    /**
+     * 사용자 이름
+     * 학생의 실명을 저장
+     * 최대 50자, 필수 입력
+     */
+    @Column(nullable = false, length = 50)
+    private String name;
+    
+    /**
+     * 사용자 전화번호
+     * 로그인 시 식별자로 사용
+     * 형식: 010-1234-5678
+     */
+    @Column(length = 20)
+    private String phone;
+    
+    /**
+     * 생성 시간
+     * 학생 등록 시점 자동 기록
+     */
+    @CreatedDate
+    @Column(updatable = false)
+    private LocalDateTime createdAt;
+    
+    /**
+     * 수정 시간
+     * 정보 변경 시점 자동 기록
+     */
+    @LastModifiedDate
+    private LocalDateTime updatedAt;
+}
+```
+
+### ✅ 복잡한 Entity 구조 (JSON 컬럼 활용)
+```java
+/**
+ * 문제 정보 엔티티
+ * 
+ * 각 단원별로 생성된 문제들을 관리합니다.
+ * 주관식 문제만 지원하며, JSON 형태로 저장된 문제 내용을 HTML로 변환합니다.
+ */
+@Entity
+@Table(name = "question")
+@Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
+@Builder
+@Slf4j
+public class Question {
+    
+    private static final ObjectMapper objectMapper = new ObjectMapper();
+    
+    /**
+     * 문제 고유 ID
+     * 자동 증가하는 기본키
+     */
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    /**
+     * 단원과의 관계
+     * ManyToOne: 여러 문제가 하나의 단원에 속함
+     * FetchType.LAZY: 필요할 때만 단원 정보를 조회
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "unit_id", nullable = false)
+    private Unit unit;
+
+    /**
+     * 문제 난이도
+     * 하: 쉬움, 중: 보통, 상: 어려움
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private Difficulty difficulty;
+
+    /**
+     * 문제 내용 (JSON 형태)
+     * 주관식 문제 내용을 JSON 형태로 저장
+     * 예시: [{"type": "paragraph", "content": [{"type": "text", "value": "연립부등식 "}]}]
+     */
+    @Column(columnDefinition = "TEXT", nullable = false)
+    private String questionText;
+
+    /**
+     * 문제 정답
+     * 문제의 정답을 저장
+     */
+    @Column(columnDefinition = "LONGTEXT", nullable = false)
+    private String answerKey;
+
+    /**
+     * 문제 이미지 (JSON 형태)
+     * 문제와 관련된 이미지들을 JSON 형태로 저장
+     * 예시: {"images": ["image1.jpg", "image2.png"]}
+     */
+    @Column(columnDefinition = "JSON")
+    private String image;
+
+    /**
+     * JSON 형태의 questionText를 HTML로 변환
+     * 
+     * @return HTML 형태의 문제 내용
+     */
+    public String getQuestionTextAsHtml() {
+        try {
+            List<Map<String, Object>> questionData = objectMapper.readValue(
+                questionText, new TypeReference<List<Map<String, Object>>>() {});
+            StringBuilder html = new StringBuilder();
+            
+            for (Map<String, Object> block : questionData) {
+                String type = (String) block.get("type");
+                @SuppressWarnings("unchecked")
+                List<Map<String, Object>> content = (List<Map<String, Object>>) block.get("content");
+                
+                if ("paragraph".equals(type)) {
+                    html.append("<p>");
+                    for (Map<String, Object> item : content) {
+                        String itemType = (String) item.get("type");
+                        String value = (String) item.get("value");
+                        
+                        if ("text".equals(itemType)) {
+                            html.append(value);
+                        } else if ("latex".equals(itemType)) {
+                            html.append("$").append(value).append("$");
+                        }
+                    }
+                    html.append("</p>");
+                }
+            }
+            
+            // 이미지가 있으면 문제 내용 아래에 추가
+            List<String> imageUrls = getImageUrls();
+            if (!imageUrls.isEmpty()) {
+                html.append("<div style='margin-top: 15px;'>");
+                for (String imageUrl : imageUrls) {
+                    html.append("<img src='").append(imageUrl)
+                        .append("' alt='문제 이미지' style='max-width: 100%; height: auto; margin: 10px 0;'/>");
+                }
+                html.append("</div>");
+            }
+            
+            return html.toString();
+            
+        } catch (JsonProcessingException e) {
+            log.error("JSON 파싱 오류: {}", e.getMessage(), e);
+            return questionText; // JSON 파싱 실패 시 원본 반환
+        }
+    }
+
+    /**
+     * 이미지 JSON을 파싱하여 이미지 URL 목록 반환
+     * 
+     * @return 이미지 URL 목록
+     */
+    public List<String> getImageUrls() {
+        try {
+            if (image == null || image.trim().isEmpty()) {
+                return List.of();
+            }
+            
+            Map<String, Object> imageData = objectMapper.readValue(
+                image, new TypeReference<Map<String, Object>>() {});
+            @SuppressWarnings("unchecked")
+            List<String> images = (List<String>) imageData.get("images");
+            
+            return images != null ? images : List.of();
+            
+        } catch (JsonProcessingException e) {
+            log.error("이미지 JSON 파싱 오류: {}", e.getMessage(), e);
+            return List.of();
+        }
+    }
+
+    /**
+     * 문제 난이도 열거형
+     */
+    public enum Difficulty {
+        하, 중, 상
+    }
+}
+```
+
+## 🔗 연관관계 패턴
+
+### ✅ ManyToOne 연관관계
+```java
+/**
+ * 시험 답안 엔티티
+ */
+@Entity
+@Table(name = "exam_answer")
+@Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
+@Builder
+@EntityListeners(AuditingEntityListener.class)
+public class ExamAnswer {
+    
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+    
+    /**
+     * 시험 제출과의 관계
+     * ManyToOne: 여러 답안이 하나의 시험 제출에 속함
+     * FetchType.LAZY: 지연 로딩으로 성능 최적화
+     * nullable = false: 필수 관계
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "exam_submission_id", nullable = false)
+    private ExamSubmission examSubmission;
+    
+    /**
+     * 문제와의 관계
+     * ManyToOne: 여러 답안이 하나의 문제에 대응
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "question_id", nullable = false)
+    private Question question;
+    
+    /**
+     * 답안 이미지 URL
+     * 학생이 업로드한 답안 이미지 경로
+     */
+    @Column(columnDefinition = "LONGTEXT")
+    private String answerImageUrl;
+    
+    /**
+     * 인식된 답안 텍스트
+     * AI가 이미지에서 인식한 텍스트
+     */
+    @Column(columnDefinition = "TEXT")
+    private String answerText;
+    
+    /**
+     * 정답 여부
+     * AI 또는 수동 채점 결과
+     */
+    @Column(nullable = false)
+    @Builder.Default
+    private Boolean isCorrect = false;
+    
+    /**
+     * 획득 점수
+     * 문제별 배점에 따른 점수
+     */
+    @Column(nullable = false)
+    @Builder.Default
+    private Integer score = 0;
+    
+    @CreatedDate
+    @Column(updatable = false)
+    private LocalDateTime createdAt;
+    
+    @LastModifiedDate
+    private LocalDateTime updatedAt;
+    
+    /**
+     * 답안 이미지 URL 업데이트 (재촬영)
+     * 
+     * @param newImageUrl 새로운 이미지 URL
+     */
+    public void updateImageUrl(String newImageUrl) {
+        this.answerImageUrl = newImageUrl;
+        this.answerText = null; // 이미지가 변경되면 텍스트 초기화
+        this.isCorrect = false; // 채점 결과 초기화
+        this.score = 0;
+    }
+    
+    /**
+     * 인식된 답안 텍스트 업데이트
+     * 
+     * @param recognizedText AI가 인식한 텍스트
+     */
+    public void updateAnswerText(String recognizedText) {
+        this.answerText = recognizedText;
+    }
+    
+    /**
+     * 채점 결과 업데이트
+     * 
+     * @param correct 정답 여부
+     * @param points 획득 점수
+     */
+    public void updateGrading(boolean correct, int points) {
+        this.isCorrect = correct;
+        this.score = points;
+    }
+}
+```
+
+### ✅ OneToMany 연관관계
+```java
+/**
+ * 시험 제출 엔티티
+ */
+@Entity
+@Table(name = "exam_submission")
+@Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
+@Builder
+@EntityListeners(AuditingEntityListener.class)
+public class ExamSubmission {
+    
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+    
+    /**
+     * 사용자와의 관계
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
+    
+    /**
+     * 시험과의 관계
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "exam_id", nullable = false)
+    private Exam exam;
+    
+    /**
+     * 답안들과의 관계
+     * OneToMany: 하나의 시험 제출에 여러 답안이 속함
+     * mappedBy: 양방향 관계에서 주인이 아닌 쪽
+     * cascade = CascadeType.ALL: 시험 제출 삭제 시 답안도 모두 삭제
+     * orphanRemoval = true: 고아 객체 자동 삭제
+     */
+    @OneToMany(mappedBy = "examSubmission", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private List<ExamAnswer> examAnswers = new ArrayList<>();
+    
+    /**
+     * 총 점수
+     * 모든 답안의 점수 합계
+     */
+    @Column
+    private Integer totalScore;
+    
+    @CreatedDate
+    @Column(updatable = false)
+    private LocalDateTime createdAt;
+    
+    @LastModifiedDate
+    private LocalDateTime updatedAt;
+    
+    /**
+     * 답안 추가
+     * 양방향 관계 편의 메서드
+     * 
+     * @param examAnswer 추가할 답안
+     */
+    public void addExamAnswer(ExamAnswer examAnswer) {
+        examAnswers.add(examAnswer);
+        // 양방향 관계 설정은 Builder를 통해 이미 설정됨
+    }
+    
+    /**
+     * 총 점수 계산 및 업데이트
+     */
+    public void calculateTotalScore() {
+        this.totalScore = examAnswers.stream()
+            .mapToInt(ExamAnswer::getScore)
+            .sum();
+    }
+}
+```
+
+## 🔧 비즈니스 메서드 패턴
+
+### ✅ Entity 내 비즈니스 로직
+```java
+/**
+ * 시험 엔티티
+ */
+@Entity
+@Table(name = "exam")
+@Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
+@Builder
+public class Exam {
+    
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+    
+    @Column(nullable = false, length = 100)
+    private String examName;
+    
+    @Column(nullable = false)
+    private Integer grade;
+    
+    @Column(columnDefinition = "TEXT")
+    private String content;
+    
+    @Column(nullable = false)
+    private Integer studentCount;
+    
+    @Column(columnDefinition = "LONGTEXT")
+    private String qrCodeUrl;
+    
+    @CreatedDate
+    @Column(nullable = false)
+    private LocalDateTime createdAt;
+    
+    /**
+     * 시험 정보 수정
+     * 비즈니스 규칙을 포함한 수정 메서드
+     * 
+     * @param examName 수정할 시험명
+     * @param content 수정할 시험 내용
+     * @param studentCount 수정할 학생 수
+     */
+    public void updateExamInfo(String examName, String content, Integer studentCount) {
+        if (examName == null || examName.trim().isEmpty()) {
+            throw new IllegalArgumentException("시험명은 필수입니다.");
+        }
+        if (studentCount != null && studentCount <= 0) {
+            throw new IllegalArgumentException("학생 수는 1명 이상이어야 합니다.");
+        }
+        
+        this.examName = examName;
+        this.content = content;
+        this.studentCount = studentCount;
+    }
+    
+    /**
+     * 시험 활성화 여부 확인
+     * 
+     * @return 시험이 활성화되어 있는지 여부
+     */
+    public boolean isActive() {
+        return this.qrCodeUrl != null && !this.qrCodeUrl.trim().isEmpty();
+    }
+}
+```
+
+## 📅 감사(Audit) 기능
+
+### ✅ 기본 감사 필드
+```java
+/**
+ * 감사 기능이 포함된 기본 엔티티
+ */
+@MappedSuperclass
+@EntityListeners(AuditingEntityListener.class)
+@Getter
+public abstract class BaseEntity {
+    
+    /**
+     * 생성 시간
+     */
+    @CreatedDate
+    @Column(updatable = false)
+    private LocalDateTime createdAt;
+    
+    /**
+     * 수정 시간
+     */
+    @LastModifiedDate
+    private LocalDateTime updatedAt;
+    
+    /**
+     * 생성자 (향후 확장 시 사용)
+     */
+    @CreatedBy
+    @Column(updatable = false, length = 50)
+    private String createdBy;
+    
+    /**
+     * 수정자 (향후 확장 시 사용)
+     */
+    @LastModifiedBy
+    @Column(length = 50)
+    private String lastModifiedBy;
+}
+
+// 사용 예시
+@Entity
+@Table(name = "user")
+@Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@Builder
+public class User extends BaseEntity {
+    
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+    
+    @Column(nullable = false, length = 50)
+    private String name;
+}
+```
+
+## ❌ 피해야 할 패턴
+
+### ❌ @Data 사용
+```java
+// 잘못된 방식 - @Data 사용 금지
+@Entity
+@Data  // 순환 참조 위험, equals/hashCode 문제 발생 가능
+public class User {
+    // 필드들...
+}
+```
+
+### ❌ 양방향 관계에서 무한 순환
+```java
+// 문제가 될 수 있는 패턴
+@Entity
+public class User {
+    @OneToMany(mappedBy = "user")
+    private List<Order> orders;
+    
+    // toString(), equals(), hashCode()에서 순환 참조 위험
+}
+
+@Entity  
+public class Order {
+    @ManyToOne
+    private User user;
+}
+```
+
+### ❌ EAGER 로딩 남용
+```java
+// 성능 문제를 일으킬 수 있는 패턴
+@ManyToOne(fetch = FetchType.EAGER)  // 지양 - LAZY 사용 권장
+@JoinColumn(name = "user_id")
+private User user;
+```
+
+## 🎯 Entity 설계 체크리스트
+
+새 Entity 작성 시:
+- [ ] @Getter 사용, @Data 사용하지 않음
+- [ ] @NoArgsConstructor(access = AccessLevel.PROTECTED) 설정
+- [ ] @Builder 패턴 사용
+- [ ] @EntityListeners(AuditingEntityListener.class) 추가
+- [ ] 연관관계는 기본적으로 LAZY 로딩 설정
+- [ ] 양방향 관계에서 연관관계 편의 메서드 제공
+- [ ] 비즈니스 메서드에 적절한 검증 로직 포함
+- [ ] 한국어 JavaDoc 작성 완료
+
+이러한 패턴을 따라 일관되고 안전한 JPA Entity를 설계하세요.

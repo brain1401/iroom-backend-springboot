@@ -1,0 +1,354 @@
+---
+description: 한국어 JavaDoc 및 코멘트 작성 규칙
+globs: **/*.java
+alwaysApply: false
+---
+
+# 한국어 문서화 규칙
+
+## 🎯 문서화 원칙
+
+### 한국어 필수 사용
+- **모든 JavaDoc**은 한국어로 작성
+- **로그 메시지**는 한국어로 작성  
+- **예외 메시지**는 한국어로 작성
+- **주석**은 한국어로 작성
+
+### 명사형 표현 사용
+- "조회한다" → "조회"
+- "생성한다" → "생성"  
+- "처리한다" → "처리"
+
+## 📋 JavaDoc 작성 규칙
+
+### ✅ 클래스 수준 JavaDoc
+```java
+/**
+ * 사용자 관리 서비스
+ * 
+ * <p>학생의 로그인, 정보 조회, 시험 참여 등의 기능을 제공합니다.
+ * 모든 비즈니스 로직과 검증 규칙이 포함되어 있습니다.</p>
+ * 
+ * <p>주요 기능:</p>
+ * <ul>
+ *   <li>학생 로그인 (이름 + 전화번호)</li>
+ *   <li>학생 정보 조회 및 관리</li>
+ *   <li>시험 참여 권한 확인</li>
+ * </ul>
+ * 
+ * @author 이룸클래스
+ * @since 2025
+ * @see User
+ * @see UserRepository
+ */
+@Service
+@RequiredArgsConstructor
+@Slf4j
+@Transactional(readOnly = true)
+public class UserService {
+    // 구현 내용
+}
+```
+
+### ✅ 메서드 수준 JavaDoc  
+```java
+/**
+ * 사용자 로그인 처리
+ * 
+ * <p>이름과 전화번호를 통해 학생 인증을 수행합니다.
+ * 존재하지 않는 학생이거나 정보가 일치하지 않으면 예외를 발생시킵니다.</p>
+ * 
+ * @param request 로그인 요청 정보 (이름, 전화번호 포함)
+ * @return 로그인 응답 정보 (사용자 ID, 이름, 전화번호, 메시지)
+ * @throws IllegalArgumentException 존재하지 않는 학생이거나 정보가 일치하지 않을 때
+ * @throws ValidationException 입력 데이터 검증 실패 시
+ */
+public UserLoginResponse login(UserLoginRequest request) {
+    log.info("사용자 로그인 요청: 이름={}, 전화번호={}", 
+            request.name(), request.phone());
+    
+    User user = userRepository.findByNameAndPhone(request.name(), request.phone())
+        .orElseThrow(() -> new IllegalArgumentException(
+            "존재하지 않는 학생입니다. 이름과 전화번호를 확인해주세요."));
+    
+    log.info("사용자 로그인 성공: ID={}, 이름={}", user.getId(), user.getName());
+    
+    return new UserLoginResponse(
+        user.getId(),
+        user.getName(), 
+        user.getPhone(),
+        "로그인에 성공했습니다."
+    );
+}
+```
+
+### ✅ 필드 수준 JavaDoc
+```java
+/**
+ * 사용자 엔티티
+ */
+@Entity
+@Table(name = "user")
+@Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
+@Builder
+public class User {
+    
+    /**
+     * 사용자 고유 식별자
+     * 자동 증가하는 기본키입니다.
+     */
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+    
+    /**
+     * 사용자 이름
+     * 학생의 실명을 저장합니다.
+     * 최대 50자까지 입력 가능하며, 필수 입력 사항입니다.
+     */
+    @Column(nullable = false, length = 50)
+    private String name;
+    
+    /**
+     * 사용자 전화번호  
+     * 로그인 시 사용되는 연락처 정보입니다.
+     * 형식: 010-1234-5678
+     */
+    @Column(length = 20)
+    private String phone;
+}
+```
+
+### ✅ 복잡한 비즈니스 로직 문서화
+```java
+/**
+ * AI 이미지 인식을 통한 답안 처리
+ * 
+ * <p>업로드된 답안지 이미지를 AI 서버로 전송하여 텍스트를 인식하고,
+ * 인식된 결과를 바탕으로 자동 채점을 수행합니다.</p>
+ * 
+ * <p>처리 과정:</p>
+ * <ol>
+ *   <li>답안 이미지 URL 검증</li>
+ *   <li>AI 서버로 이미지 인식 요청</li>
+ *   <li>인식 결과를 답안 텍스트로 저장</li>
+ *   <li>정답과 비교하여 자동 채점</li>
+ *   <li>점수 및 정답 여부 업데이트</li>
+ * </ol>
+ * 
+ * @param request 답안 생성 요청 (시험 제출 ID, 문제 ID, 이미지 URL 포함)
+ * @return 생성된 답안 정보 (ID, 인식된 텍스트, 점수, 정답 여부 포함)
+ * @throws IllegalArgumentException 시험 제출 또는 문제가 존재하지 않을 때
+ * @throws AiRecognitionException AI 인식 처리 실패 시
+ * @throws DuplicateAnswerException 이미 답안이 존재하는 문제일 때
+ */
+@Transactional
+public ExamAnswerResponse createExamAnswer(ExamAnswerCreateRequest request) {
+    log.info("답안 생성 요청: 제출 ID={}, 문제 ID={}, 이미지 URL={}", 
+            request.examSubmissionId(), request.questionId(), request.answerImageUrl());
+    
+    // 1단계: 시험 제출 존재 확인
+    ExamSubmission examSubmission = examSubmissionRepository.findById(request.examSubmissionId())
+        .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 시험 제출입니다: " + request.examSubmissionId()));
+    
+    // 구현 계속...
+}
+```
+
+## 🗣️ 로그 메시지 규칙
+
+### ✅ 정보성 로그 (INFO)
+```java
+// 비즈니스 흐름 추적용 로그
+log.info("사용자 로그인 요청: 이름={}, 전화번호={}", request.name(), request.phone());
+log.info("시험 답안 생성 시작: 제출 ID={}, 문제 ID={}", submissionId, questionId);
+log.info("AI 이미지 인식 완료: 답안 ID={}, 인식 텍스트={}", answerId, recognizedText);
+log.info("PDF 생성 완료: 파일명={}, 크기={}KB", fileName, fileSize);
+
+// 성공 완료 로그
+log.info("사용자 로그인 성공: ID={}, 이름={}", user.getId(), user.getName());
+log.info("시험 등록 완료: ID={}, 이름={}, 학생 수={}", exam.getId(), exam.getExamName(), exam.getStudentCount());
+```
+
+### ✅ 경고 로그 (WARN)
+```java
+// 비즈니스 규칙 위반이나 예상 가능한 문제
+log.warn("중복 답안 제출 시도: 시험 제출 ID={}, 문제 ID={}", submissionId, questionId);
+log.warn("AI 인식 결과 신뢰도 낮음: 답안 ID={}, 신뢰도={}", answerId, confidence);
+log.warn("시험 시간 초과: 시험 ID={}, 남은 시간={}분", examId, remainingMinutes);
+```
+
+### ✅ 오류 로그 (ERROR)
+```java
+// 예상치 못한 예외나 시스템 오류
+log.error("AI 서버 연결 실패: URL={}, 오류={}", aiServerUrl, e.getMessage(), e);
+log.error("PDF 생성 실패: 시험 ID={}, 오류={}", examId, e.getMessage(), e);
+log.error("데이터베이스 연결 오류: {}", e.getMessage(), e);
+
+// 비즈니스 로직에서 발생한 예외
+log.error("답안 처리 중 오류 발생: 답안 ID={}, 오류={}", answerId, e.getMessage(), e);
+```
+
+### ✅ 디버그 로그 (DEBUG)
+```java
+// 개발 및 디버깅용 상세 로그  
+log.debug("쿼리 실행: SQL={}, 파라미터={}", sql, parameters);
+log.debug("AI 인식 요청 데이터: {}", requestJson);
+log.debug("캐시 조회 결과: 키={}, 히트 여부={}", cacheKey, isHit);
+```
+
+## ⚠️ 예외 메시지 규칙
+
+### ✅ 사용자 친화적 메시지
+```java
+// 비즈니스 규칙 위반
+throw new IllegalArgumentException("존재하지 않는 학생입니다. 이름과 전화번호를 확인해주세요.");
+throw new DuplicateAnswerException("이미 답안이 존재하는 문제입니다. 수정을 원하시면 답안 수정 기능을 이용해주세요.");
+throw new ExamTimeoutException("시험 시간이 종료되었습니다. 더 이상 답안을 제출할 수 없습니다.");
+
+// 데이터 검증 실패
+throw new ValidationException("전화번호 형식이 올바르지 않습니다. 010-1234-5678 형식으로 입력해주세요.");
+throw new ValidationException("시험 이름은 1자 이상 100자 이하로 입력해주세요.");
+
+// 시스템 오류
+throw new AiRecognitionException("AI 인식 서비스에 일시적인 문제가 발생했습니다. 잠시 후 다시 시도해주세요.");
+throw new PdfGenerationException("PDF 생성 중 오류가 발생했습니다. 관리자에게 문의해주세요.");
+```
+
+## 💬 인라인 주석 규칙
+
+### ✅ 복잡한 비즈니스 로직 설명
+```java
+public ExamAnswerResponse updateExamAnswer(ExamAnswerUpdateRequest request) {
+    ExamAnswer examAnswer = findExamAnswerById(request.answerId());
+    
+    // 1단계: 답안 텍스트 업데이트
+    examAnswer.updateAnswerText(request.answerText());
+    
+    // 2단계: 정답 여부 다시 확인
+    Question question = examAnswer.getQuestion();
+    if (question != null) {
+        String correctAnswer = question.getAnswerKey();
+        String studentAnswer = request.answerText();
+        
+        // 정답 비교 (공백 제거 후 대소문자 무시하고 비교)
+        boolean isCorrect = correctAnswer != null && 
+            correctAnswer.trim().equalsIgnoreCase(studentAnswer.trim());
+        
+        // 3단계: ExamDraftQuestion에서 해당 문제의 배점 가져오기
+        Integer score = 0;
+        if (isCorrect) {
+            try {
+                // ExamSubmission → Exam → ExamDraft → ExamDraftQuestion 순서로 찾기
+                Long examDraftId = examAnswer.getExamSubmission().getExam().getExamDraft().getId();
+                Long questionId = question.getId();
+                
+                ExamDraftQuestion examDraftQuestion = examDraftQuestionRepository
+                    .findByExamDraftIdAndQuestionId(examDraftId, questionId)
+                    .orElse(null);
+                
+                if (examDraftQuestion != null) {
+                    score = examDraftQuestion.getPoints();
+                } else {
+                    score = 5; // 기본 배점 사용
+                }
+            } catch (Exception e) {
+                score = 5; // 오류 발생 시 기본 배점 사용
+                log.error("배점 조회 중 오류 발생, 기본 배점 사용: {}", e.getMessage());
+            }
+        }
+        
+        // 채점 결과 업데이트
+        examAnswer.updateGrading(isCorrect, score);
+    }
+    
+    return ExamAnswerResponse.from(examAnswerRepository.save(examAnswer));
+}
+```
+
+### ✅ 알고리즘 또는 복잡한 계산 설명
+```java
+/**
+ * 학년별 점수 분포 통계 계산
+ */
+public GradeScoreDistributionResponse calculateScoreDistribution(int grade) {
+    List<ExamSubmission> submissions = examSubmissionRepository.findByGrade(grade);
+    
+    // 점수 구간별 분포 계산 (0-60: 미흡, 61-80: 보통, 81-100: 우수)
+    Map<String, Integer> distribution = new HashMap<>();
+    distribution.put("미흡", 0);  // 0-60점
+    distribution.put("보통", 0);  // 61-80점  
+    distribution.put("우수", 0);  // 81-100점
+    
+    for (ExamSubmission submission : submissions) {
+        Integer score = submission.getScore();
+        if (score != null) {
+            if (score <= 60) {
+                distribution.merge("미흡", 1, Integer::sum);
+            } else if (score <= 80) {
+                distribution.merge("보통", 1, Integer::sum);  
+            } else {
+                distribution.merge("우수", 1, Integer::sum);
+            }
+        }
+    }
+    
+    return new GradeScoreDistributionResponse(grade, distribution, submissions.size());
+}
+```
+
+## 🚫 피해야 할 패턴
+
+### ❌ 영어 문서화
+```java
+// 잘못된 방식 - 영어 사용 금지
+/**
+ * User login service
+ * 
+ * @param request login request
+ * @return login response
+ */
+public UserLoginResponse login(UserLoginRequest request) {
+    log.info("User login request: name={}", request.name());  // 영어 로그 금지
+    // ...
+}
+```
+
+### ❌ 동사형 표현
+```java
+// 잘못된 방식 - 동사형 표현
+/**
+ * 사용자 정보를 조회한다  // "조회한다" 대신 "조회" 사용
+ * 
+ * @param id 조회할 사용자 ID
+ * @return 조회된 사용자 정보  // "조회된" 대신 "조회" 사용
+ */
+```
+
+### ❌ 의미 없는 주석
+```java
+// 잘못된 방식 - 의미 없는 주석
+private Long id;  // ID
+private String name;  // 이름
+
+// 사용자 생성  
+public User createUser() {
+    // 사용자를 생성한다
+    return new User();
+}
+```
+
+## 📝 문서화 체크리스트
+
+새 클래스/메서드 작성 시:
+- [ ] 클래스 JavaDoc을 한국어로 작성했는가?
+- [ ] 메서드 JavaDoc을 한국어로 작성했는가?
+- [ ] @param, @return, @throws 태그를 한국어로 작성했는가?
+- [ ] 로그 메시지를 한국어로 작성했는가?
+- [ ] 예외 메시지를 사용자 친화적인 한국어로 작성했는가?
+- [ ] 복잡한 비즈니스 로직에 설명 주석을 추가했는가?
+- [ ] 명사형 표현을 사용했는가?
+
+한국어 중심의 문서화를 통해 팀 내 소통을 원활히 하고 유지보수성을 높이세요.
