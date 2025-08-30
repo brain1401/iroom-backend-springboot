@@ -47,3 +47,6 @@ diag-java21.txt
 
 
 .serena
+
+# Environment variables
+.env
