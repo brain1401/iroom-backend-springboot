@@ -8,16 +8,49 @@ The application uses `application.yml` for configuration. Environment-specific c
 
 Run with specific profile: `./gradlew bootRun --args='--spring.profiles.active=dev'`
 
+## Environment Variables
+
+The application now uses environment variables for sensitive configuration like database credentials. This provides better security and flexibility across different environments.
+
+### Setup Environment Variables
+
+1. Copy the example environment file:
+```bash
+cp .env.example .env
+```
+
+2. Edit `.env` with your actual values:
+```bash
+# Database configuration
+DB_URL=jdbc:mysql://localhost:3306/your_database_name
+DB_USERNAME=your_username
+DB_PASSWORD=your_secure_password
+```
+
+3. The `.env` file is automatically ignored by git for security.
+
+### Available Environment Variables
+
+| Variable | Description | Default Value | Required |
+|----------|-------------|---------------|----------|
+| `DB_URL` | Database JDBC connection URL | Current project DB | No |
+| `DB_USERNAME` | Database username | Current project user | No |
+| `DB_PASSWORD` | Database password | None | **Yes** |
+
 ## Database Setup
 
-Before running the application, ensure MySQL is running and create a database. Configure the connection in `application.yml`:
+Before running the application:
+
+1. Ensure MySQL is running and create a database
+2. Set up environment variables as described above, or use defaults
+3. The application.yml now uses environment variables with fallback defaults:
 
 ```yaml
 spring:
   datasource:
-    url: jdbc:mysql://localhost:3306/your_database_name
-    username: your_username
-    password: your_password
+    url: ${DB_URL:jdbc:mysql://project-db-campus.smhrd.com:3307/campus_25SW_FS_p3_4}
+    username: ${DB_USERNAME:campus_25SW_FS_p3_4}
+    password: ${DB_PASSWORD:}  # No default - must be set via environment
   jpa:
     hibernate:
       ddl-auto: update  # or validate for production
@@ -55,13 +88,23 @@ logging:
 ```
 
 ### Production Environment
+
+For production, always use environment variables instead of hardcoded values:
+
+```bash
+# Set environment variables in production
+export DB_URL=jdbc:mysql://prod-db:3306/spring_backend_prod
+export DB_USERNAME=prod_user
+export DB_PASSWORD=your_secure_production_password
+export SPRING_PROFILES_ACTIVE=prod
+```
+
 ```yaml
 # application-prod.yml
 spring:
   datasource:
-    url: ${DB_URL:jdbc:mysql://prod-db:3306/spring_backend}
-    username: ${DB_USERNAME:prod_user}
-    password: ${DB_PASSWORD}
+    # These now use environment variables from main application.yml
+    # No need to override here as they're already externalized
   jpa:
     hibernate:
       ddl-auto: validate
@@ -70,6 +113,22 @@ logging:
   level:
     "[com.iroomclass.spring_backend]": INFO
     root: WARN
+```
+
+### Running with Environment Variables
+
+```bash
+# Method 1: Using .env file (recommended for development)
+cp .env.example .env
+# Edit .env with your values
+./gradlew bootRun
+
+# Method 2: Setting variables inline (for CI/CD or production)
+DB_PASSWORD=your_password ./gradlew bootRun
+
+# Method 3: Export variables in shell
+export DB_PASSWORD=your_password
+./gradlew bootRun
 ```
 
 ## Standard Response Wrapper
