@@ -1,12 +1,14 @@
 package com.iroomclass.springbackend.domain.admin.question.entity;
 
 import com.iroomclass.springbackend.domain.admin.unit.entity.Unit;
+import com.iroomclass.springbackend.common.UUIDv7Generator;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.*;
 
@@ -24,7 +26,7 @@ class QuestionBusinessMethodTest {
      */
     private Unit createTestUnit() {
         return Unit.builder()
-            .id(1L)
+            .id(UUIDv7Generator.generate())
             .unitName("1. 수와 연산")
             .grade(1)
             .build();
@@ -43,7 +45,7 @@ class QuestionBusinessMethodTest {
                 .unit(createTestUnit())
                 .difficulty(Question.Difficulty.하)
                 .questionText(jsonText)
-                .answerKey("4")
+                .answerText("4")
                 .questionType(Question.QuestionType.SUBJECTIVE)
                 .build();
             
@@ -63,7 +65,7 @@ class QuestionBusinessMethodTest {
                 .unit(createTestUnit())
                 .difficulty(Question.Difficulty.중)
                 .questionText(jsonText)
-                .answerKey("(x+1)^2")
+                .answerText("(x+1)^2")
                 .questionType(Question.QuestionType.SUBJECTIVE)
                 .build();
             
@@ -86,7 +88,7 @@ class QuestionBusinessMethodTest {
                 .unit(createTestUnit())
                 .difficulty(Question.Difficulty.상)
                 .questionText(jsonText)
-                .answerKey("답안")
+                .answerText("답안")
                 .questionType(Question.QuestionType.SUBJECTIVE)
                 .build();
             
@@ -107,7 +109,7 @@ class QuestionBusinessMethodTest {
                 .unit(createTestUnit())
                 .difficulty(Question.Difficulty.하)
                 .questionText(jsonText)
-                .answerKey("답안")
+                .answerText("답안")
                 .image(imageJson)
                 .questionType(Question.QuestionType.SUBJECTIVE)
                 .build();
@@ -132,7 +134,7 @@ class QuestionBusinessMethodTest {
                 .unit(createTestUnit())
                 .difficulty(Question.Difficulty.하)
                 .questionText(invalidJson)
-                .answerKey("답안")
+                .answerText("답안")
                 .questionType(Question.QuestionType.SUBJECTIVE)
                 .build();
             
@@ -152,7 +154,7 @@ class QuestionBusinessMethodTest {
                 .unit(createTestUnit())
                 .difficulty(Question.Difficulty.하)
                 .questionText(jsonText)
-                .answerKey("답안")
+                .answerText("답안")
                 .questionType(Question.QuestionType.SUBJECTIVE)
                 .build();
             
@@ -177,7 +179,7 @@ class QuestionBusinessMethodTest {
                 .unit(createTestUnit())
                 .difficulty(Question.Difficulty.하)
                 .questionText("[{\"type\": \"paragraph\", \"content\": []}]")
-                .answerKey("답안")
+                .answerText("답안")
                 .image(imageJson)
                 .questionType(Question.QuestionType.SUBJECTIVE)
                 .build();
@@ -197,7 +199,7 @@ class QuestionBusinessMethodTest {
                 .unit(createTestUnit())
                 .difficulty(Question.Difficulty.하)
                 .questionText("[{\"type\": \"paragraph\", \"content\": []}]")
-                .answerKey("답안")
+                .answerText("답안")
                 .image(null)
                 .questionType(Question.QuestionType.SUBJECTIVE)
                 .build();
@@ -217,7 +219,7 @@ class QuestionBusinessMethodTest {
                 .unit(createTestUnit())
                 .difficulty(Question.Difficulty.하)
                 .questionText("[{\"type\": \"paragraph\", \"content\": []}]")
-                .answerKey("답안")
+                .answerText("답안")
                 .image("   ")
                 .questionType(Question.QuestionType.SUBJECTIVE)
                 .build();
@@ -238,7 +240,7 @@ class QuestionBusinessMethodTest {
                 .unit(createTestUnit())
                 .difficulty(Question.Difficulty.하)
                 .questionText("[{\"type\": \"paragraph\", \"content\": []}]")
-                .answerKey("답안")
+                .answerText("답안")
                 .image(imageJson)
                 .questionType(Question.QuestionType.SUBJECTIVE)
                 .build();
@@ -259,7 +261,7 @@ class QuestionBusinessMethodTest {
                 .unit(createTestUnit())
                 .difficulty(Question.Difficulty.하)
                 .questionText("[{\"type\": \"paragraph\", \"content\": []}]")
-                .answerKey("답안")
+                .answerText("답안")
                 .image(imageJson)
                 .questionType(Question.QuestionType.SUBJECTIVE)
                 .build();
@@ -280,7 +282,7 @@ class QuestionBusinessMethodTest {
                 .unit(createTestUnit())
                 .difficulty(Question.Difficulty.하)
                 .questionText("[{\"type\": \"paragraph\", \"content\": []}]")
-                .answerKey("답안")
+                .answerText("답안")
                 .image(invalidImageJson)
                 .questionType(Question.QuestionType.SUBJECTIVE)
                 .build();
@@ -301,7 +303,7 @@ class QuestionBusinessMethodTest {
                 .unit(createTestUnit())
                 .difficulty(Question.Difficulty.하)
                 .questionText("[{\"type\": \"paragraph\", \"content\": []}]")
-                .answerKey("답안")
+                .answerText("답안")
                 .image(imageJson)
                 .questionType(Question.QuestionType.SUBJECTIVE)
                 .build();
@@ -326,7 +328,7 @@ class QuestionBusinessMethodTest {
                 .unit(createTestUnit())
                 .difficulty(Question.Difficulty.하)
                 .questionText("[{\"type\": \"paragraph\", \"content\": []}]")
-                .answerKey("답안")
+                .answerText("답안")
                 .questionType(Question.QuestionType.SUBJECTIVE)
                 .build();
             
@@ -343,7 +345,7 @@ class QuestionBusinessMethodTest {
                 .unit(createTestUnit())
                 .difficulty(Question.Difficulty.하)
                 .questionText("[{\"type\": \"paragraph\", \"content\": []}]")
-                .answerKey("1번")
+                .answerText("1번")
                 .questionType(Question.QuestionType.MULTIPLE_CHOICE)
                 .choices("{\"1\": \"선택지1\", \"2\": \"선택지2\"}")
                 .correctChoice(1)
@@ -362,7 +364,7 @@ class QuestionBusinessMethodTest {
                 .unit(createTestUnit())
                 .difficulty(Question.Difficulty.하)
                 .questionText("[{\"type\": \"paragraph\", \"content\": []}]")
-                .answerKey("답안")
+                .answerText("답안")
                 .build();
             
             // When & Then
@@ -384,7 +386,7 @@ class QuestionBusinessMethodTest {
                 .unit(createTestUnit())
                 .difficulty(Question.Difficulty.하)
                 .questionText("[{\"type\": \"paragraph\", \"content\": []}]")
-                .answerKey("1번")
+                .answerText("1번")
                 .questionType(Question.QuestionType.MULTIPLE_CHOICE)
                 .choices(choicesJson)
                 .correctChoice(1)
@@ -408,7 +410,7 @@ class QuestionBusinessMethodTest {
                 .unit(createTestUnit())
                 .difficulty(Question.Difficulty.하)
                 .questionText("[{\"type\": \"paragraph\", \"content\": []}]")
-                .answerKey("답안")
+                .answerText("답안")
                 .questionType(Question.QuestionType.SUBJECTIVE)
                 .choices("{\"1\": \"선택지1\"}")  // 주관식이므로 무시됨
                 .build();
@@ -428,7 +430,7 @@ class QuestionBusinessMethodTest {
                 .unit(createTestUnit())
                 .difficulty(Question.Difficulty.하)
                 .questionText("[{\"type\": \"paragraph\", \"content\": []}]")
-                .answerKey("1번")
+                .answerText("1번")
                 .questionType(Question.QuestionType.MULTIPLE_CHOICE)
                 .choices(null)
                 .correctChoice(1)
@@ -449,7 +451,7 @@ class QuestionBusinessMethodTest {
                 .unit(createTestUnit())
                 .difficulty(Question.Difficulty.하)
                 .questionText("[{\"type\": \"paragraph\", \"content\": []}]")
-                .answerKey("1번")
+                .answerText("1번")
                 .questionType(Question.QuestionType.MULTIPLE_CHOICE)
                 .choices("   ")
                 .correctChoice(1)
@@ -470,7 +472,7 @@ class QuestionBusinessMethodTest {
                 .unit(createTestUnit())
                 .difficulty(Question.Difficulty.하)
                 .questionText("[{\"type\": \"paragraph\", \"content\": []}]")
-                .answerKey("1번")
+                .answerText("1번")
                 .questionType(Question.QuestionType.MULTIPLE_CHOICE)
                 .choices("invalid json")
                 .correctChoice(1)
@@ -497,7 +499,7 @@ class QuestionBusinessMethodTest {
                 .unit(createTestUnit())
                 .difficulty(Question.Difficulty.하)
                 .questionText("[{\"type\": \"paragraph\", \"content\": []}]")
-                .answerKey("1번")
+                .answerText("1번")
                 .questionType(Question.QuestionType.MULTIPLE_CHOICE)
                 .choices(choicesJson)
                 .correctChoice(1)
@@ -527,7 +529,7 @@ class QuestionBusinessMethodTest {
                 .unit(createTestUnit())
                 .difficulty(Question.Difficulty.하)
                 .questionText("[{\"type\": \"paragraph\", \"content\": []}]")
-                .answerKey("1번")
+                .answerText("1번")
                 .questionType(Question.QuestionType.MULTIPLE_CHOICE)
                 .choices(choicesJson)
                 .correctChoice(1)
@@ -554,7 +556,7 @@ class QuestionBusinessMethodTest {
                 .unit(createTestUnit())
                 .difficulty(Question.Difficulty.하)
                 .questionText("[{\"type\": \"paragraph\", \"content\": []}]")
-                .answerKey("답안")
+                .answerText("답안")
                 .questionType(Question.QuestionType.SUBJECTIVE)
                 .build();
             
@@ -573,7 +575,7 @@ class QuestionBusinessMethodTest {
                 .unit(createTestUnit())
                 .difficulty(Question.Difficulty.하)
                 .questionText("[{\"type\": \"paragraph\", \"content\": []}]")
-                .answerKey("1번")
+                .answerText("1번")
                 .questionType(Question.QuestionType.MULTIPLE_CHOICE)
                 .choices(null)
                 .correctChoice(1)
@@ -599,7 +601,7 @@ class QuestionBusinessMethodTest {
                 .unit(createTestUnit())
                 .difficulty(Question.Difficulty.하)
                 .questionText("[{\"type\": \"paragraph\", \"content\": []}]")
-                .answerKey("2번")
+                .answerText("2번")
                 .questionType(Question.QuestionType.MULTIPLE_CHOICE)
                 .choices("{\"1\": \"선택지1\", \"2\": \"선택지2\", \"3\": \"선택지3\"}")
                 .correctChoice(2)
@@ -617,7 +619,7 @@ class QuestionBusinessMethodTest {
                 .unit(createTestUnit())
                 .difficulty(Question.Difficulty.하)
                 .questionText("[{\"type\": \"paragraph\", \"content\": []}]")
-                .answerKey("2번")
+                .answerText("2번")
                 .questionType(Question.QuestionType.MULTIPLE_CHOICE)
                 .choices("{\"1\": \"선택지1\", \"2\": \"선택지2\", \"3\": \"선택지3\"}")
                 .correctChoice(2)
@@ -636,7 +638,7 @@ class QuestionBusinessMethodTest {
                 .unit(createTestUnit())
                 .difficulty(Question.Difficulty.하)
                 .questionText("[{\"type\": \"paragraph\", \"content\": []}]")
-                .answerKey("답안")
+                .answerText("답안")
                 .questionType(Question.QuestionType.SUBJECTIVE)
                 .build();
             
@@ -653,7 +655,7 @@ class QuestionBusinessMethodTest {
                 .unit(createTestUnit())
                 .difficulty(Question.Difficulty.하)
                 .questionText("[{\"type\": \"paragraph\", \"content\": []}]")
-                .answerKey("2번")
+                .answerText("2번")
                 .questionType(Question.QuestionType.MULTIPLE_CHOICE)
                 .choices("{\"1\": \"선택지1\", \"2\": \"선택지2\"}")
                 .correctChoice(2)
@@ -671,7 +673,7 @@ class QuestionBusinessMethodTest {
                 .unit(createTestUnit())
                 .difficulty(Question.Difficulty.하)
                 .questionText("[{\"type\": \"paragraph\", \"content\": []}]")
-                .answerKey("답안")
+                .answerText("답안")
                 .questionType(Question.QuestionType.MULTIPLE_CHOICE)
                 .choices("{\"1\": \"선택지1\", \"2\": \"선택지2\"}")
                 .correctChoice(null)
@@ -696,7 +698,7 @@ class QuestionBusinessMethodTest {
                 .unit(createTestUnit())
                 .difficulty(Question.Difficulty.하)
                 .questionText(jsonText)
-                .answerKey("답안")
+                .answerText("답안")
                 .questionType(Question.QuestionType.SUBJECTIVE)
                 .build();
             
@@ -718,7 +720,7 @@ class QuestionBusinessMethodTest {
                 .unit(createTestUnit())
                 .difficulty(Question.Difficulty.하)
                 .questionText(jsonText)
-                .answerKey("1번")
+                .answerText("1번")
                 .questionType(Question.QuestionType.MULTIPLE_CHOICE)
                 .choices(choicesJson)
                 .correctChoice(1)
@@ -747,7 +749,7 @@ class QuestionBusinessMethodTest {
                 .unit(createTestUnit())
                 .difficulty(Question.Difficulty.중)
                 .questionText(jsonText)
-                .answerKey("1번")
+                .answerText("1번")
                 .image(imageJson)
                 .questionType(Question.QuestionType.MULTIPLE_CHOICE)
                 .choices(choicesJson)
@@ -774,7 +776,7 @@ class QuestionBusinessMethodTest {
                 .unit(createTestUnit())
                 .difficulty(Question.Difficulty.상)
                 .questionText(jsonText)
-                .answerKey("답안")
+                .answerText("답안")
                 .questionType(Question.QuestionType.MULTIPLE_CHOICE)
                 .choices(null)
                 .correctChoice(null)
@@ -810,7 +812,7 @@ class QuestionBusinessMethodTest {
                 .unit(createTestUnit())
                 .difficulty(Question.Difficulty.중)
                 .questionText(jsonText)
-                .answerKey("3번")
+                .answerText("3번")
                 .image(imageJson)
                 .questionType(Question.QuestionType.MULTIPLE_CHOICE)
                 .choices(choicesJson)
@@ -870,7 +872,7 @@ class QuestionBusinessMethodTest {
                 .unit(createTestUnit())
                 .difficulty(Question.Difficulty.상)
                 .questionText(jsonText)
-                .answerKey("극대값: f(1) = 3, 극소값: f(-1) = -1")
+                .answerText("극대값: f(1) = 3, 극소값: f(-1) = -1")
                 .image(imageJson)
                 .questionType(Question.QuestionType.SUBJECTIVE)
                 .build();

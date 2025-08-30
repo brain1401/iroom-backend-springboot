@@ -4,6 +4,7 @@ import com.iroomclass.springbackend.domain.admin.question.entity.Question;
 import com.iroomclass.springbackend.domain.admin.unit.entity.Unit;
 import com.iroomclass.springbackend.domain.admin.unit.entity.UnitCategory;
 import com.iroomclass.springbackend.domain.admin.unit.entity.UnitSubcategory;
+import com.iroomclass.springbackend.common.UUIDv7Generator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -17,6 +18,7 @@ import org.springframework.test.context.ActiveProfiles;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -124,7 +126,7 @@ class QuestionRepositoryTest {
                 .difficulty(Question.Difficulty.하)
                 .questionType(Question.QuestionType.MULTIPLE_CHOICE)
                 .questionText("[{\"type\": \"paragraph\", \"content\": [{\"type\": \"text\", \"value\": \"2 + 3 = ?\"}]}]")
-                .answerKey("5")
+                .answerText("5")
                 .build();
         
         question2 = Question.builder()
@@ -132,7 +134,7 @@ class QuestionRepositoryTest {
                 .difficulty(Question.Difficulty.중)
                 .questionType(Question.QuestionType.SUBJECTIVE)
                 .questionText("[{\"type\": \"paragraph\", \"content\": [{\"type\": \"text\", \"value\": \"정수의 성질에 대해 설명하시오\"}]}]")
-                .answerKey("정수는 양수, 0, 음수를 포함한다")
+                .answerText("정수는 양수, 0, 음수를 포함한다")
                 .build();
         
         question3 = Question.builder()
@@ -140,7 +142,7 @@ class QuestionRepositoryTest {
                 .difficulty(Question.Difficulty.상)
                 .questionType(Question.QuestionType.MULTIPLE_CHOICE)
                 .questionText("[{\"type\": \"paragraph\", \"content\": [{\"type\": \"text\", \"value\": \"복잡한 수식 계산 문제\"}]}]")
-                .answerKey("12")
+                .answerText("12")
                 .build();
         
         question4 = Question.builder()
@@ -148,7 +150,7 @@ class QuestionRepositoryTest {
                 .difficulty(Question.Difficulty.하)
                 .questionType(Question.QuestionType.MULTIPLE_CHOICE)
                 .questionText("[{\"type\": \"paragraph\", \"content\": [{\"type\": \"text\", \"value\": \"삼각형의 내각의 합은?\"}]}]")
-                .answerKey("180도")
+                .answerText("180도")
                 .build();
         
         question5 = Question.builder()
@@ -156,7 +158,7 @@ class QuestionRepositoryTest {
                 .difficulty(Question.Difficulty.중)
                 .questionType(Question.QuestionType.SUBJECTIVE)
                 .questionText("[{\"type\": \"paragraph\", \"content\": [{\"type\": \"text\", \"value\": \"분수의 곱셈 방법\"}]}]")
-                .answerKey("분자끼리 곱하고 분모끼리 곱한다")
+                .answerText("분자끼리 곱하고 분모끼리 곱한다")
                 .build();
         
         entityManager.persistAndFlush(question1);
@@ -222,7 +224,11 @@ class QuestionRepositoryTest {
         @DisplayName("존재하지 않는 단원 - 빈 결과")
         void findByUnitId_NonExistent_EmptyResult() {
             // When
-            List<Question> result = questionRepository.findByUnitId(999L);
+            // Given - 존재하지 않는 UUID 생성
+            UUID nonExistentUnitId = UUIDv7Generator.generate();
+            
+            // When
+            List<Question> result = questionRepository.findByUnitId(nonExistentUnitId);
 
             // Then
             assertThat(result).isEmpty();
@@ -452,7 +458,12 @@ class QuestionRepositoryTest {
         @DisplayName("존재하지 않는 단원들로 조회 - 빈 결과")
         void findByUnitIdIn_NonExistentUnits_EmptyResult() {
             // When
-            List<Question> result = questionRepository.findByUnitIdIn(Arrays.asList(999L, 998L));
+            // Given - 존재하지 않는 UUID들 생성
+            UUID nonExistentUnitId1 = UUIDv7Generator.generate();
+            UUID nonExistentUnitId2 = UUIDv7Generator.generate();
+            
+            // When
+            List<Question> result = questionRepository.findByUnitIdIn(Arrays.asList(nonExistentUnitId1, nonExistentUnitId2));
 
             // Then
             assertThat(result).isEmpty();

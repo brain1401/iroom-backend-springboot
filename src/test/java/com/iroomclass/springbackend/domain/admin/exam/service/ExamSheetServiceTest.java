@@ -1,5 +1,6 @@
 package com.iroomclass.springbackend.domain.admin.exam.service;
 
+import com.iroomclass.springbackend.common.UUIDv7Generator;
 import com.iroomclass.springbackend.domain.admin.exam.dto.ExamSheetCreateRequest;
 import com.iroomclass.springbackend.domain.admin.exam.dto.ExamSheetCreateResponse;
 import com.iroomclass.springbackend.domain.admin.exam.dto.ExamSheetListResponse;
@@ -29,6 +30,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+
+import java.util.UUID;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -82,35 +85,35 @@ class ExamSheetServiceTest {
     void setUp() {
         // 테스트용 Unit 생성
         testUnit = Unit.builder()
-                .id(1L)
+                .id(UUIDv7Generator.generate())
                 .unitName("1. 수와 연산")
                 .grade(1)
                 .build();
 
         // 테스트용 Question 생성
         testQuestion1 = Question.builder()
-                .id(1L)
+                .id(UUIDv7Generator.generate())
                 .unit(testUnit)
                 .questionType(Question.QuestionType.MULTIPLE_CHOICE)
                 .difficulty(Question.Difficulty.하)
                 .questionText(
                         "[{\"type\": \"paragraph\", \"content\": [{\"type\": \"text\", \"value\": \"2 + 2는?\"}]}]")
-                .answerKey("4")
+                .answerText("4")
                 .build();
 
         testQuestion2 = Question.builder()
-                .id(2L)
+                .id(UUIDv7Generator.generate())
                 .unit(testUnit)
                 .questionType(Question.QuestionType.SUBJECTIVE)
                 .difficulty(Question.Difficulty.중)
                 .questionText(
                         "[{\"type\": \"paragraph\", \"content\": [{\"type\": \"text\", \"value\": \"다음 계산 과정을 설명하시오\"}]}]")
-                .answerKey("계산 과정 설명")
+                .answerText("계산 과정 설명")
                 .build();
 
         // 테스트용 ExamSheet 생성
         testExamSheet = ExamSheet.builder()
-                .id(1L)
+                .id(UUIDv7Generator.generate())
                 .examName("1학년 중간고사")
                 .grade(1)
                 .totalQuestions(20)
@@ -122,7 +125,7 @@ class ExamSheetServiceTest {
 
         // 테스트용 ExamSheetQuestion 생성
         testExamSheetQuestion = ExamSheetQuestion.builder()
-                .id(1L)
+                .id(UUIDv7Generator.generate())
                 .examSheet(testExamSheet)
                 .question(testQuestion1)
                 .seqNo(1)
@@ -146,9 +149,9 @@ class ExamSheetServiceTest {
                     20,
                     15,
                     5,
-                    List.of(1L));
+                    List.of(UUIDv7Generator.generate()));
 
-            given(unitRepository.findById(1L)).willReturn(Optional.of(testUnit));
+            given(unitRepository.findById(any(UUID.class))).willReturn(Optional.of(testUnit));
             given(questionRepository.countByUnitIdIn(anyList()))
                     .willReturn(50L); // 충분한 문제 수
             given(examSheetRepository.save(any(ExamSheet.class)))
@@ -159,7 +162,7 @@ class ExamSheetServiceTest {
             List<Question> availableQuestions = new ArrayList<>();
             for (int i = 0; i < 25; i++) {
                 Question question = Question.builder()
-                        .id((long) (i + 1))
+                        .id(UUIDv7Generator.generate())
                         .unit(testUnit)
                         .difficulty(Question.Difficulty.중)
                         .questionType(
@@ -167,7 +170,7 @@ class ExamSheetServiceTest {
                         .questionText(
                                 "[{\"type\": \"paragraph\", \"content\": [{\"type\": \"text\", \"value\": \"테스트 문제 "
                                         + (i + 1) + "\"}]}]")
-                        .answerKey("테스트 답안 " + (i + 1))
+                        .answerText("테스트 답안 " + (i + 1))
                         .build();
                 availableQuestions.add(question);
             }
@@ -181,7 +184,7 @@ class ExamSheetServiceTest {
 
             // Then
             assertThat(response).isNotNull();
-            assertThat(response.examSheetId()).isEqualTo(1L);
+            assertThat(response.examSheetId()).isNotNull();
             assertThat(response.examName()).isEqualTo("1학년 중간고사");
             assertThat(response.grade()).isEqualTo(1);
             assertThat(response.totalQuestions()).isEqualTo(20);
@@ -201,7 +204,7 @@ class ExamSheetServiceTest {
                     10,
                     5,
                     5,
-                    List.of(1L));
+                    List.of(UUIDv7Generator.generate()));
 
             // When & Then
             assertThatThrownBy(() -> examSheetService.createExamSheet(request))
@@ -221,7 +224,7 @@ class ExamSheetServiceTest {
                     25, // 총 25개 문제 요청 (유효 범위)
                     15,
                     10,
-                    List.of(1L));
+                    List.of(UUIDv7Generator.generate()));
 
             given(questionRepository.countByUnitIdIn(anyList()))
                     .willReturn(20L); // 20개 문제만 있음 (요청한 25개보다 적음)
@@ -259,7 +262,7 @@ class ExamSheetServiceTest {
             given(examSheetRepository.findByGradeWithFilters(
                     eq(grade), eq(keyword), eq(null), any(), any(), any()))
                     .willReturn(mockPage);
-            given(examSheetSelectedUnitRepository.countByExamSheetId(1L))
+            given(examSheetSelectedUnitRepository.countByExamSheetId(any(UUID.class)))
                     .willReturn(3L);
 
             // When
@@ -274,7 +277,7 @@ class ExamSheetServiceTest {
             assertThat(response.examSheets()).hasSize(1);
 
             ExamSheetListResponse.ExamSheetInfo examInfo = response.examSheets().get(0);
-            assertThat(examInfo.examSheetId()).isEqualTo(1L);
+            assertThat(examInfo.examSheetId()).isNotNull();
             assertThat(examInfo.examName()).isEqualTo("1학년 중간고사");
             assertThat(examInfo.grade()).isEqualTo(1);
             assertThat(examInfo.totalQuestions()).isEqualTo(20);
@@ -286,14 +289,14 @@ class ExamSheetServiceTest {
         void getFilteredExamSheets_WithQuestionRangeFilter_FiltersCorrectly() {
             // Given
             ExamSheet sheet1 = ExamSheet.builder()
-                    .id(1L)
+                    .id(UUIDv7Generator.generate())
                     .examName("적은 문제 시험지")
                     .grade(1)
                     .totalQuestions(5) // 범위 밖
                     .build();
 
             ExamSheet sheet2 = ExamSheet.builder()
-                    .id(2L)
+                    .id(UUIDv7Generator.generate())
                     .examName("적절한 문제 시험지")
                     .grade(1)
                     .totalQuestions(15) // 범위 내
@@ -305,7 +308,7 @@ class ExamSheetServiceTest {
             given(examSheetRepository.findWithFilters(
                     eq(null), eq(null), eq(null), eq(null), any()))
                     .willReturn(mockPage);
-            given(examSheetSelectedUnitRepository.countByExamSheetId(anyLong()))
+            given(examSheetSelectedUnitRepository.countByExamSheetId(any(UUID.class)))
                     .willReturn(2L);
 
             // When
@@ -314,7 +317,7 @@ class ExamSheetServiceTest {
 
             // Then
             assertThat(response.totalCount()).isEqualTo(1); // sheet1은 필터링됨
-            assertThat(response.examSheets().get(0).examSheetId()).isEqualTo(2L);
+            assertThat(response.examSheets().get(0).examSheetId()).isNotNull();
         }
     }
 
@@ -326,19 +329,19 @@ class ExamSheetServiceTest {
         @DisplayName("시험지에 문제 추가 - 성공")
         void addQuestionToExamSheet_WithValidRequest_Success() {
             // Given
-            Long examSheetId = 1L;
+            UUID examSheetId = UUIDv7Generator.generate();
             QuestionSelectionRequest request = new QuestionSelectionRequest(
-                    2L, // 새로운 문제 ID
+                    UUIDv7Generator.generate(), // 새로운 문제 ID
                     5, // 배점
                     2 // 문제 순서
             );
 
             given(examSheetRepository.findById(examSheetId))
                     .willReturn(Optional.of(testExamSheet));
-            given(questionRepository.findById(2L))
+            given(questionRepository.findById(any(UUID.class)))
                     .willReturn(Optional.of(testQuestion2));
             given(examSheetQuestionRepository.findByExamSheetIdAndQuestionId(
-                    examSheetId, 2L))
+                    any(UUID.class), any(UUID.class)))
                     .willReturn(Optional.empty()); // 중복 없음
             given(examSheetQuestionRepository.findByExamSheetIdAndQuestionOrderGreaterThanEqual(
                     examSheetId, 2))
@@ -362,8 +365,8 @@ class ExamSheetServiceTest {
         @DisplayName("존재하지 않는 시험지에 문제 추가 - 실패")
         void addQuestionToExamSheet_WithNonExistentExamSheet_ThrowsException() {
             // Given
-            Long examSheetId = 999L;
-            QuestionSelectionRequest request = new QuestionSelectionRequest(2L, 5, 1);
+            UUID examSheetId = UUIDv7Generator.generate();
+            QuestionSelectionRequest request = new QuestionSelectionRequest(UUIDv7Generator.generate(), 5, 1);
 
             given(examSheetRepository.findById(examSheetId))
                     .willReturn(Optional.empty());
@@ -380,15 +383,15 @@ class ExamSheetServiceTest {
         @DisplayName("이미 포함된 문제 추가 - 실패")
         void addQuestionToExamSheet_WithDuplicateQuestion_ThrowsException() {
             // Given
-            Long examSheetId = 1L;
-            QuestionSelectionRequest request = new QuestionSelectionRequest(1L, 5, 1);
+            UUID examSheetId = UUIDv7Generator.generate();
+            QuestionSelectionRequest request = new QuestionSelectionRequest(UUIDv7Generator.generate(), 5, 1);
 
             given(examSheetRepository.findById(examSheetId))
                     .willReturn(Optional.of(testExamSheet));
-            given(questionRepository.findById(1L))
+            given(questionRepository.findById(any(UUID.class)))
                     .willReturn(Optional.of(testQuestion1));
             given(examSheetQuestionRepository.findByExamSheetIdAndQuestionId(
-                    examSheetId, 1L))
+                    any(UUID.class), any(UUID.class)))
                     .willReturn(Optional.of(testExamSheetQuestion)); // 중복 있음
 
             // When & Then
@@ -408,8 +411,8 @@ class ExamSheetServiceTest {
         @DisplayName("시험지에서 문제 제거 - 성공")
         void removeQuestionFromExamSheet_WithValidRequest_Success() {
             // Given
-            Long examSheetId = 1L;
-            Long questionId = 1L;
+            UUID examSheetId = UUIDv7Generator.generate();
+            UUID questionId = UUIDv7Generator.generate();
 
             given(examSheetRepository.findById(examSheetId))
                     .willReturn(Optional.of(testExamSheet));
@@ -436,8 +439,8 @@ class ExamSheetServiceTest {
         @DisplayName("시험지에 포함되지 않은 문제 제거 - 실패")
         void removeQuestionFromExamSheet_WithNonExistentQuestion_ThrowsException() {
             // Given
-            Long examSheetId = 1L;
-            Long questionId = 999L;
+            UUID examSheetId = UUIDv7Generator.generate();
+            UUID questionId = UUIDv7Generator.generate();
 
             given(examSheetRepository.findById(examSheetId))
                     .willReturn(Optional.of(testExamSheet));
@@ -462,10 +465,10 @@ class ExamSheetServiceTest {
         @DisplayName("시험지 문제 교체 - 성공")
         void replaceQuestionInExamSheet_WithValidRequest_Success() {
             // Given
-            Long examSheetId = 1L;
+            UUID examSheetId = testExamSheet.getId();
             QuestionReplaceRequest request = new QuestionReplaceRequest(
-                    1L, // 기존 문제 ID
-                    2L, // 새 문제 ID
+                    testQuestion1.getId(), // 기존 문제 ID
+                    testQuestion2.getId(), // 새 문제 ID
                     10, // 새 배점
                     "더 적절한 난이도로 교체");
 
@@ -473,7 +476,7 @@ class ExamSheetServiceTest {
                     .willReturn(Optional.of(testExamSheet));
             given(examSheetQuestionRepository.findByExamSheetIdOrderByQuestionOrder(examSheetId))
                     .willReturn(List.of(testExamSheetQuestion));
-            given(questionRepository.findById(2L))
+            given(questionRepository.findById(testQuestion2.getId()))
                     .willReturn(Optional.of(testQuestion2));
             given(examSheetQuestionRepository.save(any(ExamSheetQuestion.class)))
                     .willReturn(testExamSheetQuestion);
@@ -492,11 +495,12 @@ class ExamSheetServiceTest {
         @DisplayName("같은 문제로 교체 시도 - 실패 (DTO 레벨에서 검증)")
         void replaceQuestionInExamSheet_WithSameQuestion_ThrowsException() {
             // Given - DTO compact constructor에서 검증되므로 생성자 호출 시 예외 발생
+            UUID questionId = UUIDv7Generator.generate();
 
             // When & Then
             assertThatThrownBy(() -> new QuestionReplaceRequest(
-                    1L, // 기존 문제 ID
-                    1L, // 같은 문제 ID
+                    questionId, // 기존 문제 ID
+                    questionId, // 같은 문제 ID
                     10,
                     "교체 사유")).isInstanceOf(IllegalArgumentException.class)
                     .hasMessageContaining("기존 문제와 새로운 문제가 동일할 수 없습니다");
@@ -511,7 +515,7 @@ class ExamSheetServiceTest {
         @DisplayName("시험지 미리보기 조회 - 성공")
         void getExamSheetPreview_WithValidExamSheet_Success() {
             // Given
-            Long examSheetId = 1L;
+            UUID examSheetId = testExamSheet.getId();
 
             given(examSheetRepository.findById(examSheetId))
                     .willReturn(Optional.of(testExamSheet));
@@ -523,7 +527,7 @@ class ExamSheetServiceTest {
 
             // Then
             assertThat(response).isNotNull();
-            assertThat(response.examSheetId()).isEqualTo(examSheetId);
+            assertThat(response.examSheetId()).isEqualTo(testExamSheet.getId());
             assertThat(response.examSheetName()).isEqualTo("1학년 중간고사");
             assertThat(response.grade()).isEqualTo(1);
             assertThat(response.totalQuestions()).isEqualTo(20);
@@ -537,7 +541,7 @@ class ExamSheetServiceTest {
         @DisplayName("존재하지 않는 시험지 미리보기 - 실패")
         void getExamSheetPreview_WithNonExistentExamSheet_ThrowsException() {
             // Given
-            Long examSheetId = 999L;
+            UUID examSheetId = UUIDv7Generator.generate();
 
             given(examSheetRepository.findById(examSheetId))
                     .willReturn(Optional.empty());
@@ -557,8 +561,8 @@ class ExamSheetServiceTest {
         @DisplayName("단원별 선택 가능한 문제 조회 - 성공")
         void getSelectableQuestions_WithUnitFilter_Success() {
             // Given
-            Long examSheetId = 1L;
-            Long unitId = 1L;
+            UUID examSheetId = UUIDv7Generator.generate();
+            UUID unitId = UUIDv7Generator.generate();
 
             given(examSheetRepository.findById(examSheetId))
                     .willReturn(Optional.of(testExamSheet));

@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.iroomclass.springbackend.domain.admin.exam.dto.ExamSheetCreateRequest;
 import com.iroomclass.springbackend.domain.admin.exam.dto.QuestionReplaceRequest;
 import com.iroomclass.springbackend.domain.admin.exam.dto.QuestionSelectionRequest;
+import com.iroomclass.springbackend.common.UUIDv7Generator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -19,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.context.WebApplicationContext;
 
 import java.util.List;
+import java.util.UUID;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -69,7 +71,7 @@ class ExamSheetControllerIntegrationTest {
                     20, // 총 문제 수
                     15, // 객관식 문제 수
                     5,  // 주관식 문제 수
-                    List.of(1L, 2L) // 단원 ID 목록
+                    List.of(UUIDv7Generator.generate(), UUIDv7Generator.generate()) // 단원 ID 목록
             );
 
             // When & Then
@@ -97,7 +99,7 @@ class ExamSheetControllerIntegrationTest {
                     10,
                     5,
                     5,
-                    List.of(1L)
+                    List.of(UUIDv7Generator.generate())
             );
 
             // When & Then
@@ -216,8 +218,8 @@ class ExamSheetControllerIntegrationTest {
         @Test
         @DisplayName("존재하는 시험지 상세 조회 - 성공")
         void getExamSheetDetail_Success() throws Exception {
-            // 일반적으로 존재할 것으로 예상되는 ID 사용
-            Long examSheetId = 1L;
+            // 테스트용 UUID 생성 (일반적으로 존재할 것으로 예상되는 ID)
+            UUID examSheetId = UUIDv7Generator.generate();
 
             mockMvc.perform(get(BASE_URL + "/{examSheetId}", examSheetId)
                             .contentType(MediaType.APPLICATION_JSON))
@@ -236,7 +238,7 @@ class ExamSheetControllerIntegrationTest {
         @Test
         @DisplayName("존재하지 않는 시험지 상세 조회 - 실패")
         void getExamSheetDetail_NotFound_Fail() throws Exception {
-            Long nonExistentId = 99999L;
+            UUID nonExistentId = UUIDv7Generator.generate();
 
             mockMvc.perform(get(BASE_URL + "/{examSheetId}", nonExistentId)
                             .contentType(MediaType.APPLICATION_JSON))
@@ -253,7 +255,7 @@ class ExamSheetControllerIntegrationTest {
         @Test
         @DisplayName("시험지 미리보기 조회 - 성공")
         void getExamSheetPreview_Success() throws Exception {
-            Long examSheetId = 1L;
+            UUID examSheetId = UUIDv7Generator.generate();
 
             mockMvc.perform(get(BASE_URL + "/{examSheetId}/preview", examSheetId)
                             .contentType(MediaType.APPLICATION_JSON))
@@ -276,7 +278,7 @@ class ExamSheetControllerIntegrationTest {
         @Test
         @DisplayName("존재하지 않는 시험지 미리보기 - 실패")
         void getExamSheetPreview_NotFound_Fail() throws Exception {
-            Long nonExistentId = 99999L;
+            UUID nonExistentId = UUIDv7Generator.generate();
 
             mockMvc.perform(get(BASE_URL + "/{examSheetId}/preview", nonExistentId)
                             .contentType(MediaType.APPLICATION_JSON))
@@ -292,7 +294,7 @@ class ExamSheetControllerIntegrationTest {
         @Test
         @DisplayName("선택 가능한 문제 목록 조회 - 성공")
         void getSelectableQuestions_Success() throws Exception {
-            Long examSheetId = 1L;
+            UUID examSheetId = UUIDv7Generator.generate();
 
             mockMvc.perform(get(BASE_URL + "/{examSheetId}/selectable-questions", examSheetId)
                             .param("unitId", "1")
@@ -311,7 +313,7 @@ class ExamSheetControllerIntegrationTest {
         @Test
         @DisplayName("시험지 문제 관리 현황 조회 - 성공")
         void getExamSheetQuestionManagement_Success() throws Exception {
-            Long examSheetId = 1L;
+            UUID examSheetId = UUIDv7Generator.generate();
 
             mockMvc.perform(get(BASE_URL + "/{examSheetId}/question-management", examSheetId)
                             .contentType(MediaType.APPLICATION_JSON))
@@ -337,9 +339,9 @@ class ExamSheetControllerIntegrationTest {
         @Test
         @DisplayName("시험지에 문제 추가 - 성공")
         void addQuestionToExamSheet_Success() throws Exception {
-            Long examSheetId = 1L;
+            UUID examSheetId = UUIDv7Generator.generate();
             QuestionSelectionRequest request = new QuestionSelectionRequest(
-                    2L, // 문제 ID
+                    UUIDv7Generator.generate(), // 문제 ID
                     5,  // 배점
                     1   // 순서
             );
@@ -358,8 +360,8 @@ class ExamSheetControllerIntegrationTest {
         @Test
         @DisplayName("시험지에서 문제 제거 - 성공")
         void removeQuestionFromExamSheet_Success() throws Exception {
-            Long examSheetId = 1L;
-            Long questionId = 2L;
+            UUID examSheetId = UUIDv7Generator.generate();
+            UUID questionId = UUIDv7Generator.generate();
 
             mockMvc.perform(delete(BASE_URL + "/{examSheetId}/questions/{questionId}",
                             examSheetId, questionId)
@@ -374,8 +376,8 @@ class ExamSheetControllerIntegrationTest {
         @Test
         @DisplayName("존재하지 않는 문제 제거 - 실패")
         void removeNonExistentQuestion_Fail() throws Exception {
-            Long examSheetId = 1L;
-            Long nonExistentQuestionId = 99999L;
+            UUID examSheetId = UUIDv7Generator.generate();
+            UUID nonExistentQuestionId = UUIDv7Generator.generate();
 
             mockMvc.perform(delete(BASE_URL + "/{examSheetId}/questions/{questionId}",
                             examSheetId, nonExistentQuestionId)
@@ -392,10 +394,10 @@ class ExamSheetControllerIntegrationTest {
         @Test
         @DisplayName("시험지 문제 교체 - 성공")
         void replaceQuestionInExamSheet_Success() throws Exception {
-            Long examSheetId = 1L;
+            UUID examSheetId = UUIDv7Generator.generate();
             QuestionReplaceRequest request = new QuestionReplaceRequest(
-                    1L, // 기존 문제 ID
-                    3L, // 새 문제 ID
+                    UUIDv7Generator.generate(), // 기존 문제 ID
+                    UUIDv7Generator.generate(), // 새 문제 ID
                     10, // 새 배점
                     "더 적절한 난이도로 교체" // 교체 사유
             );
@@ -413,10 +415,11 @@ class ExamSheetControllerIntegrationTest {
         @Test
         @DisplayName("동일한 문제로 교체 - 실패")
         void replaceSameQuestion_Fail() throws Exception {
-            Long examSheetId = 1L;
+            UUID examSheetId = UUIDv7Generator.generate();
+            UUID sameQuestionId = UUIDv7Generator.generate();
             QuestionReplaceRequest request = new QuestionReplaceRequest(
-                    1L, // 기존 문제 ID
-                    1L, // 동일한 문제 ID로 교체 (금지)
+                    sameQuestionId, // 기존 문제 ID
+                    sameQuestionId, // 동일한 문제 ID로 교체 (금지)
                     5,
                     "동일한 문제"
             );
@@ -454,7 +457,7 @@ class ExamSheetControllerIntegrationTest {
         @Test
         @DisplayName("문제 추가 - 잘못된 JSON 형식")
         void addQuestion_InvalidJson_Fail() throws Exception {
-            Long examSheetId = 1L;
+            UUID examSheetId = UUIDv7Generator.generate();
             String invalidJson = "{ invalid json }";
 
             mockMvc.perform(post(BASE_URL + "/{examSheetId}/questions", examSheetId)

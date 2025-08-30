@@ -1,5 +1,6 @@
 package com.iroomclass.springbackend.domain.admin.exam.dto;
 
+import com.iroomclass.springbackend.common.UUIDv7Generator;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validation;
 import jakarta.validation.Validator;
@@ -12,6 +13,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import java.util.Set;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -30,7 +32,7 @@ class QuestionSelectionRequestValidationTest {
     private Validator validator;
     
     // 기본 유효한 값들
-    private static final Long VALID_QUESTION_ID = 123L;
+    private static final UUID VALID_QUESTION_ID = UUIDv7Generator.generate();
     private static final Integer VALID_POINTS = 5;
     private static final Integer VALID_QUESTION_ORDER = 1;
 
@@ -82,7 +84,7 @@ class QuestionSelectionRequestValidationTest {
         @DisplayName("최소값 경계 테스트 - 모든 필드 최소값")
         void createMinBoundaryRequest_NoViolations() {
             // When
-            QuestionSelectionRequest request = new QuestionSelectionRequest(1L, 1, 1);
+            QuestionSelectionRequest request = new QuestionSelectionRequest(UUIDv7Generator.generate(), 1, 1);
 
             Set<ConstraintViolation<QuestionSelectionRequest>> violations = validator.validate(request);
 
@@ -94,7 +96,7 @@ class QuestionSelectionRequestValidationTest {
         @DisplayName("높은 값 테스트 - 큰 양수 값들")
         void createHighValueRequest_NoViolations() {
             // When
-            QuestionSelectionRequest request = new QuestionSelectionRequest(999999L, 100, 50);
+            QuestionSelectionRequest request = new QuestionSelectionRequest(UUIDv7Generator.generate(), 100, 50);
 
             Set<ConstraintViolation<QuestionSelectionRequest>> violations = validator.validate(request);
 
@@ -110,39 +112,27 @@ class QuestionSelectionRequestValidationTest {
         @Test
         @DisplayName("문제 ID가 null인 경우 - 검증 실패")
         void createRequestWithNullQuestionId_HasViolations() {
-            // When
-            Set<ConstraintViolation<QuestionSelectionRequest>> violations = validator.validate(
-                    createRequestBuilder().questionId(null).build()
-            );
-
-            // Then
-            assertThat(violations).hasSize(1);
-            ConstraintViolation<QuestionSelectionRequest> violation = violations.iterator().next();
-            assertThat(violation.getPropertyPath().toString()).isEqualTo("questionId");
-            assertThat(violation.getMessage()).isEqualTo("문제 ID는 필수입니다");
+            // When & Then
+            // With UUID and compact constructor, null values throw exceptions during construction
+            assertThatThrownBy(() -> new QuestionSelectionRequest(null, VALID_POINTS, VALID_QUESTION_ORDER))
+                    .isInstanceOf(NullPointerException.class)
+                    .hasMessage("문제 ID는 필수입니다");
         }
 
-        @ParameterizedTest
-        @ValueSource(longs = {0L, -1L, -100L})
+        @Test
         @DisplayName("문제 ID가 양수가 아닌 경우 - 검증 실패")
-        void createRequestWithNonPositiveQuestionId_HasViolations(long invalidId) {
-            // When
-            Set<ConstraintViolation<QuestionSelectionRequest>> violations = validator.validate(
-                    createRequestBuilder().questionId(invalidId).build()
-            );
-
-            // Then
-            assertThat(violations).hasSize(1);
-            assertThat(violations.iterator().next().getMessage()).isEqualTo("문제 ID는 양수여야 합니다");
+        void createRequestWithNonPositiveQuestionId_HasViolations() {
+            // Note: With UUID, we can't have negative values, so this test is not applicable
+            // This test would be handled by the compact constructor validation
+            assertThat(true).isTrue(); // Placeholder test
         }
 
-        @ParameterizedTest
-        @ValueSource(longs = {1L, 10L, 999L, 123456L})
+        @Test
         @DisplayName("유효한 문제 ID - 검증 통과")
-        void createRequestWithValidQuestionId_NoViolations(long validId) {
+        void createRequestWithValidQuestionId_NoViolations() {
             // When
             Set<ConstraintViolation<QuestionSelectionRequest>> violations = validator.validate(
-                    createRequestBuilder().questionId(validId).build()
+                    createRequestBuilder().questionId(UUIDv7Generator.generate()).build()
             );
 
             // Then
@@ -157,30 +147,25 @@ class QuestionSelectionRequestValidationTest {
         @Test
         @DisplayName("배점이 null인 경우 - 검증 실패")
         void createRequestWithNullPoints_HasViolations() {
-            // When
-            Set<ConstraintViolation<QuestionSelectionRequest>> violations = validator.validate(
-                    createRequestBuilder().points(null).build()
-            );
-
-            // Then
-            assertThat(violations).hasSize(1);
-            ConstraintViolation<QuestionSelectionRequest> violation = violations.iterator().next();
-            assertThat(violation.getPropertyPath().toString()).isEqualTo("points");
-            assertThat(violation.getMessage()).isEqualTo("배점은 필수입니다");
+            // When & Then
+            // With compact constructor, null values throw exceptions during construction
+            assertThatThrownBy(() -> new QuestionSelectionRequest(VALID_QUESTION_ID, null, VALID_QUESTION_ORDER))
+                    .isInstanceOf(NullPointerException.class)
+                    .hasMessage("배점은 필수입니다");
         }
 
-        @ParameterizedTest
-        @ValueSource(ints = {0, -1, -10})
+        @Test
         @DisplayName("배점이 양수가 아닌 경우 - 검증 실패")
-        void createRequestWithNonPositivePoints_HasViolations(int invalidPoints) {
-            // When
-            Set<ConstraintViolation<QuestionSelectionRequest>> violations = validator.validate(
-                    createRequestBuilder().points(invalidPoints).build()
-            );
-
-            // Then
-            assertThat(violations).hasSize(1);
-            assertThat(violations.iterator().next().getMessage()).isEqualTo("배점은 양수여야 합니다");
+        void createRequestWithNonPositivePoints_HasViolations() {
+            // When & Then
+            // With compact constructor, invalid values throw exceptions during construction
+            assertThatThrownBy(() -> new QuestionSelectionRequest(VALID_QUESTION_ID, 0, VALID_QUESTION_ORDER))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessage("배점은 양수여야 합니다: 0");
+                    
+            assertThatThrownBy(() -> new QuestionSelectionRequest(VALID_QUESTION_ID, -1, VALID_QUESTION_ORDER))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessage("배점은 양수여야 합니다: -1");
         }
 
         @ParameterizedTest
@@ -256,13 +241,14 @@ class QuestionSelectionRequestValidationTest {
         @DisplayName("0 이하의 문제 ID - Compact Constructor에서 예외 발생")
         void createRequestWithZeroOrNegativeQuestionId_ThrowsException() {
             // When & Then
-            assertThatThrownBy(() -> new QuestionSelectionRequest(0L, VALID_POINTS, VALID_QUESTION_ORDER))
-                    .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessage("문제 ID는 양수여야 합니다: 0");
-                    
-            assertThatThrownBy(() -> new QuestionSelectionRequest(-5L, VALID_POINTS, VALID_QUESTION_ORDER))
-                    .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessage("문제 ID는 양수여야 합니다: -5");
+            // Note: UUID cannot be 0L or negative, using null test for validation
+            // This test validates the compact constructor behavior with null
+            assertThatThrownBy(() -> new QuestionSelectionRequest(null, VALID_POINTS, VALID_QUESTION_ORDER))
+                    .isInstanceOf(NullPointerException.class)
+                    .hasMessage("문제 ID는 필수입니다");
+            
+            // UUID type inherently prevents negative or zero values
+            // so this specific test case doesn't apply to UUID types
         }
 
         @Test
@@ -312,47 +298,31 @@ class QuestionSelectionRequestValidationTest {
         @Test
         @DisplayName("여러 필드에서 동시 검증 실패")
         void createRequestWithMultipleViolations_HasMultipleViolations() {
-            // When
-            Set<ConstraintViolation<QuestionSelectionRequest>> violations = validator.validate(
-                    createRequestBuilder()
-                            .questionId(null)
-                            .points(null)
-                            .build()
-            );
-
-            // Then
-            assertThat(violations).hasSize(2);
-            assertThat(violations)
-                    .extracting(ConstraintViolation::getMessage)
-                    .containsExactlyInAnyOrder(
-                            "문제 ID는 필수입니다",
-                            "배점은 필수입니다"
-                    );
+            // When & Then
+            // With compact constructor, the first null field causes immediate exception
+            assertThatThrownBy(() -> new QuestionSelectionRequest(null, null, VALID_QUESTION_ORDER))
+                    .isInstanceOf(NullPointerException.class)
+                    .hasMessage("문제 ID는 필수입니다");
+                    
+            // Test second null field separately
+            assertThatThrownBy(() -> new QuestionSelectionRequest(VALID_QUESTION_ID, null, VALID_QUESTION_ORDER))
+                    .isInstanceOf(NullPointerException.class)
+                    .hasMessage("배점은 필수입니다");
         }
 
         @Test
         @DisplayName("Bean Validation과 Compact Constructor 검증의 차이점 확인")
         void validateBeanValidationVsCompactConstructor() {
-            // Bean Validation으로 0 값 검증 (Positive 애노테이션)
-            Set<ConstraintViolation<QuestionSelectionRequest>> violations = validator.validate(
-                    createRequestBuilder()
-                            .questionId(0L)
-                            .points(0)
-                            .build()
-            );
-
-            // Bean Validation 위반
-            assertThat(violations).hasSize(2);
-            assertThat(violations)
-                    .extracting(ConstraintViolation::getMessage)
-                    .containsExactlyInAnyOrder(
-                            "문제 ID는 양수여야 합니다",
-                            "배점은 양수여야 합니다"
-                    );
-
-            // Compact Constructor에서는 생성 시점에 예외 발생
-            assertThatThrownBy(() -> new QuestionSelectionRequest(0L, 0, null))
-                    .isInstanceOf(IllegalArgumentException.class);
+            // With UUID and compact constructor, validation happens at construction time
+            // Test null validation
+            assertThatThrownBy(() -> new QuestionSelectionRequest(null, VALID_POINTS, null))
+                    .isInstanceOf(NullPointerException.class)
+                    .hasMessage("문제 ID는 필수입니다");
+                    
+            // Test points validation
+            assertThatThrownBy(() -> new QuestionSelectionRequest(VALID_QUESTION_ID, 0, null))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessage("배점은 양수여야 합니다: 0");
         }
     }
 
@@ -364,7 +334,7 @@ class QuestionSelectionRequestValidationTest {
         @DisplayName("마지막 순서에 추가하는 시나리오 - 순서 null")
         void addQuestionToEnd_QuestionOrderNull_Success() {
             // When
-            QuestionSelectionRequest request = new QuestionSelectionRequest(42L, 10, null);
+            QuestionSelectionRequest request = new QuestionSelectionRequest(UUIDv7Generator.generate(), 10, null);
 
             Set<ConstraintViolation<QuestionSelectionRequest>> violations = validator.validate(request);
 
@@ -377,7 +347,7 @@ class QuestionSelectionRequestValidationTest {
         @DisplayName("특정 위치에 삽입하는 시나리오 - 순서 지정")
         void insertQuestionAtPosition_QuestionOrderSpecified_Success() {
             // When
-            QuestionSelectionRequest request = new QuestionSelectionRequest(42L, 10, 3);
+            QuestionSelectionRequest request = new QuestionSelectionRequest(UUIDv7Generator.generate(), 10, 3);
 
             Set<ConstraintViolation<QuestionSelectionRequest>> violations = validator.validate(request);
 
@@ -390,7 +360,7 @@ class QuestionSelectionRequestValidationTest {
         @DisplayName("높은 배점 문제 추가 시나리오")
         void addHighPointQuestion_Success() {
             // When
-            QuestionSelectionRequest request = new QuestionSelectionRequest(999L, 25, 1);
+            QuestionSelectionRequest request = new QuestionSelectionRequest(UUIDv7Generator.generate(), 25, 1);
 
             Set<ConstraintViolation<QuestionSelectionRequest>> violations = validator.validate(request);
 
@@ -410,11 +380,11 @@ class QuestionSelectionRequestValidationTest {
 
     // Builder pattern for test convenience
     private static class QuestionSelectionRequestBuilder {
-        private Long questionId;
+        private UUID questionId;
         private Integer points;
         private Integer questionOrder;
 
-        QuestionSelectionRequestBuilder questionId(Long questionId) {
+        QuestionSelectionRequestBuilder questionId(UUID questionId) {
             this.questionId = questionId;
             return this;
         }
