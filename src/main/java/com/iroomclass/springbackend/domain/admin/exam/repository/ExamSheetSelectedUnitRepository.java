@@ -4,7 +4,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import com.iroomclass.springbackend.domain.admin.exam.entity.ExamSheet;
-import com.iroomclass.springbackend.domain.admin.exam.entity.ExamSelectedUnit;
+import com.iroomclass.springbackend.domain.admin.exam.entity.ExamSheetSelectedUnit;
 
 import java.util.List;
 
@@ -17,8 +17,8 @@ import java.util.List;
  * @since 2025
  */
 @Repository
-public interface ExamSelectedUnitRepository extends JpaRepository<ExamSelectedUnit, Long> {
-    
+public interface ExamSheetSelectedUnitRepository extends JpaRepository<ExamSheetSelectedUnit, Long> {
+
     /**
      * 시험지별 선택된 단원 조회
      * 
@@ -28,8 +28,8 @@ public interface ExamSelectedUnitRepository extends JpaRepository<ExamSelectedUn
      * @param examSheet 시험지
      * @return 해당 시험지에 선택된 단원 목록
      */
-    List<ExamSelectedUnit> findByExamSheet(ExamSheet examSheet);
-    
+    List<ExamSheetSelectedUnit> findByExamSheet(ExamSheet examSheet);
+
     /**
      * 시험지 ID로 선택된 단원 조회
      * 
@@ -39,8 +39,8 @@ public interface ExamSelectedUnitRepository extends JpaRepository<ExamSelectedUn
      * @param examSheetId 시험지 ID
      * @return 해당 시험지에 선택된 단원 목록
      */
-    List<ExamSelectedUnit> findByExamSheetId(Long examSheetId);
-    
+    List<ExamSheetSelectedUnit> findByExamSheetId(Long examSheetId);
+
     /**
      * 시험지 ID로 선택된 단원 수 카운트
      * 

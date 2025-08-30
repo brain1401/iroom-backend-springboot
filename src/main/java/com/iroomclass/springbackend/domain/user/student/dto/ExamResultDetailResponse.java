@@ -40,6 +40,15 @@ public record ExamResultDetailResponse(
     @Schema(description = "총 문제 수", example = "20")
     int totalQuestions,
 
+    @Schema(description = "객관식 문제 수", example = "15")
+    int multipleChoiceCount,
+
+    @Schema(description = "주관식 문제 수", example = "5")
+    int subjectiveCount,
+
+    @Schema(description = "단원명 목록", example = "정수와 유리수, 문자와 식, 일차방정식")
+    String unitNames,
+
     @Schema(description = "정답 수", example = "17")
     int correctCount,
 

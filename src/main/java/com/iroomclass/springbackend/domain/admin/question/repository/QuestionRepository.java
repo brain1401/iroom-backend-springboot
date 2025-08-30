@@ -5,6 +5,8 @@ import java.util.List;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.iroomclass.springbackend.domain.admin.question.entity.Question;
@@ -110,4 +112,72 @@ public interface QuestionRepository extends JpaRepository<Question, Long> {
      * @return 페이징된 문제 목록
      */
     Page<Question> findByUnitId(Long unitId, Pageable pageable);
+    
+    /**
+     * 단원별, 난이도별 문제 목록 조회 (난이도 문자열 기반)
+     * 
+     * @param unitId 단원 ID
+     * @param difficultyName 난이도 이름 ("하", "중", "상")
+     * @return 해당 단원의 특정 난이도 문제 목록
+     */
+    @Query("SELECT q FROM Question q WHERE q.unit.id = :unitId AND CAST(q.difficulty AS string) = :difficultyName")
+    List<Question> findByUnitIdAndDifficultyName(@Param("unitId") Long unitId, @Param("difficultyName") String difficultyName);
+    
+    /**
+     * 단원별, 문제 유형별 문제 목록 조회
+     * 
+     * @param unitId 단원 ID
+     * @param questionType 문제 유형
+     * @return 해당 단원의 특정 유형 문제 목록
+     */
+    List<Question> findByUnitIdAndQuestionType(Long unitId, Question.QuestionType questionType);
+    
+    /**
+     * 단원별, 난이도별, 문제 유형별 문제 목록 조회
+     * 
+     * @param unitId 단원 ID
+     * @param difficultyName 난이도 이름 ("하", "중", "상")
+     * @param questionType 문제 유형
+     * @return 해당 조건의 문제 목록
+     */
+    @Query("SELECT q FROM Question q WHERE q.unit.id = :unitId AND CAST(q.difficulty AS string) = :difficultyName AND q.questionType = :questionType")
+    List<Question> findByUnitIdAndDifficultyNameAndQuestionType(@Param("unitId") Long unitId, @Param("difficultyName") String difficultyName, @Param("questionType") Question.QuestionType questionType);
+    
+    /**
+     * 학년별 문제 목록 조회
+     * 
+     * @param grade 학년 (1, 2, 3)
+     * @return 해당 학년의 모든 문제 목록
+     */
+    List<Question> findByUnit_Grade(Integer grade);
+    
+    /**
+     * 학년별, 난이도별 문제 목록 조회
+     * 
+     * @param grade 학년 (1, 2, 3)
+     * @param difficultyName 난이도 이름 ("하", "중", "상")
+     * @return 해당 학년의 특정 난이도 문제 목록
+     */
+    @Query("SELECT q FROM Question q WHERE q.unit.grade = :grade AND CAST(q.difficulty AS string) = :difficultyName")
+    List<Question> findByUnit_GradeAndDifficultyName(@Param("grade") Integer grade, @Param("difficultyName") String difficultyName);
+    
+    /**
+     * 학년별, 문제 유형별 문제 목록 조회
+     * 
+     * @param grade 학년 (1, 2, 3)
+     * @param questionType 문제 유형
+     * @return 해당 학년의 특정 유형 문제 목록
+     */
+    List<Question> findByUnit_GradeAndQuestionType(Integer grade, Question.QuestionType questionType);
+    
+    /**
+     * 학년별, 난이도별, 문제 유형별 문제 목록 조회
+     * 
+     * @param grade 학년 (1, 2, 3)
+     * @param difficultyName 난이도 이름 ("하", "중", "상")
+     * @param questionType 문제 유형
+     * @return 해당 조건의 문제 목록
+     */
+    @Query("SELECT q FROM Question q WHERE q.unit.grade = :grade AND CAST(q.difficulty AS string) = :difficultyName AND q.questionType = :questionType")
+    List<Question> findByUnit_GradeAndDifficultyNameAndQuestionType(@Param("grade") Integer grade, @Param("difficultyName") String difficultyName, @Param("questionType") Question.QuestionType questionType);
 }

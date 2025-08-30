@@ -63,4 +63,91 @@ public class ExamSheetQuestion {
      */
     @Column(nullable = false)
     private Integer points;
+
+    /**
+     * 문제 출제 순서
+     * 시험지에서 실제 출제되는 순서 (seqNo와 별개의 개념)
+     * 예: seqNo는 관리용 순서, questionOrder는 학생에게 보여지는 순서
+     * 필수 입력
+     */
+    @Column(nullable = false)
+    private Integer questionOrder;
+
+    /**
+     * 문제 선택 방식
+     * RANDOM: 랜덤으로 선택된 문제
+     * MANUAL: 수동으로 선택된 문제
+     * 기본값: MANUAL
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    @Builder.Default
+    private SelectionMethod selectionMethod = SelectionMethod.MANUAL;
+
+    /**
+     * 문제 선택 방식 열거형
+     */
+    public enum SelectionMethod {
+        /**
+         * 랜덤 선택
+         * 시스템이 자동으로 선택한 문제
+         */
+        RANDOM("랜덤 선택"),
+        
+        /**
+         * 수동 선택
+         * 관리자가 직접 선택한 문제
+         */
+        MANUAL("수동 선택");
+        
+        private final String description;
+        
+        SelectionMethod(String description) {
+            this.description = description;
+        }
+        
+        public String getDescription() {
+            return description;
+        }
+    }
+
+    /**
+     * 문제 순서 업데이트
+     * 
+     * @param questionOrder 새로운 문제 순서 (1 이상)
+     * @throws IllegalArgumentException 순서가 1보다 작을 때
+     */
+    public void updateQuestionOrder(Integer questionOrder) {
+        if (questionOrder == null || questionOrder < 1) {
+            throw new IllegalArgumentException("문제 순서는 1 이상이어야 합니다: " + questionOrder);
+        }
+        this.questionOrder = questionOrder;
+    }
+
+    /**
+     * 문제 선택 방식 업데이트
+     * 
+     * @param selectionMethod 새로운 선택 방식
+     */
+    public void updateSelectionMethod(SelectionMethod selectionMethod) {
+        this.selectionMethod = selectionMethod != null ? selectionMethod : SelectionMethod.MANUAL;
+    }
+
+    /**
+     * 랜덤으로 선택된 문제인지 확인
+     * 
+     * @return 랜덤 선택이면 true
+     */
+    public boolean isRandomlySelected() {
+        return SelectionMethod.RANDOM.equals(selectionMethod);
+    }
+
+    /**
+     * 수동으로 선택된 문제인지 확인
+     * 
+     * @return 수동 선택이면 true
+     */
+    public boolean isManuallySelected() {
+        return SelectionMethod.MANUAL.equals(selectionMethod);
+    }
 }

@@ -52,7 +52,7 @@ public class DashboardService {
         // 2단계: 전체 학생 수 및 평균 성적 계산
         Map<String, List<ExamSubmission>> allStudentSubmissions = allSubmissions.stream()
             .collect(Collectors.groupingBy(submission -> 
-                submission.getStudentName() + "_" + submission.getStudentPhone()));
+                submission.getUser().getName() + "_" + submission.getUser().getPhone()));
         
         List<Double> allStudentAverageScores = new ArrayList<>();
         for (List<ExamSubmission> studentSubmissionList : allStudentSubmissions.values()) {
@@ -171,7 +171,7 @@ public class DashboardService {
         // 2단계: 학생별 평균 성적 계산
         Map<String, List<ExamSubmission>> studentSubmissions = submissions.stream()
             .collect(Collectors.groupingBy(submission -> 
-                submission.getStudentName() + "_" + submission.getStudentPhone()));
+                submission.getUser().getName() + "_" + submission.getUser().getPhone()));
         
         List<Double> studentAverageScores = new ArrayList<>();
         for (List<ExamSubmission> studentSubmissionList : studentSubmissions.values()) {
@@ -312,7 +312,7 @@ public class DashboardService {
             // 해당 학년의 학생별 평균 성적 계산
             Map<String, List<ExamSubmission>> studentSubmissions = gradeSubmissions.stream()
                 .collect(Collectors.groupingBy(submission -> 
-                    submission.getStudentName() + "_" + submission.getStudentPhone()));
+                    submission.getUser().getName() + "_" + submission.getUser().getPhone()));
             
             List<Double> gradeAverageScores = new ArrayList<>();
             for (List<ExamSubmission> studentSubmissionList : studentSubmissions.values()) {

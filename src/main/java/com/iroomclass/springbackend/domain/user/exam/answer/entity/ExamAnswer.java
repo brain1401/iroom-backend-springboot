@@ -89,6 +89,15 @@ public class ExamAnswer {
     private String answerText;
     
     /**
+     * AI가 추출한 답안 풀이 과정 (주관식용)
+     * AI가 이미지에서 인식한 학생의 문제 풀이 과정
+     * 주관식 문제일 때만 사용
+     * TEXT 타입으로 긴 내용 가능
+     */
+    @Column(columnDefinition = "TEXT")
+    private String aiSolutionProcess;
+
+    /**
      * 정답 여부
      * 0: 오답, 1: 정답
      */
@@ -129,6 +138,27 @@ public class ExamAnswer {
      */
     public void updateAnswerText(String answerText) {
         this.answerText = answerText;
+    }
+
+    /**
+     * AI 풀이 과정 업데이트
+     * 
+     * @param aiSolutionProcess AI가 인식한 풀이 과정
+     */
+    public void updateAiSolutionProcess(String aiSolutionProcess) {
+        this.aiSolutionProcess = aiSolutionProcess;
+    }
+
+    /**
+     * AI 인식 결과 전체 업데이트
+     * 답안 텍스트와 풀이 과정을 동시에 업데이트
+     * 
+     * @param answerText AI가 인식한 최종 답안
+     * @param aiSolutionProcess AI가 인식한 풀이 과정
+     */
+    public void updateAiRecognitionResult(String answerText, String aiSolutionProcess) {
+        this.answerText = answerText;
+        this.aiSolutionProcess = aiSolutionProcess;
     }
     
     /**

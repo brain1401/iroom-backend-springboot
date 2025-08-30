@@ -1,6 +1,5 @@
 package com.iroomclass.springbackend.domain.admin.exam.entity;
 
-import com.iroomclass.springbackend.domain.admin.exam.entity.ExamSheet;
 import com.iroomclass.springbackend.domain.admin.unit.entity.Unit;
 
 import jakarta.persistence.*;
@@ -16,13 +15,13 @@ import lombok.*;
  * @since 2025
  */
 @Entity
-@Table(name = "exam_selected_unit")
+@Table(name = "exam_sheet_selected_unit")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Builder
-public class ExamSelectedUnit {
-    
+public class ExamSheetSelectedUnit {
+
     /**
      * 선택 단원 고유 ID
      * 자동 증가하는 기본키

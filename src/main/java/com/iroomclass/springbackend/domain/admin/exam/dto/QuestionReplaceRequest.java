@@ -24,7 +24,14 @@ public record QuestionReplaceRequest(
     @NotNull(message = "새로운 문제 ID는 필수입니다")
     @Positive(message = "문제 ID는 양수여야 합니다")
     @Schema(description = "새로운 문제 ID", example = "456", requiredMode = Schema.RequiredMode.REQUIRED)
-    Long newQuestionId
+    Long newQuestionId,
+    
+    @Positive(message = "배점은 양수여야 합니다")
+    @Schema(description = "새 문제의 배점 (미지정 시 기존 배점 유지)", example = "5")
+    Integer points,
+    
+    @Schema(description = "교체 사유 (선택사항)", example = "더 적절한 난이도의 문제로 교체")
+    String reason
 ) {
     public QuestionReplaceRequest {
         Objects.requireNonNull(oldQuestionId, "oldQuestionId는 필수입니다");
@@ -32,6 +39,10 @@ public record QuestionReplaceRequest(
         
         if (Objects.equals(oldQuestionId, newQuestionId)) {
             throw new IllegalArgumentException("기존 문제와 새로운 문제가 동일할 수 없습니다");
+        }
+        
+        if (reason != null && reason.length() > 200) {
+            throw new IllegalArgumentException("교체 사유는 200자 이내여야 합니다");
         }
     }
 }

@@ -11,6 +11,7 @@ import com.iroomclass.springbackend.domain.user.student.dto.StudentSubmissionHis
 import com.iroomclass.springbackend.domain.user.student.dto.ExamResultDetailResponse;
 import com.iroomclass.springbackend.domain.user.student.dto.QuestionResultResponse;
 import com.iroomclass.springbackend.domain.user.student.dto.StudentProfileResponse;
+import com.iroomclass.springbackend.domain.user.student.dto.RecentExamSubmissionsResponse;
 import com.iroomclass.springbackend.domain.user.info.entity.User;
 import com.iroomclass.springbackend.domain.user.info.repository.UserRepository;
 import com.iroomclass.springbackend.domain.user.exam.entity.ExamSubmission;
@@ -73,6 +74,40 @@ public class StudentService {
     }
     
     /**
+     * 학생 최근 시험 3건 조회 (메인화면)
+     * 
+     * @param studentName 학생 이름
+     * @param studentPhone 학생 전화번호  
+     * @return 최근 시험 3건 목록
+     */
+    public RecentExamSubmissionsResponse getRecentExamSubmissions(String studentName, String studentPhone) {
+        log.info("학생 최근 시험 3건 조회: 이름={}, 전화번호={}", studentName, studentPhone);
+        
+        // 1단계: 학생 존재 확인
+        long submissionCount = examSubmissionRepository.countByUserNameAndUserPhone(studentName, studentPhone);
+        if (submissionCount == 0) {
+            throw new IllegalArgumentException("존재하지 않는 학생입니다. 시험 제출 이력이 없습니다.");
+        }
+        
+        // 2단계: 최근 3건 제출 이력 조회
+        List<ExamSubmission> recentSubmissions = examSubmissionRepository
+            .findTop3ByUserNameAndUserPhoneOrderBySubmittedAtDesc(studentName, studentPhone);
+        
+        // 3단계: 응답 데이터 구성
+        List<RecentExamSubmissionsResponse.RecentExamInfo> recentExamInfos = recentSubmissions.stream()
+            .map(this::convertToRecentExamInfo)
+            .collect(Collectors.toList());
+        
+        log.info("학생 최근 시험 3건 조회 완료: 이름={}, 조회된 건수={}", studentName, recentExamInfos.size());
+        
+        return new RecentExamSubmissionsResponse(
+            studentName,
+            studentPhone,
+            recentExamInfos
+        );
+    }
+    
+    /**
      * 학생별 시험 제출 이력 조회
      * 
      * @param studentName 학생 이름
@@ -83,13 +118,13 @@ public class StudentService {
         log.info("학생 시험 제출 이력 조회: 이름={}, 전화번호={}", studentName, studentPhone);
         
         // 1단계: 학생 존재 확인
-        long submissionCount = examSubmissionRepository.countByStudentNameAndStudentPhone(studentName, studentPhone);
+        long submissionCount = examSubmissionRepository.countByUserNameAndUserPhone(studentName, studentPhone);
         if (submissionCount == 0) {
             throw new IllegalArgumentException("존재하지 않는 학생입니다. 시험 제출 이력이 없습니다.");
         }
         
         // 2단계: 시험 제출 이력 조회
-        List<ExamSubmission> submissions = examSubmissionRepository.findByStudentNameAndStudentPhoneOrderBySubmittedAtDesc(
+        List<ExamSubmission> submissions = examSubmissionRepository.findByUserNameAndUserPhoneOrderBySubmittedAtDesc(
             studentName, studentPhone);
         
         // 3단계: 응답 데이터 구성
@@ -122,8 +157,8 @@ public class StudentService {
         ExamSubmission submission = examSubmissionRepository.findById(submissionId)
             .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 시험 제출입니다: " + submissionId));
         
-        if (!submission.getStudentName().equals(studentName) || 
-            !submission.getStudentPhone().equals(studentPhone)) {
+        if (!submission.getUser().getName().equals(studentName) || 
+            !submission.getUser().getPhone().equals(studentPhone)) {
             throw new IllegalArgumentException("본인의 시험 결과만 조회할 수 있습니다.");
         }
         
@@ -138,6 +173,18 @@ public class StudentService {
         int correctCount = (int) answers.stream().filter(answer -> answer.getIsCorrect()).count();
         int incorrectCount = answers.size() - correctCount;
         
+        // 문제 타입별 개수 계산
+        int multipleChoiceCount = (int) answers.stream()
+            .filter(answer -> answer.getQuestion().isMultipleChoice())
+            .count();
+        int subjectiveCount = answers.size() - multipleChoiceCount;
+        
+        // 단원명 목록 생성 (중복 제거)
+        String unitNames = answers.stream()
+            .map(answer -> answer.getQuestion().getUnit().getUnitName())
+            .distinct()
+            .collect(Collectors.joining(", "));
+        
         log.info("시험 상세 결과 조회 완료: 제출 ID={}, 학생={}, 총점={}, 정답 수={}", 
             submissionId, studentName, submission.getTotalScore(), correctCount);
         
@@ -146,11 +193,14 @@ public class StudentService {
             submission.getExam().getId(),
             submission.getExam().getExamName(),
             submission.getExam().getGrade() + "학년",
-            submission.getStudentName(),
-            submission.getStudentPhone(),
+            submission.getUser().getName(),
+            submission.getUser().getPhone(),
             submission.getSubmittedAt(),
             submission.getTotalScore(),
             answers.size(),
+            multipleChoiceCount,
+            subjectiveCount,
+            unitNames,
             correctCount,
             incorrectCount,
             questionResults
@@ -182,8 +232,8 @@ public class StudentService {
         ExamSubmission submission = examSubmissionRepository.findById(submissionId)
             .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 시험 제출입니다: " + submissionId));
         
-        if (!submission.getStudentName().equals(studentName) || 
-            !submission.getStudentPhone().equals(studentPhone)) {
+        if (!submission.getUser().getName().equals(studentName) || 
+            !submission.getUser().getPhone().equals(studentPhone)) {
             throw new IllegalArgumentException("본인의 시험 결과만 조회할 수 있습니다.");
         }
         
@@ -216,6 +266,32 @@ public class StudentService {
             answer.getAnswerText(),
             question.getAnswerKey(),
             answer.getAnswerImageUrl()
+        );
+    }
+    
+    /**
+     * ExamSubmission을 RecentExamInfo로 변환 (최근 시험 목록용)
+     */
+    private RecentExamSubmissionsResponse.RecentExamInfo convertToRecentExamInfo(ExamSubmission submission) {
+        List<ExamAnswer> answers = examAnswerRepository.findByExamSubmissionId(submission.getId());
+        int correctCount = (int) answers.stream().filter(answer -> answer.getIsCorrect()).count();
+        double correctRate = answers.size() > 0 ? (double) correctCount / answers.size() * 100 : 0.0;
+        
+        // 단원명 목록 가져오기 (중복 제거)
+        String unitNames = answers.stream()
+            .map(answer -> answer.getQuestion().getUnit().getUnitName())
+            .distinct()
+            .collect(Collectors.joining(", "));
+        
+        return new RecentExamSubmissionsResponse.RecentExamInfo(
+            submission.getId(),
+            submission.getExam().getId(),
+            submission.getExam().getExamName(),
+            answers.size(),
+            unitNames,
+            submission.getSubmittedAt(),
+            submission.getTotalScore(),
+            Math.round(correctRate * 10.0) / 10.0 // 소수점 첫째자리까지
         );
     }
     

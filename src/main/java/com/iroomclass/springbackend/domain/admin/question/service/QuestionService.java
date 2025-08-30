@@ -165,43 +165,6 @@ public class QuestionService {
             question.getCorrectChoice());
     }
     
-    /**
-     * 문제 미리보기 조회
-     * 
-     * 문제 직접 선택 시스템에서 특정 문제를 미리보기할 때 사용됩니다.
-     * getQuestionDetail과 동일한 정보를 제공하지만 용도가 다릅니다.
-     * 
-     * @param questionId 문제 ID
-     * @return 문제 미리보기 정보
-     */
-    public QuestionDetailResponse getQuestionPreview(Long questionId) {
-        log.info("문제 {} 미리보기 조회 요청", questionId);
-        
-        // 1단계: 문제 조회
-        Optional<Question> questionOpt = questionRepository.findById(questionId);
-        if (questionOpt.isEmpty()) {
-            throw new IllegalArgumentException("존재하지 않는 문제입니다: " + questionId);
-        }
-        
-        Question question = questionOpt.get();
-        
-        // 2단계: 단원 정보 조회
-        Unit unit = question.getUnit();
-        
-        log.info("문제 {} 미리보기 조회 완료 - 유형: {}, 난이도: {}", 
-                questionId, question.getQuestionType().name(), question.getDifficulty().name());
-        
-        return new QuestionDetailResponse(
-            question.getId(), 
-            unit.getId(), 
-            unit.getUnitName(), 
-            question.getDifficulty().name(),
-            question.getQuestionType().name(), 
-            question.getQuestionTextAsHtml(), 
-            question.getAnswerKey(),
-            question.getChoicesAsMap(),
-            question.getCorrectChoice());
-    }
     
     /**
      * 단원별 문제 통계 조회
@@ -268,5 +231,29 @@ public class QuestionService {
         log.info("문제 검색 완료: {}개 결과", totalResults);
         
         return new QuestionSearchResponse(keyword, questionInfos, totalResults);
+    }
+    
+    /**
+     * 문제 미리보기 조회
+     * 
+     * 문제 직접 선택 시스템에서 특정 문제의 미리보기 정보를 조회합니다.
+     * getQuestionDetail과 동일한 정보를 제공하지만, 미리보기 용도로 명시적으로 분리하였습니다.
+     * 
+     * @param questionId 문제 ID
+     * @return 문제 미리보기 정보
+     * @throws IllegalArgumentException 문제가 존재하지 않을 때
+     */
+    @Transactional(readOnly = true)
+    public QuestionDetailResponse getQuestionPreview(Long questionId) {
+        log.info("문제 {} 미리보기 조회 요청", questionId);
+        
+        // 기존 getQuestionDetail 메서드와 동일한 로직 사용
+        // 미리보기와 상세 조회가 현재는 같은 정보를 제공하므로 재사용
+        QuestionDetailResponse response = getQuestionDetail(questionId);
+        
+        log.info("문제 {} 미리보기 조회 완료 - 유형: {}, 난이도: {}", 
+                questionId, response.questionType(), response.difficulty());
+        
+        return response;
     }
 }

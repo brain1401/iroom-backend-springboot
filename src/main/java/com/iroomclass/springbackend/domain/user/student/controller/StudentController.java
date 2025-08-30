@@ -12,6 +12,7 @@ import com.iroomclass.springbackend.domain.user.student.dto.StudentSubmissionHis
 import com.iroomclass.springbackend.domain.user.student.dto.ExamResultDetailResponse;
 import com.iroomclass.springbackend.domain.user.student.dto.QuestionResultResponse;
 import com.iroomclass.springbackend.domain.user.student.dto.StudentProfileResponse;
+import com.iroomclass.springbackend.domain.user.student.dto.RecentExamSubmissionsResponse;
 import com.iroomclass.springbackend.domain.user.student.service.StudentService;
 
 import java.time.LocalDate;
@@ -69,6 +70,32 @@ public class StudentController {
         return ApiResponse.success("프로필 조회 성공", response);
     }
 
+    /**
+     * 학생 메인화면 - 최근 시험 3건 조회
+     * 
+     * @param studentName 학생 이름
+     * @param studentPhone 학생 전화번호
+     * @return 최근 시험 3건 목록
+     */
+    @GetMapping("/recent-submissions")
+    @Operation(summary = "학생 메인화면 - 최근 시험 3건 조회", description = "학생 메인화면에서 최근 제출한 시험 3건을 조회합니다.")
+    @io.swagger.v3.oas.annotations.responses.ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "조회 성공"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "잘못된 입력값"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "존재하지 않는 학생")
+    })
+    public ApiResponse<RecentExamSubmissionsResponse> getRecentExamSubmissions(
+            @Parameter(description = "학생 이름", example = "김철수") @RequestParam String studentName,
+            @Parameter(description = "학생 전화번호", example = "010-1234-5678") @RequestParam String studentPhone) {
+        log.info("학생 최근 시험 3건 조회 요청: 이름={}, 전화번호={}", studentName, studentPhone);
+
+        RecentExamSubmissionsResponse response = studentService.getRecentExamSubmissions(studentName, studentPhone);
+
+        log.info("학생 최근 시험 3건 조회 성공: 이름={}, 조회된 건수={}",
+                response.studentName(), response.recentExams().size());
+
+        return ApiResponse.success("최근 시험 이력 조회 성공", response);
+    }
     /**
      * 학생별 시험 제출 이력 조회
      * 

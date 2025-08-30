@@ -59,7 +59,7 @@ public interface ExamSheetRepository extends JpaRepository<ExamSheet, Long> {
      */
     @Query("""
         SELECT DISTINCT es FROM ExamSheet es 
-        LEFT JOIN ExamSelectedUnit esu ON es.id = esu.examSheet.id
+        LEFT JOIN ExamSheetSelectedUnit esu ON es.id = esu.examSheet.id
         LEFT JOIN esu.unit u
         WHERE (:examName IS NULL OR es.examName LIKE %:examName%)
         AND (:unitName IS NULL OR u.unitName LIKE %:unitName%)
@@ -90,7 +90,7 @@ public interface ExamSheetRepository extends JpaRepository<ExamSheet, Long> {
      */
     @Query("""
         SELECT DISTINCT es FROM ExamSheet es 
-        LEFT JOIN ExamSelectedUnit esu ON es.id = esu.examSheet.id
+        LEFT JOIN ExamSheetSelectedUnit esu ON es.id = esu.examSheet.id
         LEFT JOIN esu.unit u
         WHERE es.grade = :grade
         AND (:examName IS NULL OR es.examName LIKE %:examName%)

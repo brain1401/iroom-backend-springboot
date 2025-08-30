@@ -3,6 +3,7 @@ package com.iroomclass.springbackend.domain.user.exam.entity;
 import java.time.LocalDateTime;
 
 import com.iroomclass.springbackend.domain.admin.exam.entity.Exam;
+import com.iroomclass.springbackend.domain.user.info.entity.User;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -25,7 +26,7 @@ import lombok.NoArgsConstructor;
  * 시험 제출 Entity
  * 
  * 학생별 시험 제출 기록을 관리합니다.
- * 시험당 1회 제출 제한이며, 이름과 전화번호로 학생을 식별합니다.
+ * 시험당 1회 제출 제한이며, User 엔티티와의 관계로 학생을 식별합니다.
  * 
  * @author 이룸클래스
  * @since 2025
@@ -56,20 +57,13 @@ public class ExamSubmission {
     private Exam exam;
     
     /**
-     * 학생 이름
-     * 시험 제출 시 입력받는 학생 이름
-     * 최대 50자, 필수 입력
+     * 학생 정보
+     * ManyToOne: 여러 시험 제출이 하나의 사용자에 속함
+     * FetchType.LAZY: 필요할 때만 사용자 정보를 조회
      */
-    @Column(nullable = false, length = 50)
-    private String studentName;
-    
-    /**
-     * 학생 전화번호
-     * 시험 제출 시 입력받는 학생 전화번호
-     * 최대 20자, 필수 입력
-     */
-    @Column(nullable = false, length = 20)
-    private String studentPhone;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
     
     /**
      * 제출일시

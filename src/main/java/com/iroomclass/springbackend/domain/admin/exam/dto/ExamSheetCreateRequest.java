@@ -1,7 +1,7 @@
 package com.iroomclass.springbackend.domain.admin.exam.dto;
 
 import java.util.List;
-import java.util.Objects;
+
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -37,14 +37,34 @@ public record ExamSheetCreateRequest(
     @Schema(description = "총 문제 개수 (1~30)", example = "20", requiredMode = Schema.RequiredMode.REQUIRED)
     Integer totalQuestions,
     
+    @NotNull(message = "객관식 문제 개수는 필수입니다.")
+    @Min(value = 0, message = "객관식 문제 개수는 0 이상이어야 합니다.")
+    @Max(value = 30, message = "객관식 문제 개수는 30 이하여야 합니다.")
+    @Schema(description = "객관식 문제 개수 (0~30)", example = "15", requiredMode = Schema.RequiredMode.REQUIRED)
+    Integer multipleChoiceCount,
+    
+    @NotNull(message = "주관식 문제 개수는 필수입니다.")
+    @Min(value = 0, message = "주관식 문제 개수는 0 이상이어야 합니다.")
+    @Max(value = 30, message = "주관식 문제 개수는 30 이하여야 합니다.")
+    @Schema(description = "주관식 문제 개수 (0~30)", example = "5", requiredMode = Schema.RequiredMode.REQUIRED)
+    Integer subjectiveCount,
+    
     @NotEmpty(message = "선택된 단원은 최소 1개 이상이어야 합니다.")
     @Schema(description = "선택된 단원 ID 목록", example = "[1, 2, 3]", requiredMode = Schema.RequiredMode.REQUIRED)
     List<Long> unitIds
 ) {
     public ExamSheetCreateRequest {
-        Objects.requireNonNull(examName, "examName은 필수입니다");
-        Objects.requireNonNull(grade, "grade는 필수입니다");
-        Objects.requireNonNull(totalQuestions, "totalQuestions는 필수입니다");
-        Objects.requireNonNull(unitIds, "unitIds는 필수입니다");
+        // 이중 검증 아키텍처: 핵심 불변성은 Compact Constructor에서 즉시 검증
+        
+        // 문제 개수 일관성 검증 - 이는 데이터 무결성의 핵심 불변성
+        if (totalQuestions != null && multipleChoiceCount != null && subjectiveCount != null) {
+            int calculatedTotal = multipleChoiceCount + subjectiveCount;
+            if (calculatedTotal != totalQuestions) {
+                throw new IllegalArgumentException(
+                    String.format("객관식 문제 개수(%d) + 주관식 문제 개수(%d) = %d가 총 문제 개수(%d)와 일치하지 않습니다.",
+                        multipleChoiceCount, subjectiveCount, calculatedTotal, totalQuestions)
+                );
+            }
+        }
     }
 }
