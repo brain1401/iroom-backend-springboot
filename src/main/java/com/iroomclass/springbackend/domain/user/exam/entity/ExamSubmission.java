@@ -27,8 +27,9 @@ import lombok.NoArgsConstructor;
 /**
  * 시험 제출 Entity
  * 
- * 학생별 시험 제출 기록을 관리합니다.
+ * 학생별 시험 제출 기록을 관리합니다. (순수 제출 정보만)
  * 시험당 1회 제출 제한이며, User 엔티티와의 관계로 학생을 식별합니다.
+ * 채점 결과는 별도의 ExamGrading 엔티티에서 관리합니다.
  * 
  * @author 이룸클래스
  * @since 2025
@@ -75,13 +76,6 @@ public class ExamSubmission {
     private LocalDateTime submittedAt;
     
     /**
-     * 총점
-     * 자동 채점 후 계산된 총점
-     */
-    @Column
-    private Integer totalScore;
-    
-    /**
      * Entity 저장 전 실행되는 메서드
      * UUID 및 제출일시를 자동으로 설정합니다.
      */
@@ -90,7 +84,9 @@ public class ExamSubmission {
         if (id == null) {
             id = UUIDv7Generator.generate();
         }
-        submittedAt = LocalDateTime.now();
+        if (submittedAt == null) {
+            submittedAt = LocalDateTime.now();
+        }
     }
     
     /**

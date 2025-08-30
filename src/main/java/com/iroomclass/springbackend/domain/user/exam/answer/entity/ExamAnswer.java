@@ -27,8 +27,9 @@ import lombok.NoArgsConstructor;
 /**
  * 시험 답안 Entity
  * 
- * 학생이 제출한 시험 답안을 관리합니다.
- * 주관식과 객관식 문제의 답안을 모두 지원하며, AI 이미지 인식 결과와 채점 결과를 포함합니다.
+ * 학생이 제출한 시험 답안을 관리합니다. (순수 답안 정보만)
+ * 주관식과 객관식 문제의 답안을 모두 지원하며, AI 이미지 인식 결과를 포함합니다.
+ * 채점 결과는 별도의 QuestionGrading 엔티티에서 관리합니다.
  * 
  * <p>답안 유형별 특징:</p>
  * <ul>
@@ -100,20 +101,6 @@ public class ExamAnswer {
     private String aiSolutionProcess;
 
     /**
-     * 정답 여부
-     * 0: 오답, 1: 정답
-     */
-    @Column
-    private Boolean isCorrect;
-    
-    /**
-     * 획득 점수
-     * 해당 문제에서 획득한 점수
-     */
-    @Column
-    private Integer score;
-
-    /**
      * 선택한 답안 번호 (객관식용)
      * 객관식 문제에서 학생이 선택한 번호 (1, 2, 3, 4, 5)
      * 객관식 문제일 때만 사용
@@ -123,18 +110,12 @@ public class ExamAnswer {
     
     /**
      * Entity 저장 전 실행되는 메서드
-     * UUID 및 기본값 설정
+     * UUID 자동 설정
      */
     @PrePersist
     protected void onCreate() {
         if (id == null) {
             id = UUIDv7Generator.generate();
-        }
-        if (isCorrect == null) {
-            isCorrect = false;
-        }
-        if (score == null) {
-            score = 0;
         }
     }
     
@@ -171,14 +152,6 @@ public class ExamAnswer {
      */
     public void updateImageUrl(String answerImageUrl) {
         this.answerImageUrl = answerImageUrl;
-    }
-    
-    /**
-     * 채점 결과 업데이트
-     */
-    public void updateGrading(Boolean isCorrect, Integer score) {
-        this.isCorrect = isCorrect;
-        this.score = score;
     }
 
     /**
@@ -224,23 +197,6 @@ public class ExamAnswer {
         }
     }
 
-    /**
-     * 객관식 자동 채점
-     * 객관식 문제인 경우 자동으로 채점하고 결과를 업데이트
-     * 
-     * @return 채점이 실행되었으면 true, 아니면 false
-     */
-    public boolean autoGradeMultipleChoice() {
-        if (!isMultipleChoiceQuestion() || selectedChoice == null) {
-            return false;
-        }
-
-        boolean correct = question.isCorrectChoice(selectedChoice);
-        this.isCorrect = correct;
-        this.score = correct ? 100 : 0; // 기본 점수: 맞으면 100, 틀리면 0
-        
-        return true;
-    }
 
     /**
      * 답안 내용 반환 (타입별)
@@ -258,15 +214,11 @@ public class ExamAnswer {
     /**
      * 답안 상태 확인
      * 
-     * @return 답안 상태 (ANSWERED, UNANSWERED, GRADED)
+     * @return 답안 상태 (ANSWERED, UNANSWERED)
      */
     public AnswerStatus getAnswerStatus() {
         if (!hasAnswer()) {
             return AnswerStatus.UNANSWERED;
-        }
-        
-        if (isCorrect != null) {
-            return AnswerStatus.GRADED;
         }
         
         return AnswerStatus.ANSWERED;
@@ -282,13 +234,8 @@ public class ExamAnswer {
         UNANSWERED,
         
         /**
-         * 답안 제출됨 (미채점)
+         * 답안 제출됨
          */
-        ANSWERED,
-        
-        /**
-         * 채점 완료
-         */
-        GRADED
+        ANSWERED
     }
 }
