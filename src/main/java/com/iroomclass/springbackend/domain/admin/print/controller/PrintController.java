@@ -1,6 +1,7 @@
 package com.iroomclass.springbackend.domain.admin.print.controller;
 
 import com.iroomclass.springbackend.domain.admin.print.dto.PrintRequest;
+import java.util.UUID;
 import com.iroomclass.springbackend.domain.admin.print.dto.PrintResponse;
 import com.iroomclass.springbackend.domain.admin.print.dto.PrintableDocumentResponse;
 import com.iroomclass.springbackend.domain.admin.print.service.PrintService;
@@ -34,7 +35,7 @@ public class PrintController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "❌ 리소스 없음 - 존재하지 않는 시험지")
     })
     public ApiResponse<PrintableDocumentResponse> getPrintableDocuments(
-            @Parameter(description = "시험지 ID", example = "1") @PathVariable Long examSheetId) {
+            @Parameter(description = "시험지 ID", example = "123e4567-e89b-12d3-a456-426614174000") @PathVariable UUID examSheetId) {
 
         log.info("인쇄 가능한 문서 목록 조회 요청: examSheetId={}", examSheetId);
 

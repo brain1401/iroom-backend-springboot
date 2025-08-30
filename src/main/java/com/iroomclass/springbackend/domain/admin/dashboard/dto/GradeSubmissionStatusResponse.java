@@ -2,6 +2,7 @@ package com.iroomclass.springbackend.domain.admin.dashboard.dto;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.UUID;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 /**
@@ -41,8 +42,8 @@ public record GradeSubmissionStatusResponse(
      */
     @Schema(description = "시험별 제출 현황")
     public record ExamSubmissionStatus(
-        @Schema(description = "시험 ID", example = "1")
-        Long examId,
+        @Schema(description = "시험 ID", example = "123e4567-e89b-12d3-a456-426614174000")
+        UUID examId,
 
         @Schema(description = "시험명", example = "1학년 중간고사")
         String examName,

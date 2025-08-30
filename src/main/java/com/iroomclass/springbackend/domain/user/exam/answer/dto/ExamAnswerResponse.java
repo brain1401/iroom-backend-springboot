@@ -5,6 +5,7 @@ import com.iroomclass.springbackend.domain.user.exam.answer.entity.ExamAnswer;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.util.Objects;
+import java.util.UUID;
 
 /**
  * 시험 답안 응답 DTO
@@ -16,14 +17,14 @@ import java.util.Objects;
  */
 @Schema(description = "시험 답안 응답")
 public record ExamAnswerResponse(
-    @Schema(description = "답안 ID", example = "1")
-    Long answerId,
+    @Schema(description = "답안 ID", example = "123e4567-e89b-12d3-a456-426614174000")
+    UUID answerId,
     
-    @Schema(description = "시험 제출 ID", example = "1")
-    Long examSubmissionId,
+    @Schema(description = "시험 제출 ID", example = "123e4567-e89b-12d3-a456-426614174001")
+    UUID examSubmissionId,
     
-    @Schema(description = "문제 ID", example = "3")
-    Long questionId,
+    @Schema(description = "문제 ID", example = "123e4567-e89b-12d3-a456-426614174002")
+    UUID questionId,
     
     @Schema(description = "답안 이미지 URL (주관식 문제용)", example = "/uploads/answers/answer_1.jpg", nullable = true)
     String answerImageUrl,

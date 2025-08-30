@@ -2,6 +2,7 @@ package com.iroomclass.springbackend.domain.admin.exam.dto;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.UUID;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
@@ -33,8 +34,8 @@ public record ExamSheetListResponse(
      */
     @Schema(description = "시험지 정보")
     public record ExamSheetInfo(
-        @Schema(description = "시험지 ID", example = "1")
-        Long examSheetId,
+        @Schema(description = "시험지 ID", example = "550e8400-e29b-41d4-a716-446655440000")
+        UUID examSheetId,
         
         @Schema(description = "시험지 이름", example = "1학년 중간고사")
         String examName,

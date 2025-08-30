@@ -1,6 +1,7 @@
 package com.iroomclass.springbackend.domain.admin.exam.repository;
 
 import java.util.List;
+import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
@@ -15,7 +16,7 @@ import com.iroomclass.springbackend.domain.admin.exam.entity.ExamSheet;
  * @author 이룸클래스
  * @since 2025
  */
-public interface ExamRepository extends JpaRepository<Exam, Long> {
+public interface ExamRepository extends JpaRepository<Exam, UUID> {
     
     /**
      * 시험지별 시험 조회
@@ -36,7 +37,7 @@ public interface ExamRepository extends JpaRepository<Exam, Long> {
      * @param examSheetId 시험지 ID
      * @return 해당 시험지에서 발행된 시험 목록
      */
-    List<Exam> findByExamSheetId(Long examSheetId);
+    List<Exam> findByExamSheetId(UUID examSheetId);
 
     /**
      * 학년별 시험 조회

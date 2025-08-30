@@ -1,6 +1,7 @@
 package com.iroomclass.springbackend.domain.admin.question.dto;
 
 import java.util.Objects;
+import java.util.UUID;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
@@ -14,8 +15,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
  */
 @Schema(description = "문제 통계 조회 응답")
 public record QuestionStatisticsResponse(
-    @Schema(description = "단원 ID", example = "1")
-    Long unitId,
+    @Schema(description = "단원 ID", example = "550e8400-e29b-41d4-a716-446655440000")
+    UUID unitId,
     
     @Schema(description = "단원명", example = "자연수와 0")
     String unitName,

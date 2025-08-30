@@ -2,6 +2,7 @@ package com.iroomclass.springbackend.domain.user.exam.answer.dto;
 
 import jakarta.validation.constraints.NotNull;
 import java.util.Objects;
+import java.util.UUID;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
@@ -16,12 +17,12 @@ import io.swagger.v3.oas.annotations.media.Schema;
 @Schema(description = "시험 답안 생성 요청")
 public record ExamAnswerCreateRequest(
     @NotNull(message = "시험 제출 ID는 필수입니다.")
-    @Schema(description = "시험 제출 ID", example = "1", requiredMode = Schema.RequiredMode.REQUIRED)
-    Long examSubmissionId,
+    @Schema(description = "시험 제출 ID", example = "123e4567-e89b-12d3-a456-426614174000", requiredMode = Schema.RequiredMode.REQUIRED)
+    UUID examSubmissionId,
     
     @NotNull(message = "문제 ID는 필수입니다.")
-    @Schema(description = "문제 ID", example = "1", requiredMode = Schema.RequiredMode.REQUIRED)
-    Long questionId,
+    @Schema(description = "문제 ID", example = "123e4567-e89b-12d3-a456-426614174001", requiredMode = Schema.RequiredMode.REQUIRED)
+    UUID questionId,
     
     @Schema(description = "답안 이미지 URL (주관식 문제용)", example = "https://example.com/answer-image.jpg")
     String answerImageUrl,

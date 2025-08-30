@@ -11,6 +11,7 @@ import com.iroomclass.springbackend.domain.admin.exam.entity.ExamSheet;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * 시험지 Repository
@@ -21,7 +22,7 @@ import java.util.List;
  * @since 2025
  */
 @Repository
-public interface ExamSheetRepository extends JpaRepository<ExamSheet, Long> {
+public interface ExamSheetRepository extends JpaRepository<ExamSheet, UUID> {
     
     /**
      * 학년별 시험지 조회

@@ -2,6 +2,7 @@ package com.iroomclass.springbackend.domain.user.student.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Objects;
+import java.util.UUID;
 
 /**
  * 문제별 결과 응답 DTO
@@ -11,11 +12,11 @@ import java.util.Objects;
  */
 @Schema(description = "문제별 결과 응답")
 public record QuestionResultResponse(
-    @Schema(description = "시험 제출 ID", example = "1")
-    Long submissionId,
+    @Schema(description = "시험 제출 ID", example = "123e4567-e89b-12d3-a456-426614174000")
+    UUID submissionId,
 
-    @Schema(description = "문제 ID", example = "1")
-    Long questionId,
+    @Schema(description = "문제 ID", example = "123e4567-e89b-12d3-a456-426614174001")
+    UUID questionId,
 
     @Schema(description = "문제 번호", example = "1")
     int questionNumber,

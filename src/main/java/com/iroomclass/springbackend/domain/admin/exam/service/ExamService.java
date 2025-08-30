@@ -2,6 +2,7 @@ package com.iroomclass.springbackend.domain.admin.exam.service;
 
 import java.util.List;
 import java.util.ArrayList;
+import java.util.UUID;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -151,7 +152,7 @@ public class ExamService {
      * @param examId 시험 ID
      * @return 시험 상세 정보
      */
-    public ExamDetailResponse getExamDetail(Long examId) {
+    public ExamDetailResponse getExamDetail(UUID examId) {
         log.info("시험 상세 조회 요청: ID={}", examId);
         
         Exam exam = examRepository.findById(examId)
@@ -179,7 +180,7 @@ public class ExamService {
      * @return 수정된 시험 정보
      */
     @Transactional
-    public ExamDetailResponse updateExam(Long examId, ExamUpdateRequest request) {
+    public ExamDetailResponse updateExam(UUID examId, ExamUpdateRequest request) {
         log.info("시험 수정 요청: ID={}", examId);
         
         // 1단계: 시험 조회
@@ -203,7 +204,7 @@ public class ExamService {
      * @param examId 시험 ID
      */
     @Transactional
-    public void deleteExam(Long examId) {
+    public void deleteExam(UUID examId) {
         log.info("시험 삭제 요청: ID={}", examId);
         
         // 1단계: 시험 존재 확인
@@ -219,7 +220,7 @@ public class ExamService {
     /**
      * QR 코드 URL 생성
      */
-    private String generateQrCodeUrl(Long examSheetId) {
+    private String generateQrCodeUrl(UUID examSheetId) {
         // 답안지에서 QR 코드 URL 가져오기
         List<ExamDocument> documents = examDocumentRepository.findByExamSheetId(examSheetId);
         

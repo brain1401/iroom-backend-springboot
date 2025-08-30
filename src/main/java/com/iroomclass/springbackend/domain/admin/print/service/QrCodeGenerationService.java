@@ -1,5 +1,7 @@
 package com.iroomclass.springbackend.domain.admin.print.service;
 
+import java.util.UUID;
+
 import com.iroomclass.springbackend.domain.admin.print.util.QrCodeGenerator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,7 +25,7 @@ public class QrCodeGenerationService {
      * @param examSheetId 시험지 ID
      * @return Base64로 인코딩된 QR 코드 이미지
      */
-    public String generateAnswerSheetQrCode(Long examSheetId) {
+    public String generateAnswerSheetQrCode(UUID examSheetId) {
         try {
             log.info("답안지 QR 코드 생성 시작: examSheetId={}", examSheetId);
             
@@ -49,7 +51,7 @@ public class QrCodeGenerationService {
      * @param examSheetId 시험지 ID
      * @return QR 코드 URL (Base64 데이터 URL)
      */
-    public String generateAnswerSheetQrCodeUrl(Long examSheetId) {
+    public String generateAnswerSheetQrCodeUrl(UUID examSheetId) {
         String qrCodeBase64 = generateAnswerSheetQrCode(examSheetId);
         return "data:image/png;base64," + qrCodeBase64;
     }

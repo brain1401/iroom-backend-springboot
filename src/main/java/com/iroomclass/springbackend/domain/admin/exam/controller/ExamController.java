@@ -1,6 +1,7 @@
 package com.iroomclass.springbackend.domain.admin.exam.controller;
 
 import com.iroomclass.springbackend.common.ApiResponse;
+import java.util.UUID;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
@@ -116,7 +117,7 @@ public class ExamController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "존재하지 않는 시험")
     })
     public ApiResponse<ExamDetailResponse> getExamDetail(
-            @Parameter(description = "시험 ID", example = "1") @PathVariable Long examId) {
+            @Parameter(description = "시험 ID", example = "123e4567-e89b-12d3-a456-426614174000") @PathVariable UUID examId) {
         log.info("시험 상세 조회 요청: ID={}", examId);
 
         ExamDetailResponse response = examService.getExamDetail(examId);
@@ -141,7 +142,7 @@ public class ExamController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "존재하지 않는 시험")
     })
     public ApiResponse<ExamDetailResponse> updateExam(
-            @Parameter(description = "시험 ID", example = "1") @PathVariable Long examId,
+            @Parameter(description = "시험 ID", example = "123e4567-e89b-12d3-a456-426614174000") @PathVariable UUID examId,
             @Valid @RequestBody ExamUpdateRequest request) {
         log.info("시험 수정 요청: ID={}", examId);
 
@@ -166,7 +167,7 @@ public class ExamController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "존재하지 않는 시험")
     })
     public ApiResponse<Void> deleteExam(
-            @Parameter(description = "시험 ID", example = "1") @PathVariable Long examId) {
+            @Parameter(description = "시험 ID", example = "123e4567-e89b-12d3-a456-426614174000") @PathVariable UUID examId) {
         log.info("시험 삭제 요청: ID={}", examId);
 
         examService.deleteExam(examId);

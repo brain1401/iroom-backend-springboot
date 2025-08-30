@@ -2,6 +2,7 @@ package com.iroomclass.springbackend.domain.admin.exam.dto;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.UUID;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
@@ -15,8 +16,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
  */
 @Schema(description = "시험지 상세 조회 응답")
 public record ExamSheetDetailResponse(
-    @Schema(description = "시험지 ID", example = "1")
-    Long examSheetId,
+    @Schema(description = "시험지 ID", example = "123e4567-e89b-12d3-a456-426614174000")
+    UUID examSheetId,
     
     @Schema(description = "시험지 이름", example = "1학년 중간고사")
     String examName,
@@ -47,8 +48,8 @@ public record ExamSheetDetailResponse(
      */
     @Schema(description = "단원 정보")
     public record UnitInfo(
-        @Schema(description = "단원 ID", example = "1")
-        Long unitId,
+        @Schema(description = "단원 ID", example = "123e4567-e89b-12d3-a456-426614174000")
+        UUID unitId,
         
         @Schema(description = "단원명", example = "자연수와 0")
         String unitName
@@ -67,11 +68,11 @@ public record ExamSheetDetailResponse(
         @Schema(description = "문제 번호", example = "1")
         Integer seqNo,
         
-        @Schema(description = "문제 ID", example = "1")
-        Long questionId,
+        @Schema(description = "문제 ID", example = "123e4567-e89b-12d3-a456-426614174000")
+        UUID questionId,
         
-        @Schema(description = "단원 ID", example = "1")
-        Long unitId,
+        @Schema(description = "단원 ID", example = "123e4567-e89b-12d3-a456-426614174000")
+        UUID unitId,
         
         @Schema(description = "단원명", example = "자연수와 0")
         String unitName,

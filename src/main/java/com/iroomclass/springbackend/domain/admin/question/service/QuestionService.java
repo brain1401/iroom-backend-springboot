@@ -2,6 +2,7 @@ package com.iroomclass.springbackend.domain.admin.question.service;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
@@ -42,7 +43,7 @@ public class QuestionService {
      * @param unitId 단원 ID
      * @return 해당 단원의 문제 목록
      */
-    public QuestionListResponse getQuestionsByUnit(Long unitId) {
+    public QuestionListResponse getQuestionsByUnit(UUID unitId) {
         log.info("단원 {} 문제 목록 조회 요청", unitId);
         
         // 1단계: 단원 존재 여부 확인
@@ -88,7 +89,7 @@ public class QuestionService {
      * @param difficulty 난이도 (하, 중, 상)
      * @return 해당 단원의 특정 난이도 문제 목록
      */
-    public QuestionListResponse getQuestionsByUnitAndDifficulty(Long unitId, String difficulty) {
+    public QuestionListResponse getQuestionsByUnitAndDifficulty(UUID unitId, String difficulty) {
         log.info("단원 {} 난이도 {} 문제 목록 조회 요청", unitId, difficulty);
         
         // 1단계: 단원 존재 여부 확인
@@ -137,7 +138,7 @@ public class QuestionService {
      * @param questionId 문제 ID
      * @return 문제 상세 정보
      */
-    public QuestionDetailResponse getQuestionDetail(Long questionId) {
+    public QuestionDetailResponse getQuestionDetail(UUID questionId) {
         log.info("문제 {} 상세 조회 요청", questionId);
         
         // 1단계: 문제 조회
@@ -160,7 +161,8 @@ public class QuestionService {
             question.getDifficulty().name(),
             question.getQuestionType().name(), 
             question.getQuestionTextAsHtml(), 
-            question.getAnswerKey(),
+            question.getAnswerText(),
+            question.getScoringRubric(),
             question.getChoicesAsMap(),
             question.getCorrectChoice());
     }
@@ -172,7 +174,7 @@ public class QuestionService {
      * @param unitId 단원 ID
      * @return 단원별 문제 통계
      */
-    public QuestionStatisticsResponse getQuestionStatisticsByUnit(Long unitId) {
+    public QuestionStatisticsResponse getQuestionStatisticsByUnit(UUID unitId) {
         log.info("단원 {} 문제 통계 조회 요청", unitId);
         
         // 1단계: 단원 존재 여부 확인
@@ -244,7 +246,7 @@ public class QuestionService {
      * @throws IllegalArgumentException 문제가 존재하지 않을 때
      */
     @Transactional(readOnly = true)
-    public QuestionDetailResponse getQuestionPreview(Long questionId) {
+    public QuestionDetailResponse getQuestionPreview(UUID questionId) {
         log.info("문제 {} 미리보기 조회 요청", questionId);
         
         // 기존 getQuestionDetail 메서드와 동일한 로직 사용

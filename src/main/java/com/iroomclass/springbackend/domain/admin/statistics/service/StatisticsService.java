@@ -134,7 +134,7 @@ public class StatisticsService {
         }
         
         // 2단계: 모든 답안 데이터 조회
-        List<Long> submissionIds = submissions.stream()
+        List<UUID> submissionIds = submissions.stream()
             .map(submission -> submission.getId())
             .collect(Collectors.toList());
         
@@ -146,7 +146,7 @@ public class StatisticsService {
         }
         
         // 3단계: 단원별 오답률 계산
-        Map<Long, UnitErrorStats> unitErrorStatsMap = new HashMap<>();
+        Map<UUID, UnitErrorStats> unitErrorStatsMap = new HashMap<>();
         
         for (ExamAnswer answer : allAnswers) {
             // 문제 정보 조회 (단원 정보 포함)
@@ -155,7 +155,7 @@ public class StatisticsService {
                 continue; // 단원 정보가 없는 문제는 건너뛰기
             }
             
-            Long unitId = question.getUnit().getId();
+            UUID unitId = question.getUnit().getId();
             UnitErrorStats stats = unitErrorStatsMap.computeIfAbsent(unitId, 
                 k -> new UnitErrorStats(question.getUnit().getUnitName()));
             
@@ -169,7 +169,7 @@ public class StatisticsService {
         List<GradeStatisticsResponse.HighErrorRateUnit> highErrorRateUnits = unitErrorStatsMap.entrySet()
             .stream()
             .map(entry -> {
-                Long unitId = entry.getKey();
+                UUID unitId = entry.getKey();
                 UnitErrorStats stats = entry.getValue();
                 double errorRate = stats.totalQuestions > 0 ? 
                     (double) stats.wrongAnswers / stats.totalQuestions * 100 : 0.0;

@@ -2,6 +2,7 @@ package com.iroomclass.springbackend.domain.admin.exam.dto;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.UUID;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
@@ -15,8 +16,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
  */
 @Schema(description = "시험지 문서 목록 조회 응답")
 public record ExamDocumentListResponse(
-    @Schema(description = "시험지 ID", example = "1")
-    Long examSheetId,
+    @Schema(description = "시험지 ID", example = "550e8400-e29b-41d4-a716-446655440000")
+    UUID examSheetId,
     
     @Schema(description = "시험지 이름", example = "1학년 중간고사")
     String examName,
@@ -42,8 +43,8 @@ public record ExamDocumentListResponse(
      */
     @Schema(description = "문서 정보")
     public record DocumentInfo(
-        @Schema(description = "문서 ID", example = "1")
-        Long documentId,
+        @Schema(description = "문서 ID", example = "550e8400-e29b-41d4-a716-446655440001")
+        UUID documentId,
         
         @Schema(description = "문서 타입", example = "QUESTION_PAPER", allowableValues = {"ANSWER_SHEET", "QUESTION_PAPER", "ANSWER_KEY"})
         String documentType,

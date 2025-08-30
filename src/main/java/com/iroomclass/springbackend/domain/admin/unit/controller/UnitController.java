@@ -1,6 +1,7 @@
 package com.iroomclass.springbackend.domain.admin.unit.controller;
 
 import java.util.List;
+import java.util.UUID;
 
 import com.iroomclass.springbackend.common.ApiResponse;
 import org.springframework.data.domain.Page;
@@ -155,7 +156,7 @@ public class UnitController {
     })
     public ApiResponse<Page<UnitQuestionInfo>> getUnitQuestions(
             @Parameter(description = "단원 ID", example = "1", required = true)
-            @PathVariable Long unitId,
+            @PathVariable UUID unitId,
             @Parameter(description = "페이징 정보 (page=0, size=20, sort=id)")
             @PageableDefault(size = 20, sort = "id") Pageable pageable) {
         

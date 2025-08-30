@@ -106,7 +106,7 @@ public class ExamDocumentService {
      * @param examSheetId 시험지 ID
      * @return 해당 시험지의 문서 목록
      */
-    public ExamDocumentListResponse getExamDocumentsBySheet(Long examSheetId) {
+    public ExamDocumentListResponse getExamDocumentsBySheet(UUID examSheetId) {
         log.info("시험지 {} 문서 목록 조회 요청", examSheetId);
 
         // 1단계: 시험지 존재 확인
@@ -142,7 +142,7 @@ public class ExamDocumentService {
      * @param documentId 문서 ID
      * @return 시험지 문서 상세 정보
      */
-    public ExamDocumentDetailResponse getExamDocumentDetail(Long documentId) {
+    public ExamDocumentDetailResponse getExamDocumentDetail(UUID documentId) {
         log.info("시험지 문서 {} 상세 조회 요청", documentId);
 
         ExamDocument document = examDocumentRepository.findById(documentId)
@@ -169,7 +169,7 @@ public class ExamDocumentService {
      * @param examSheetId 시험지 ID
      */
     @Transactional
-    public void deleteExamDocuments(Long examSheetId) {
+    public void deleteExamDocuments(UUID examSheetId) {
         log.info("시험지 문서 삭제 요청: 시험지 ID={}", examSheetId);
 
         // 1단계: 시험지 존재 확인
@@ -326,7 +326,7 @@ public class ExamDocumentService {
             // 오른쪽 정답 영역 (흰색)
             content.append("<div style='flex: 1; padding: 20px; background-color: white;'>");
             content.append("<div style='line-height: 1.6;'>");
-            content.append("<p>").append(question.getQuestion().getAnswerKey()).append("</p>");
+            content.append("<p>").append(question.getQuestion().getAnswerText()).append("</p>");
             content.append("</div>");
             content.append("</div>");
 
@@ -346,7 +346,7 @@ public class ExamDocumentService {
     /**
      * QR 코드 URL 생성
      */
-    private String generateQrCodeUrl(Long examSheetId) {
+    private String generateQrCodeUrl(UUID examSheetId) {
         // 실제로는 QR 코드 이미지를 생성하고 저장해야 하지만,
         // 여기서는 임시 URL을 반환합니다.
         return "https://example.com/qr/" + examSheetId + "/" + UUID.randomUUID().toString();

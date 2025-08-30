@@ -2,6 +2,7 @@ package com.iroomclass.springbackend.domain.user.exam.answer.dto;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.UUID;
 
 import com.iroomclass.springbackend.domain.user.exam.answer.entity.ExamAnswer;
 
@@ -17,8 +18,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
  */
 @Schema(description = "시험 답안 목록 응답")
 public record ExamAnswerListResponse(
-    @Schema(description = "시험 제출 ID", example = "1")
-    Long examSubmissionId,
+    @Schema(description = "시험 제출 ID", example = "123e4567-e89b-12d3-a456-426614174000")
+    UUID examSubmissionId,
     
     @Schema(description = "답안 목록")
     List<ExamAnswerResponse> answers,
@@ -40,7 +41,7 @@ public record ExamAnswerListResponse(
     /**
      * Entity 리스트를 DTO로 변환하는 정적 메서드
      */
-    public static ExamAnswerListResponse from(List<ExamAnswer> examAnswers, Long examSubmissionId) {
+    public static ExamAnswerListResponse from(List<ExamAnswer> examAnswers, UUID examSubmissionId) {
         List<ExamAnswerResponse> answerResponses = examAnswers.stream()
             .map(ExamAnswerResponse::from)
             .toList();

@@ -3,6 +3,7 @@ package com.iroomclass.springbackend.domain.admin.statistics.dto;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 import java.util.Objects;
+import java.util.UUID;
 
 /**
  * 학년별 통계 응답 DTO
@@ -39,8 +40,8 @@ public record GradeStatisticsResponse(
      */
     @Schema(description = "최근 시험 평균 점수")
     public record RecentExamAverage(
-        @Schema(description = "시험 ID", example = "1")
-        Long examId,
+        @Schema(description = "시험 ID", example = "123e4567-e89b-12d3-a456-426614174000")
+        UUID examId,
 
         @Schema(description = "시험명", example = "1학년 중간고사")
         String examName,
@@ -69,8 +70,8 @@ public record GradeStatisticsResponse(
      */
     @Schema(description = "오답률 높은 세부 단원")
     public record HighErrorRateUnit(
-        @Schema(description = "세부 단원 ID", example = "1")
-        Long unitId,
+        @Schema(description = "세부 단원 ID", example = "123e4567-e89b-12d3-a456-426614174001")
+        UUID unitId,
 
         @Schema(description = "세부 단원명", example = "정수")
         String unitName,

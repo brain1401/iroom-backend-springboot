@@ -3,6 +3,7 @@ package com.iroomclass.springbackend.domain.admin.exam.dto;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Min;
 import java.util.Objects;
+import java.util.UUID;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
@@ -15,8 +16,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 @Schema(description = "시험 등록 요청")
 public record ExamCreateRequest(
     @NotNull(message = "시험지 ID는 필수입니다.")
-    @Schema(description = "시험지 ID", example = "1", requiredMode = Schema.RequiredMode.REQUIRED)
-    Long examSheetId,
+    @Schema(description = "시험지 ID", example = "550e8400-e29b-41d4-a716-446655440000", requiredMode = Schema.RequiredMode.REQUIRED)
+    UUID examSheetId,
     
     @Schema(description = "시험 관련 메모/설명", example = "1학년 중간고사 - 자연수와 0 단원")
     String content,

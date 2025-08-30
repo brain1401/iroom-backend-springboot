@@ -2,6 +2,7 @@ package com.iroomclass.springbackend.domain.admin.question.dto;
 
 import java.util.Map;
 import java.util.Objects;
+import java.util.UUID;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
@@ -16,11 +17,11 @@ import io.swagger.v3.oas.annotations.media.Schema;
  */
 @Schema(description = "문제 상세 조회 응답")
 public record QuestionDetailResponse(
-    @Schema(description = "문제 ID", example = "1")
-    Long questionId,
+    @Schema(description = "문제 ID", example = "550e8400-e29b-41d4-a716-446655440000")
+    UUID questionId,
     
-    @Schema(description = "단원 ID", example = "1")
-    Long unitId,
+    @Schema(description = "단원 ID", example = "550e8400-e29b-41d4-a716-446655440001")
+    UUID unitId,
     
     @Schema(description = "단원명", example = "자연수와 0")
     String unitName,
@@ -35,7 +36,10 @@ public record QuestionDetailResponse(
     String stem,
     
     @Schema(description = "주관식 정답 (주관식인 경우)", example = "3")
-    String answerKey,
+    String answerText,
+    
+    @Schema(description = "채점 기준 (채점 루브릭)", example = "정확한 계산 과정과 최종 답안 모두 필요")
+    String scoringRubric,
     
     @Schema(description = "객관식 선택지 (객관식인 경우)", example = "{\"1\": \"0\", \"2\": \"-1\", \"3\": \"3\", \"4\": \"1.5\", \"5\": \"모든 것\"}")
     Map<String, String> choices,
@@ -53,7 +57,7 @@ public record QuestionDetailResponse(
         
         // 문제 유형별 필수 필드 검증
         if ("SUBJECTIVE".equals(questionType)) {
-            Objects.requireNonNull(answerKey, "주관식 문제는 answerKey가 필수입니다");
+            Objects.requireNonNull(answerText, "주관식 문제는 answerText가 필수입니다");
         } else if ("MULTIPLE_CHOICE".equals(questionType)) {
             Objects.requireNonNull(choices, "객관식 문제는 choices가 필수입니다");
             Objects.requireNonNull(correctChoice, "객관식 문제는 correctChoice가 필수입니다");

@@ -2,8 +2,10 @@ package com.iroomclass.springbackend.domain.admin.exam.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import com.iroomclass.springbackend.common.UUIDv7Generator;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 /**
  * 시험지 Entity
@@ -24,11 +26,11 @@ public class ExamSheet {
 
     /**
      * 시험지 고유 ID
-     * 자동 증가하는 기본키
+     * UUIDv7 기본키
      */
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @Column(columnDefinition = "BINARY(16)")
+    private UUID id;
 
     /**
      * 시험지 이름
@@ -92,11 +94,14 @@ public class ExamSheet {
     
     /**
      * Entity 저장 전 실행되는 메서드
-     * 생성일시와 수정일시를 자동으로 설정합니다.
+     * UUID, 생성일시와 수정일시를 자동으로 설정합니다.
      * 이미 설정된 값이 있으면 유지합니다.
      */
     @PrePersist
     protected void onCreate() {
+        if (id == null) {
+            id = UUIDv7Generator.generate();
+        }
         LocalDateTime now = LocalDateTime.now();
         if (createdAt == null) {
             createdAt = now;

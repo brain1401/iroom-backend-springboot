@@ -1,6 +1,7 @@
 package com.iroomclass.springbackend.domain.user.student.controller;
 
 import com.iroomclass.springbackend.common.ApiResponse;
+import java.util.UUID;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -139,7 +140,7 @@ public class StudentController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "존재하지 않는 제출 또는 학생")
     })
     public ApiResponse<ExamResultDetailResponse> getExamResult(
-            @Parameter(description = "시험 제출 ID", example = "1") @PathVariable Long submissionId,
+            @Parameter(description = "시험 제출 ID", example = "123e4567-e89b-12d3-a456-426614174000") @PathVariable UUID submissionId,
             @Parameter(description = "학생 이름", example = "김철수") @RequestParam String studentName,
             @Parameter(description = "학생 전화번호", example = "010-1234-5678") @RequestParam String studentPhone) {
         log.info("시험 상세 결과 조회 요청: 제출 ID={}, 학생={}, 전화번호={}",
@@ -170,8 +171,8 @@ public class StudentController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "존재하지 않는 제출, 문제 또는 학생")
     })
     public ApiResponse<QuestionResultResponse> getQuestionResult(
-            @Parameter(description = "시험 제출 ID", example = "1") @PathVariable Long submissionId,
-            @Parameter(description = "문제 ID", example = "1") @PathVariable Long questionId,
+            @Parameter(description = "시험 제출 ID", example = "123e4567-e89b-12d3-a456-426614174000") @PathVariable UUID submissionId,
+            @Parameter(description = "문제 ID", example = "123e4567-e89b-12d3-a456-426614174001") @PathVariable UUID questionId,
             @Parameter(description = "학생 이름", example = "김철수") @RequestParam String studentName,
             @Parameter(description = "학생 전화번호", example = "010-1234-5678") @RequestParam String studentPhone) {
         log.info("문제별 결과 조회 요청: 제출 ID={}, 문제 ID={}, 학생={}, 전화번호={}",

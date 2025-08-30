@@ -3,6 +3,8 @@ package com.iroomclass.springbackend.domain.user.info.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDate;
+import java.util.UUID;
+import com.iroomclass.springbackend.common.UUIDv7Generator;
 
 /**
  * 사용자 Entity
@@ -23,11 +25,11 @@ public class User {
     
     /**
      * 사용자 고유 ID
-     * 자동 증가하는 기본키
+     * UUIDv7로 생성되는 기본키
      */
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @Column(columnDefinition = "BINARY(16)")
+    private UUID id;
     
     /**
      * 사용자 이름
@@ -60,4 +62,14 @@ public class User {
      */
     @Column(nullable = false, name = "birth_date")
     private LocalDate birthDate;
+    
+    /**
+     * 엔티티 저장 전 UUID 자동 생성
+     */
+    @PrePersist
+    public void generateId() {
+        if (this.id == null) {
+            this.id = UUIDv7Generator.generate();
+        }
+    }
 }

@@ -1,6 +1,7 @@
 package com.iroomclass.springbackend.domain.admin.exam.dto;
 
 import java.util.List;
+import java.util.UUID;
 
 
 import jakarta.validation.constraints.NotBlank;
@@ -50,8 +51,8 @@ public record ExamSheetCreateRequest(
     Integer subjectiveCount,
     
     @NotEmpty(message = "선택된 단원은 최소 1개 이상이어야 합니다.")
-    @Schema(description = "선택된 단원 ID 목록", example = "[1, 2, 3]", requiredMode = Schema.RequiredMode.REQUIRED)
-    List<Long> unitIds
+    @Schema(description = "선택된 단원 ID 목록", example = "[\"123e4567-e89b-12d3-a456-426614174000\", \"123e4567-e89b-12d3-a456-426614174001\"]", requiredMode = Schema.RequiredMode.REQUIRED)
+    List<UUID> unitIds
 ) {
     public ExamSheetCreateRequest {
         // 이중 검증 아키텍처: 핵심 불변성은 Compact Constructor에서 즉시 검증

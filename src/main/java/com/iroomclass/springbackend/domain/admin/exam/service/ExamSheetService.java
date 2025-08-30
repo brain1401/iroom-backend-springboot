@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.Comparator;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -85,7 +86,7 @@ public class ExamSheetService {
 
         // 3단계: 선택된 단원들 저장
         List<ExamSheetSelectedUnit> selectedUnits = new ArrayList<>();
-        for (Long unitId : request.unitIds()) {
+        for (UUID unitId : request.unitIds()) {
             Unit unit = unitRepository.findById(unitId)
                     .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 단원입니다: " + unitId));
 
@@ -214,7 +215,7 @@ public class ExamSheetService {
      * @param examSheetId 시험지 ID
      * @return 시험지 상세 정보
      */
-    public ExamSheetDetailResponse getExamSheetDetail(Long examSheetId) {
+    public ExamSheetDetailResponse getExamSheetDetail(UUID examSheetId) {
         log.info("시험지 {} 상세 조회 요청", examSheetId);
 
         // 1단계: 시험지 조회
@@ -271,7 +272,7 @@ public class ExamSheetService {
      * @return 수정된 시험지 정보
      */
     @Transactional
-    public ExamSheetDetailResponse updateExamSheet(Long examSheetId, ExamSheetUpdateRequest request) {
+    public ExamSheetDetailResponse updateExamSheet(UUID examSheetId, ExamSheetUpdateRequest request) {
         log.info("시험지 {} 수정 요청: 문제={}번 교체", examSheetId, request.seqNo());
 
         // 1단계: 시험지 존재 확인
@@ -315,7 +316,7 @@ public class ExamSheetService {
      * @return 교체 완료된 시험지 정보
      */
     @Transactional
-    public ExamSheetDetailResponse replaceQuestion(Long examSheetId, QuestionReplaceRequest request) {
+    public ExamSheetDetailResponse replaceQuestion(UUID examSheetId, QuestionReplaceRequest request) {
         log.info("시험지 {} 문제 교체 요청: {} → {}",
                 examSheetId, request.oldQuestionId(), request.newQuestionId());
 
@@ -391,7 +392,7 @@ public class ExamSheetService {
     /**
      * 랜덤 문제 선택
      */
-    private List<Question> selectRandomQuestions(List<Long> unitIds, int totalQuestions) {
+    private List<Question> selectRandomQuestions(List<UUID> unitIds, int totalQuestions) {
         List<Question> allQuestions = questionRepository.findByUnitIdIn(unitIds);
 
         if (allQuestions.size() < totalQuestions) {
@@ -406,7 +407,7 @@ public class ExamSheetService {
     /**
      * 같은 단원에서 다른 문제 선택
      */
-    private Question selectRandomQuestionFromUnit(Long unitId, Long excludeQuestionId) {
+    private Question selectRandomQuestionFromUnit(UUID unitId, UUID excludeQuestionId) {
         List<Question> questions = questionRepository.findByUnitId(unitId);
 
         // 현재 문제 제외
@@ -438,7 +439,7 @@ public class ExamSheetService {
      * @param questionType 문제 유형 (선택)
      * @return 선택 가능한 문제 목록
      */
-    public SelectableQuestionsResponse getSelectableQuestions(Long examSheetId, Long unitId,
+    public SelectableQuestionsResponse getSelectableQuestions(UUID examSheetId, UUID unitId,
             String difficulty, String questionType) {
         log.info("시험지 {} 선택 가능한 문제 목록 조회: 단원={}, 난이도={}, 유형={}",
                 examSheetId, unitId, difficulty, questionType);
@@ -448,7 +449,7 @@ public class ExamSheetService {
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 시험지입니다: " + examSheetId));
 
         // 2단계: 시험지에 이미 포함된 문제 ID 목록 조회
-        List<Long> selectedQuestionIds = examSheetQuestionRepository
+        List<UUID> selectedQuestionIds = examSheetQuestionRepository
                 .findByExamSheetIdOrderBySeqNo(examSheetId)
                 .stream()
                 .map(esq -> esq.getQuestion().getId())
@@ -542,7 +543,7 @@ public class ExamSheetService {
      * @return 업데이트된 시험지 문제 관리 정보
      */
     @Transactional
-    public ExamSheetQuestionManageResponse addQuestionToExamSheet(Long examSheetId,
+    public ExamSheetQuestionManageResponse addQuestionToExamSheet(UUID examSheetId,
             QuestionSelectionRequest request) {
         log.info("시험지 {} 문제 추가: 문제={}, 배점={}, 순서={}",
                 examSheetId, request.questionId(), request.points(), request.questionOrder());
@@ -611,7 +612,7 @@ public class ExamSheetService {
      * @return 업데이트된 시험지 문제 관리 정보
      */
     @Transactional
-    public ExamSheetQuestionManageResponse removeQuestionFromExamSheet(Long examSheetId, Long questionId) {
+    public ExamSheetQuestionManageResponse removeQuestionFromExamSheet(UUID examSheetId, UUID questionId) {
         log.info("시험지 {} 문제 제거: 문제={}", examSheetId, questionId);
 
         // 1단계: 시험지 존재 확인
@@ -653,7 +654,7 @@ public class ExamSheetService {
      * @param examSheetId 시험지 ID
      * @return 시험지 문제 관리 현황
      */
-    public ExamSheetQuestionManageResponse getExamSheetQuestionManagement(Long examSheetId) {
+    public ExamSheetQuestionManageResponse getExamSheetQuestionManagement(UUID examSheetId) {
         log.info("시험지 {} 문제 관리 현황 조회", examSheetId);
 
         // 1단계: 시험지 조회
@@ -723,7 +724,7 @@ public class ExamSheetService {
      * @throws IllegalArgumentException 시험지가 존재하지 않을 때
      */
     @Transactional(readOnly = true)
-    public ExamSheetPreviewResponse getExamSheetPreview(Long examSheetId) {
+    public ExamSheetPreviewResponse getExamSheetPreview(UUID examSheetId) {
         log.info("시험지 {} 미리보기 조회 시작", examSheetId);
 
         // 1. 시험지 조회
@@ -822,7 +823,7 @@ public class ExamSheetService {
         int hardCount = 0;
 
         // 단원별 분포 계산을 위한 Map
-        Map<Long, ExamSheetPreviewResponse.UnitDistribution> unitDistributionMap = new HashMap<>();
+        Map<UUID, ExamSheetPreviewResponse.UnitDistribution> unitDistributionMap = new HashMap<>();
 
         for (ExamSheetQuestion esq : examSheetQuestions) {
             Question question = esq.getQuestion();
@@ -844,7 +845,7 @@ public class ExamSheetService {
             }
 
             // 단원별 분포
-            Long unitId = unit.getId();
+            UUID unitId = unit.getId();
             if (unitDistributionMap.containsKey(unitId)) {
                 ExamSheetPreviewResponse.UnitDistribution existing = unitDistributionMap.get(unitId);
                 unitDistributionMap.put(unitId, new ExamSheetPreviewResponse.UnitDistribution(
@@ -885,7 +886,7 @@ public class ExamSheetService {
      * @throws IllegalArgumentException 시험지나 문제가 존재하지 않거나 유효하지 않을 때
      */
     @Transactional
-    public ExamSheetQuestionManageResponse replaceQuestionInExamSheet(Long examSheetId,
+    public ExamSheetQuestionManageResponse replaceQuestionInExamSheet(UUID examSheetId,
             QuestionReplaceRequest request) {
         log.info("시험지 {} 문제 교체 시작: 기존 {} → 새 {}",
                 examSheetId, request.oldQuestionId(), request.newQuestionId());

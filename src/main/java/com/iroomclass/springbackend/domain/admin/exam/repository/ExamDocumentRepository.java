@@ -6,6 +6,7 @@ import com.iroomclass.springbackend.domain.admin.exam.entity.ExamDocument;
 import com.iroomclass.springbackend.domain.admin.exam.entity.ExamSheet;
 
 import java.util.List;
+import java.util.UUID;
 
 /**
  * 시험지 문서 Repository
@@ -15,7 +16,7 @@ import java.util.List;
  * @author 이룸클래스
  * @since 2025
  */
-public interface ExamDocumentRepository extends JpaRepository<ExamDocument, Long> {
+public interface ExamDocumentRepository extends JpaRepository<ExamDocument, UUID> {
     
     /**
      * 시험지별 문서 조회
@@ -38,7 +39,7 @@ public interface ExamDocumentRepository extends JpaRepository<ExamDocument, Long
      * @param documentType 문서 타입 (문제지, 답안지)
      * @return 해당 조건의 문서
      */
-    ExamDocument findByExamSheetIdAndDocumentType(Long examSheetId, ExamDocument.DocumentType documentType);
+    ExamDocument findByExamSheetIdAndDocumentType(UUID examSheetId, ExamDocument.DocumentType documentType);
     
     /**
      * 시험지 ID로 모든 문서 조회
@@ -49,7 +50,7 @@ public interface ExamDocumentRepository extends JpaRepository<ExamDocument, Long
      * @param examSheetId 시험지 ID
      * @return 해당 시험지의 모든 문서 목록
      */
-    List<ExamDocument> findByExamSheetId(Long examSheetId);
+    List<ExamDocument> findByExamSheetId(UUID examSheetId);
     
     /**
      * 시험지와 문서 타입 목록으로 문서 조회

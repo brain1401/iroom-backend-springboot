@@ -1,5 +1,7 @@
 package com.iroomclass.springbackend.domain.user.exam.service;
 
+import java.util.UUID;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -96,7 +98,7 @@ public class ExamSubmissionService {
      * @return 최종 제출 완료 정보
      */
     @Transactional
-    public ExamSubmissionCreateResponse finalSubmitExam(Long submissionId) {
+    public ExamSubmissionCreateResponse finalSubmitExam(UUID submissionId) {
         log.info("시험 최종 제출 요청: 제출 ID={}", submissionId);
         
         // 1단계: 시험 제출 존재 확인

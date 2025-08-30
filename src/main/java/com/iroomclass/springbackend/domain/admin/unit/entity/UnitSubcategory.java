@@ -8,12 +8,15 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import java.util.UUID;
+import com.iroomclass.springbackend.common.UUIDv7Generator;
 
 /**
  * 단원 중분류 Entity
@@ -34,11 +37,11 @@ public class UnitSubcategory {
     
     /**
      * 중분류 고유 ID
-     * 자동 증가하는 기본키
+     * UUIDv7로 생성되는 기본키
      */
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @Column(columnDefinition = "BINARY(16)")
+    private UUID id;
     
     /**
      * 대분류와의 관계
@@ -72,4 +75,14 @@ public class UnitSubcategory {
      */
     @Column(length = 200)
     private String description;
+    
+    /**
+     * 엔티티 저장 전 UUID 자동 생성
+     */
+    @PrePersist
+    public void generateId() {
+        if (this.id == null) {
+            this.id = UUIDv7Generator.generate();
+        }
+    }
 }

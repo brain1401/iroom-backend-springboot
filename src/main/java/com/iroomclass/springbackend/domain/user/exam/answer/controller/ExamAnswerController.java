@@ -1,6 +1,7 @@
 package com.iroomclass.springbackend.domain.user.exam.answer.controller;
 
 import com.iroomclass.springbackend.common.ApiResponse;
+import java.util.UUID;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -83,7 +84,7 @@ public class ExamAnswerController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "존재하지 않는 답안")
     })
     public ApiResponse<ExamAnswerResponse> retakeExamAnswer(
-            @Parameter(description = "답안 ID", example = "1") @PathVariable Long answerId,
+            @Parameter(description = "답안 ID", example = "123e4567-e89b-12d3-a456-426614174000") @PathVariable UUID answerId,
             @Parameter(description = "새로운 이미지 URL", example = "/uploads/answers/answer_1_retake.jpg") @RequestParam String newImageUrl) {
         log.info("답안 재촬영 요청: 답안 ID={}, 새 이미지 URL={}", answerId, newImageUrl);
 
@@ -130,7 +131,7 @@ public class ExamAnswerController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "잘못된 시험 제출 ID")
     })
     public ApiResponse<ExamAnswerListResponse> getExamAnswers(
-            @Parameter(description = "시험 제출 ID", example = "1") @PathVariable Long examSubmissionId) {
+            @Parameter(description = "시험 제출 ID", example = "123e4567-e89b-12d3-a456-426614174000") @PathVariable UUID examSubmissionId) {
         log.info("답안 목록 조회 요청: 시험 제출 ID={}", examSubmissionId);
 
         ExamAnswerListResponse response = examAnswerService.getExamAnswers(examSubmissionId);
@@ -155,8 +156,8 @@ public class ExamAnswerController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "존재하지 않는 답안")
     })
     public ApiResponse<ExamAnswerResponse> getExamAnswer(
-            @Parameter(description = "시험 제출 ID", example = "1") @PathVariable Long examSubmissionId,
-            @Parameter(description = "문제 ID", example = "3") @PathVariable Long questionId) {
+            @Parameter(description = "시험 제출 ID", example = "123e4567-e89b-12d3-a456-426614174000") @PathVariable UUID examSubmissionId,
+            @Parameter(description = "문제 ID", example = "123e4567-e89b-12d3-a456-426614174001") @PathVariable UUID questionId) {
         log.info("특정 문제 답안 조회 요청: 시험 제출 ID={}, 문제 ID={}", examSubmissionId, questionId);
 
         ExamAnswerResponse response = examAnswerService.getExamAnswer(examSubmissionId, questionId);
@@ -179,7 +180,7 @@ public class ExamAnswerController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "잘못된 시험 제출 ID")
     })
     public ApiResponse<ExamAnswerService.AnswerStatusSummary> getAnswerStatusSummary(
-            @Parameter(description = "시험 제출 ID", example = "1") @PathVariable Long examSubmissionId) {
+            @Parameter(description = "시험 제출 ID", example = "123e4567-e89b-12d3-a456-426614174000") @PathVariable UUID examSubmissionId) {
         log.info("답안 상태 확인 요청: 시험 제출 ID={}", examSubmissionId);
 
         ExamAnswerService.AnswerStatusSummary response = examAnswerService.getAnswerStatusSummary(examSubmissionId);

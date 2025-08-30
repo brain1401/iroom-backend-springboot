@@ -6,6 +6,8 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import java.util.UUID;
+import com.iroomclass.springbackend.common.UUIDv7Generator;
 
 /**
  * 관리자 엔티티
@@ -23,10 +25,11 @@ public class Admin {
 
     /**
      * 관리자 고유 식별자
+     * UUIDv7로 생성되는 기본키
      */
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @Column(columnDefinition = "BINARY(16)")
+    private UUID id;
 
     /**
      * 관리자 아이디 (로그인용)
@@ -45,5 +48,15 @@ public class Admin {
      */
     @Column(length = 100)
     private String academyName;
+    
+    /**
+     * 엔티티 저장 전 UUID 자동 생성
+     */
+    @PrePersist
+    public void generateId() {
+        if (this.id == null) {
+            this.id = UUIDv7Generator.generate();
+        }
+    }
     
 }

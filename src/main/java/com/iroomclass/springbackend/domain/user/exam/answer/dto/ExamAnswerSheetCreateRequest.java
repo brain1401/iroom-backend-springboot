@@ -5,6 +5,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.NotEmpty;
 import java.util.List;
 import java.util.Objects;
+import java.util.UUID;
 
 /**
  * 답안지 전체 촬영 요청 DTO
@@ -15,8 +16,8 @@ import java.util.Objects;
 @Schema(description = "답안지 전체 촬영 요청")
 public record ExamAnswerSheetCreateRequest(
     @NotNull(message = "시험 제출 ID는 필수입니다.")
-    @Schema(description = "시험 제출 ID", example = "1", requiredMode = Schema.RequiredMode.REQUIRED)
-    Long examSubmissionId,
+    @Schema(description = "시험 제출 ID", example = "123e4567-e89b-12d3-a456-426614174000", requiredMode = Schema.RequiredMode.REQUIRED)
+    UUID examSubmissionId,
     
     @NotEmpty(message = "답안지 이미지는 최소 1개 이상 필요합니다.")
     @Schema(description = "답안지 이미지 URL 목록 (여러 페이지 가능)", 

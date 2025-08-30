@@ -2,7 +2,10 @@ package com.iroomclass.springbackend.domain.admin.exam.entity;
 
 import jakarta.persistence.*;
 import com.iroomclass.springbackend.domain.admin.exam.entity.ExamSheet;
+import com.iroomclass.springbackend.common.UUIDv7Generator;
 import lombok.*;
+
+import java.util.UUID;
 
 /**
  * 시험지 문서 Entity
@@ -25,11 +28,11 @@ public class ExamDocument {
     
     /**
      * 시험지 문서 고유 ID
-     * 자동 증가하는 기본키
+     * UUIDv7 기본키
      */
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @Column(columnDefinition = "BINARY(16)")
+    private UUID id;
     
     /**
      * 시험지와의 관계
@@ -71,5 +74,16 @@ public class ExamDocument {
         ANSWER_SHEET,    // 답안지
         QUESTION_PAPER,  // 문제지
         ANSWER_KEY       // 답안
+    }
+    
+    /**
+     * Entity 저장 전 실행되는 메서드
+     * UUID를 자동으로 설정합니다.
+     */
+    @PrePersist
+    protected void onCreate() {
+        if (id == null) {
+            id = UUIDv7Generator.generate();
+        }
     }
 }

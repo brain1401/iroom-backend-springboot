@@ -2,6 +2,7 @@ package com.iroomclass.springbackend.domain.admin.submission.service;
 
 import java.util.List;
 import java.util.ArrayList;
+import java.util.UUID;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -39,7 +40,7 @@ public class AdminExamSubmissionService {
      * @param examId 시험 ID
      * @return 해당 시험의 제출 목록
      */
-    public ExamSubmissionListResponse getExamSubmissions(Long examId) {
+    public ExamSubmissionListResponse getExamSubmissions(UUID examId) {
         log.info("관리자 - 시험별 제출 목록 조회 요청: 시험 ID={}", examId);
         
         // 1단계: 시험 존재 확인
@@ -66,7 +67,7 @@ public class AdminExamSubmissionService {
      * @param submissionId 시험 제출 ID
      * @return 시험 제출 상세 정보
      */
-    public ExamSubmissionDetailResponse getExamSubmissionDetail(Long submissionId) {
+    public ExamSubmissionDetailResponse getExamSubmissionDetail(UUID submissionId) {
         log.info("관리자 - 시험 제출 상세 조회 요청: 제출 ID={}", submissionId);
         
         ExamSubmission submission = examSubmissionRepository.findById(submissionId)
@@ -109,7 +110,7 @@ public class AdminExamSubmissionService {
      * @param examId 시험 ID
      * @return 해당 시험의 제출 학생 수
      */
-    public long getExamSubmissionCount(Long examId) {
+    public long getExamSubmissionCount(UUID examId) {
         long count = examSubmissionRepository.countByExamId(examId);
         log.info("관리자 - 시험별 제출 학생 수 조회: 시험 ID={}, 제출 학생 수={}", examId, count);
         return count;

@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import com.iroomclass.springbackend.domain.admin.exam.entity.ExamSheetQuestion;
 
 import java.util.List;
+import java.util.UUID;
 
 /**
  * 시험지 문제 Repository
@@ -14,7 +15,7 @@ import java.util.List;
  * @author 이룸클래스
  * @since 2025
  */
-public interface ExamSheetQuestionRepository extends JpaRepository<ExamSheetQuestion, Long> {
+public interface ExamSheetQuestionRepository extends JpaRepository<ExamSheetQuestion, UUID> {
     
     /**
      * 특정 시험지에 포함된 문제 목록 조회
@@ -25,7 +26,7 @@ public interface ExamSheetQuestionRepository extends JpaRepository<ExamSheetQues
      * @param examSheetId 시험지 ID
      * @return 해당 시험지의 문제 목록 (순서대로)
      */
-    List<ExamSheetQuestion> findByExamSheetIdOrderBySeqNo(Long examSheetId);
+    List<ExamSheetQuestion> findByExamSheetIdOrderBySeqNo(UUID examSheetId);
     
     /**
      * 특정 시험지의 문제 개수 조회
@@ -36,7 +37,7 @@ public interface ExamSheetQuestionRepository extends JpaRepository<ExamSheetQues
      * @param examSheetId 시험지 ID
      * @return 해당 시험지의 문제 개수
      */
-    long countByExamSheetId(Long examSheetId);
+    long countByExamSheetId(UUID examSheetId);
     
     /**
      * 특정 시험지의 특정 문제 조회
@@ -48,7 +49,7 @@ public interface ExamSheetQuestionRepository extends JpaRepository<ExamSheetQues
      * @param seqNo 문제 번호
      * @return 해당 문제 정보
      */
-    java.util.Optional<ExamSheetQuestion> findByExamSheetIdAndSeqNo(Long examSheetId, int seqNo);
+    java.util.Optional<ExamSheetQuestion> findByExamSheetIdAndSeqNo(UUID examSheetId, int seqNo);
 
     /**
      * 특정 시험지의 특정 문제 조회 (문제 ID로)
@@ -60,7 +61,7 @@ public interface ExamSheetQuestionRepository extends JpaRepository<ExamSheetQues
      * @param questionId 문제 ID
      * @return 해당 문제 정보
      */
-    java.util.Optional<ExamSheetQuestion> findByExamSheetIdAndQuestionId(Long examSheetId, Long questionId);
+    java.util.Optional<ExamSheetQuestion> findByExamSheetIdAndQuestionId(UUID examSheetId, UUID questionId);
     
     /**
      * 특정 시험지의 문제 목록 조회 (문제 순서 기준 정렬)
@@ -71,7 +72,7 @@ public interface ExamSheetQuestionRepository extends JpaRepository<ExamSheetQues
      * @param examSheetId 시험지 ID
      * @return 해당 시험지의 문제 목록 (questionOrder 순서대로)
      */
-    List<ExamSheetQuestion> findByExamSheetIdOrderByQuestionOrder(Long examSheetId);
+    List<ExamSheetQuestion> findByExamSheetIdOrderByQuestionOrder(UUID examSheetId);
     
     /**
      * 특정 순서 이후의 문제들 조회 (포함)
@@ -83,7 +84,7 @@ public interface ExamSheetQuestionRepository extends JpaRepository<ExamSheetQues
      * @param questionOrder 기준 순서 (이 순서 이상인 문제들 조회)
      * @return 기준 순서 이후의 문제 목록
      */
-    List<ExamSheetQuestion> findByExamSheetIdAndQuestionOrderGreaterThanEqual(Long examSheetId, Integer questionOrder);
+    List<ExamSheetQuestion> findByExamSheetIdAndQuestionOrderGreaterThanEqual(UUID examSheetId, Integer questionOrder);
     
     /**
      * 특정 순서 이후의 문제들 조회 (초과)
@@ -95,5 +96,5 @@ public interface ExamSheetQuestionRepository extends JpaRepository<ExamSheetQues
      * @param questionOrder 기준 순서 (이 순서 초과인 문제들 조회)
      * @return 기준 순서 이후의 문제 목록
      */
-    List<ExamSheetQuestion> findByExamSheetIdAndQuestionOrderGreaterThan(Long examSheetId, Integer questionOrder);
+    List<ExamSheetQuestion> findByExamSheetIdAndQuestionOrderGreaterThan(UUID examSheetId, Integer questionOrder);
 }

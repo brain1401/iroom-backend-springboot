@@ -1,9 +1,11 @@
 package com.iroomclass.springbackend.domain.user.exam.answer.entity;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 import com.iroomclass.springbackend.domain.user.exam.entity.ExamSubmission;
 import com.iroomclass.springbackend.domain.admin.question.entity.Question;
+import com.iroomclass.springbackend.common.UUIDv7Generator;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -47,11 +49,11 @@ public class ExamAnswer {
     
     /**
      * 답안 고유 ID
-     * 자동 증가하는 기본키
+     * UUIDv7 기본키
      */
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @Column(columnDefinition = "BINARY(16)")
+    private UUID id;
     
     /**
      * 시험 제출과의 관계
@@ -121,10 +123,13 @@ public class ExamAnswer {
     
     /**
      * Entity 저장 전 실행되는 메서드
-     * 기본값 설정
+     * UUID 및 기본값 설정
      */
     @PrePersist
     protected void onCreate() {
+        if (id == null) {
+            id = UUIDv7Generator.generate();
+        }
         if (isCorrect == null) {
             isCorrect = false;
         }

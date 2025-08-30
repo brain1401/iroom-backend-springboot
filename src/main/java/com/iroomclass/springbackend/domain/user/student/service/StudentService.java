@@ -1,6 +1,7 @@
 package com.iroomclass.springbackend.domain.user.student.service;
 
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import java.time.LocalDate;
 
@@ -150,7 +151,7 @@ public class StudentService {
      * @param studentPhone 학생 전화번호
      * @return 시험 상세 결과
      */
-    public ExamResultDetailResponse getExamResult(Long submissionId, String studentName, String studentPhone) {
+    public ExamResultDetailResponse getExamResult(UUID submissionId, String studentName, String studentPhone) {
         log.info("시험 상세 결과 조회: 제출 ID={}, 학생={}, 전화번호={}", submissionId, studentName, studentPhone);
         
         // 1단계: 시험 제출 존재 확인 및 학생 본인 확인
@@ -210,7 +211,7 @@ public class StudentService {
     /**
      * ExamSheetQuestion 조회 (문제 번호와 배점 정보)
      */
-    private ExamSheetQuestion getExamSheetQuestion(Long examSheetId, Long questionId) {
+    private ExamSheetQuestion getExamSheetQuestion(UUID examSheetId, UUID questionId) {
         return examSheetQuestionRepository.findByExamSheetIdAndQuestionId(examSheetId, questionId)
             .orElse(null);
     }
@@ -224,7 +225,7 @@ public class StudentService {
      * @param studentPhone 학생 전화번호
      * @return 문제별 결과 정보
      */
-    public QuestionResultResponse getQuestionResult(Long submissionId, Long questionId, String studentName, String studentPhone) {
+    public QuestionResultResponse getQuestionResult(UUID submissionId, UUID questionId, String studentName, String studentPhone) {
         log.info("문제별 결과 조회: 제출 ID={}, 문제 ID={}, 학생={}, 전화번호={}", 
             submissionId, questionId, studentName, studentPhone);
         
@@ -264,7 +265,7 @@ public class StudentService {
             question.getUnit().getSubcategory().getCategory().getCategoryName(),
             question.getDifficulty().name(),
             answer.getAnswerText(),
-            question.getAnswerKey(),
+            question.getAnswerText(),
             answer.getAnswerImageUrl()
         );
     }
@@ -337,7 +338,7 @@ public class StudentService {
             question.getUnit().getUnitName(),
             question.getDifficulty().name(),
             answer.getAnswerText(),
-            question.getAnswerKey()
+            question.getAnswerText()
         );
     }
 }

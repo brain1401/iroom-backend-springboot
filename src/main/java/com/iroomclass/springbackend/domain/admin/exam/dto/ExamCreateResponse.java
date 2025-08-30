@@ -2,6 +2,7 @@ package com.iroomclass.springbackend.domain.admin.exam.dto;
 
 import java.time.LocalDateTime;
 import java.util.Objects;
+import java.util.UUID;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
@@ -13,8 +14,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
  */
 @Schema(description = "시험 등록 응답")
 public record ExamCreateResponse(
-    @Schema(description = "시험 ID", example = "1")
-    Long examId,
+    @Schema(description = "시험 ID", example = "123e4567-e89b-12d3-a456-426614174000")
+    UUID examId,
     
     @Schema(description = "시험명", example = "1학년 중간고사")
     String examName,

@@ -2,6 +2,7 @@ package com.iroomclass.springbackend.domain.admin.question.dto;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.UUID;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
@@ -34,11 +35,11 @@ public record QuestionSearchResponse(
      */
     @Schema(description = "검색된 문제 정보")
     public record QuestionInfo(
-        @Schema(description = "문제 ID", example = "1")
-        Long questionId,
+        @Schema(description = "문제 ID", example = "123e4567-e89b-12d3-a456-426614174000")
+        UUID questionId,
         
-        @Schema(description = "단원 ID", example = "1")
-        Long unitId,
+        @Schema(description = "단원 ID", example = "123e4567-e89b-12d3-a456-426614174000")
+        UUID unitId,
         
         @Schema(description = "단원명", example = "자연수와 0")
         String unitName,

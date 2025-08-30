@@ -1,6 +1,7 @@
 package com.iroomclass.springbackend.domain.admin.exam.controller;
 
 import com.iroomclass.springbackend.common.ApiResponse;
+import java.util.UUID;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -79,7 +80,7 @@ public class ExamDocumentController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "존재하지 않는 시험지")
     })
     public ApiResponse<ExamDocumentListResponse> getExamDocumentsBySheet(
-            @Parameter(description = "시험지 ID", example = "1") @PathVariable Long examSheetId) {
+            @Parameter(description = "시험지 ID", example = "123e4567-e89b-12d3-a456-426614174000") @PathVariable UUID examSheetId) {
         log.info("시험지 {} 문서 목록 조회 요청", examSheetId);
 
         ExamDocumentListResponse response = examDocumentService.getExamDocumentsBySheet(examSheetId);
@@ -103,7 +104,7 @@ public class ExamDocumentController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "존재하지 않는 시험지 문서")
     })
     public ApiResponse<ExamDocumentDetailResponse> getExamDocumentDetail(
-            @Parameter(description = "문서 ID", example = "1") @PathVariable Long documentId) {
+            @Parameter(description = "문서 ID", example = "123e4567-e89b-12d3-a456-426614174000") @PathVariable UUID documentId) {
         log.info("시험지 문서 {} 상세 조회 요청", documentId);
 
         ExamDocumentDetailResponse response = examDocumentService.getExamDocumentDetail(documentId);
@@ -127,7 +128,7 @@ public class ExamDocumentController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "존재하지 않는 시험지")
     })
     public ApiResponse<String> deleteExamDocuments(
-            @Parameter(description = "시험지 ID", example = "1") @PathVariable Long examSheetId) {
+            @Parameter(description = "시험지 ID", example = "123e4567-e89b-12d3-a456-426614174000") @PathVariable UUID examSheetId) {
         log.info("시험지 문서 삭제 요청: 시험지 ID={}", examSheetId);
 
         examDocumentService.deleteExamDocuments(examSheetId);

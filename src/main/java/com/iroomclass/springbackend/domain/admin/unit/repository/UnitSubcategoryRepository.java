@@ -1,6 +1,7 @@
 package com.iroomclass.springbackend.domain.admin.unit.repository;
 
 import java.util.List;
+import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
@@ -17,7 +18,7 @@ import com.iroomclass.springbackend.domain.admin.unit.entity.UnitSubcategory;
  * @since 2025
  */
 @Repository
-public interface UnitSubcategoryRepository extends JpaRepository<UnitSubcategory, Long> {
+public interface UnitSubcategoryRepository extends JpaRepository<UnitSubcategory, UUID> {
 
     /**
      * 대분류별 단원 중분류 조회
@@ -28,7 +29,7 @@ public interface UnitSubcategoryRepository extends JpaRepository<UnitSubcategory
      * @param categoryId 대분류 ID
      * @return 해당 대분류에 속한 중분류 목록 (표시 순서대로 정렬)
      */
-    List<UnitSubcategory> findByCategoryIdOrderByDisplayOrder(Long categoryId);
+    List<UnitSubcategory> findByCategoryIdOrderByDisplayOrder(UUID categoryId);
     
     /**
      * 대분류 엔티티로 중분류 조회

@@ -1,7 +1,7 @@
 package com.iroomclass.springbackend.domain.admin.exam.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
-
+import java.util.UUID;
 import java.util.List;
 
 /**
@@ -15,8 +15,8 @@ import java.util.List;
  */
 public record SelectableQuestionsResponse(
     
-    @Schema(description = "검색 조건 - 단원 ID", example = "5")
-    Long unitId,
+    @Schema(description = "검색 조건 - 단원 ID", example = "550e8400-e29b-41d4-a716-446655440000")
+    UUID unitId,
     
     @Schema(description = "검색 조건 - 단원명", example = "정수와 유리수")
     String unitName,
@@ -39,11 +39,11 @@ public record SelectableQuestionsResponse(
      */
     public record SelectableQuestion(
         
-        @Schema(description = "문제 ID", example = "123")
-        Long questionId,
+        @Schema(description = "문제 ID", example = "550e8400-e29b-41d4-a716-446655440000")
+        UUID questionId,
         
-        @Schema(description = "단원 ID", example = "5")
-        Long unitId,
+        @Schema(description = "단원 ID", example = "550e8400-e29b-41d4-a716-446655440001")
+        UUID unitId,
         
         @Schema(description = "단원명", example = "정수와 유리수")
         String unitName,

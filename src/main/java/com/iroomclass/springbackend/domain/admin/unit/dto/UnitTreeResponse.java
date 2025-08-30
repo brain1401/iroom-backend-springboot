@@ -2,6 +2,7 @@ package com.iroomclass.springbackend.domain.admin.unit.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * 단원 트리 구조 응답 DTO
@@ -14,8 +15,8 @@ import java.util.List;
  */
 @Schema(description = "단원 트리 구조 응답")
 public record UnitTreeResponse(
-    @Schema(description = "대분류 ID", example = "1")
-    Long categoryId,
+    @Schema(description = "대분류 ID", example = "123e4567-e89b-12d3-a456-426614174000")
+    UUID categoryId,
     
     @Schema(description = "대분류명", example = "수와 연산")
     String categoryName,
@@ -35,8 +36,8 @@ public record UnitTreeResponse(
      */
     @Schema(description = "중분류 노드")
     public record UnitSubcategoryNode(
-        @Schema(description = "중분류 ID", example = "1")
-        Long subcategoryId,
+        @Schema(description = "중분류 ID", example = "123e4567-e89b-12d3-a456-426614174001")
+        UUID subcategoryId,
         
         @Schema(description = "중분류명", example = "정수와 유리수")
         String subcategoryName,
@@ -56,8 +57,8 @@ public record UnitTreeResponse(
      */
     @Schema(description = "세부단원 노드")
     public record UnitNode(
-        @Schema(description = "세부단원 ID", example = "1")
-        Long unitId,
+        @Schema(description = "세부단원 ID", example = "123e4567-e89b-12d3-a456-426614174002")
+        UUID unitId,
         
         @Schema(description = "세부단원명", example = "정수")
         String unitName,

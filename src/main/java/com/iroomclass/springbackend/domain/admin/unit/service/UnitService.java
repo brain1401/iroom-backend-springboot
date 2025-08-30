@@ -1,6 +1,7 @@
 package com.iroomclass.springbackend.domain.admin.unit.service;
 
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import org.springframework.data.domain.Page;
@@ -231,7 +232,7 @@ public class UnitService {
      * @param pageable 페이징 정보
      * @return 페이징된 문제 목록
      */
-    public Page<UnitQuestionInfo> getUnitQuestions(Long unitId, Pageable pageable) {
+    public Page<UnitQuestionInfo> getUnitQuestions(UUID unitId, Pageable pageable) {
         log.info("단원 {} 문제 목록 조회 시작 (페이지: {}, 크기: {})", 
                 unitId, pageable.getPageNumber(), pageable.getPageSize());
         
@@ -261,10 +262,10 @@ public class UnitService {
      * 단원별 문제 정보 DTO
      */
     public record UnitQuestionInfo(
-        Long questionId,
+        UUID questionId,
         String questionType,
         String difficulty,
         String unitName,
-        Long unitId
+        UUID unitId
     ) {}
 }

@@ -1,7 +1,7 @@
 package com.iroomclass.springbackend.domain.admin.exam.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
-
+import java.util.UUID;
 import java.util.List;
 
 /**
@@ -14,8 +14,8 @@ import java.util.List;
  */
 public record ExamSheetQuestionManageResponse(
     
-    @Schema(description = "시험지 ID", example = "1")
-    Long examSheetId,
+    @Schema(description = "시험지 ID", example = "550e8400-e29b-41d4-a716-446655440000")
+    UUID examSheetId,
     
     @Schema(description = "시험지 이름", example = "1학년 중간고사")
     String examName,
@@ -47,11 +47,11 @@ public record ExamSheetQuestionManageResponse(
         @Schema(description = "문제 순서", example = "1")
         Integer questionOrder,
         
-        @Schema(description = "문제 ID", example = "123")
-        Long questionId,
+        @Schema(description = "문제 ID", example = "550e8400-e29b-41d4-a716-446655440000")
+        UUID questionId,
         
-        @Schema(description = "단원 ID", example = "5")
-        Long unitId,
+        @Schema(description = "단원 ID", example = "550e8400-e29b-41d4-a716-446655440001")
+        UUID unitId,
         
         @Schema(description = "단원명", example = "정수와 유리수")
         String unitName,

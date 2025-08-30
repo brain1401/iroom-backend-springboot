@@ -2,6 +2,8 @@ package com.iroomclass.springbackend.domain.admin.unit.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import java.util.UUID;
+import com.iroomclass.springbackend.common.UUIDv7Generator;
 
 /**
  * 단원 대분류 Entity
@@ -22,11 +24,11 @@ public class UnitCategory {
     
     /**
      * 대분류 고유 ID
-     * 자동 증가하는 기본키
+     * UUIDv7로 생성되는 기본키
      */
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @Column(columnDefinition = "BINARY(16)")
+    private UUID id;
     
     /**
      * 대분류명
@@ -51,4 +53,14 @@ public class UnitCategory {
      */
     @Column(length = 200)
     private String description;
+    
+    /**
+     * 엔티티 저장 전 UUID 자동 생성
+     */
+    @PrePersist
+    public void generateId() {
+        if (this.id == null) {
+            this.id = UUIDv7Generator.generate();
+        }
+    }
 }

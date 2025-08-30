@@ -8,6 +8,7 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 /**
  * 시험 답안 Repository
@@ -18,7 +19,7 @@ import java.util.Optional;
  * @since 2025
  */
 @Repository
-public interface ExamAnswerRepository extends JpaRepository<ExamAnswer, Long> {
+public interface ExamAnswerRepository extends JpaRepository<ExamAnswer, UUID> {
 
     /**
      * 시험 제출별 답안 목록 조회
@@ -40,7 +41,7 @@ public interface ExamAnswerRepository extends JpaRepository<ExamAnswer, Long> {
      * @param examSubmissionId 시험 제출 ID
      * @return 해당 시험 제출의 답안 목록
      */
-    List<ExamAnswer> findByExamSubmissionId(Long examSubmissionId);
+    List<ExamAnswer> findByExamSubmissionId(UUID examSubmissionId);
 
     /**
      * 특정 문제의 답안 조회
@@ -52,7 +53,7 @@ public interface ExamAnswerRepository extends JpaRepository<ExamAnswer, Long> {
      * @param questionId       문제 ID
      * @return 해당 문제의 답안
      */
-    Optional<ExamAnswer> findByExamSubmissionIdAndQuestionId(Long examSubmissionId, Long questionId);
+    Optional<ExamAnswer> findByExamSubmissionIdAndQuestionId(UUID examSubmissionId, UUID questionId);
 
     /**
      * 시험 제출별 답안 수 조회
@@ -63,7 +64,7 @@ public interface ExamAnswerRepository extends JpaRepository<ExamAnswer, Long> {
      * @param examSubmissionId 시험 제출 ID
      * @return 해당 시험 제출의 답안 수
      */
-    long countByExamSubmissionId(Long examSubmissionId);
+    long countByExamSubmissionId(UUID examSubmissionId);
 
     /**
      * 정답 답안 수 조회
@@ -74,7 +75,7 @@ public interface ExamAnswerRepository extends JpaRepository<ExamAnswer, Long> {
      * @param examSubmissionId 시험 제출 ID
      * @return 정답인 답안 수
      */
-    long countByExamSubmissionIdAndIsCorrectTrue(Long examSubmissionId);
+    long countByExamSubmissionIdAndIsCorrectTrue(UUID examSubmissionId);
 
     /**
      * 답안 존재 여부 확인
@@ -86,7 +87,7 @@ public interface ExamAnswerRepository extends JpaRepository<ExamAnswer, Long> {
      * @param questionId       문제 ID
      * @return 답안 존재 여부
      */
-    boolean existsByExamSubmissionIdAndQuestionId(Long examSubmissionId, Long questionId);
+    boolean existsByExamSubmissionIdAndQuestionId(UUID examSubmissionId, UUID questionId);
 
     /**
      * 여러 시험 제출 ID로 답안 목록 조회
@@ -97,5 +98,5 @@ public interface ExamAnswerRepository extends JpaRepository<ExamAnswer, Long> {
      * @param examSubmissionIds 시험 제출 ID 목록
      * @return 해당 시험 제출들의 답안 목록
      */
-    List<ExamAnswer> findByExamSubmissionIdIn(List<Long> examSubmissionIds);
+    List<ExamAnswer> findByExamSubmissionIdIn(List<UUID> examSubmissionIds);
 }

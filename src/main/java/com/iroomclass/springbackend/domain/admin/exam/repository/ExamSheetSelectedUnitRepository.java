@@ -7,6 +7,7 @@ import com.iroomclass.springbackend.domain.admin.exam.entity.ExamSheet;
 import com.iroomclass.springbackend.domain.admin.exam.entity.ExamSheetSelectedUnit;
 
 import java.util.List;
+import java.util.UUID;
 
 /**
  * 시험지 선택 단원 Repository
@@ -17,7 +18,7 @@ import java.util.List;
  * @since 2025
  */
 @Repository
-public interface ExamSheetSelectedUnitRepository extends JpaRepository<ExamSheetSelectedUnit, Long> {
+public interface ExamSheetSelectedUnitRepository extends JpaRepository<ExamSheetSelectedUnit, UUID> {
 
     /**
      * 시험지별 선택된 단원 조회
@@ -39,7 +40,7 @@ public interface ExamSheetSelectedUnitRepository extends JpaRepository<ExamSheet
      * @param examSheetId 시험지 ID
      * @return 해당 시험지에 선택된 단원 목록
      */
-    List<ExamSheetSelectedUnit> findByExamSheetId(Long examSheetId);
+    List<ExamSheetSelectedUnit> findByExamSheetId(UUID examSheetId);
 
     /**
      * 시험지 ID로 선택된 단원 수 카운트
@@ -50,5 +51,5 @@ public interface ExamSheetSelectedUnitRepository extends JpaRepository<ExamSheet
      * @param examSheetId 시험지 ID
      * @return 해당 시험지에 선택된 단원 수
      */
-    long countByExamSheetId(Long examSheetId);
+    long countByExamSheetId(UUID examSheetId);
 }

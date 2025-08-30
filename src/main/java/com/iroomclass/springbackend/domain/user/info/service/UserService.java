@@ -1,5 +1,7 @@
 package com.iroomclass.springbackend.domain.user.info.service;
 
+import java.util.UUID;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 

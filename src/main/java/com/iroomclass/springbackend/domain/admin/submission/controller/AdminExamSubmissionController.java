@@ -3,6 +3,7 @@ package com.iroomclass.springbackend.domain.admin.submission.controller;
 import java.util.List;
 
 import com.iroomclass.springbackend.common.ApiResponse;
+import java.util.UUID;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -57,7 +58,7 @@ public class AdminExamSubmissionController {
     })
     public ApiResponse<ExamSubmissionListResponse> getExamSubmissions(
             @Parameter(description = "시험 ID", example = "1") 
-            @PathVariable Long examId) {
+            @PathVariable UUID examId) {
         log.info("관리자 - 시험별 제출 목록 조회 요청: 시험 ID={}", examId);
         
         ExamSubmissionListResponse response = adminExamSubmissionService.getExamSubmissions(examId);
@@ -85,7 +86,7 @@ public class AdminExamSubmissionController {
     })
     public ApiResponse<ExamSubmissionDetailResponse> getExamSubmissionDetail(
             @Parameter(description = "시험 제출 ID", example = "1") 
-            @PathVariable Long submissionId) {
+            @PathVariable UUID submissionId) {
         log.info("관리자 - 시험 제출 상세 조회 요청: 제출 ID={}", submissionId);
         
         ExamSubmissionDetailResponse response = adminExamSubmissionService.getExamSubmissionDetail(submissionId);
@@ -143,7 +144,7 @@ public class AdminExamSubmissionController {
     })
     public ApiResponse<Long> getExamSubmissionCount(
             @Parameter(description = "시험 ID", example = "1") 
-            @PathVariable Long examId) {
+            @PathVariable UUID examId) {
         log.info("관리자 - 시험별 제출 학생 수 조회 요청: 시험 ID={}", examId);
         
         long count = adminExamSubmissionService.getExamSubmissionCount(examId);

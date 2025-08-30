@@ -3,6 +3,7 @@ package com.iroomclass.springbackend.domain.user.student.dto;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
+import java.util.UUID;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 /**
@@ -13,11 +14,11 @@ import io.swagger.v3.oas.annotations.media.Schema;
  */
 @Schema(description = "시험 상세 결과 응답")
 public record ExamResultDetailResponse(
-    @Schema(description = "시험 제출 ID", example = "1")
-    Long submissionId,
+    @Schema(description = "시험 제출 ID", example = "123e4567-e89b-12d3-a456-426614174000")
+    UUID submissionId,
 
-    @Schema(description = "시험 ID", example = "1")
-    Long examId,
+    @Schema(description = "시험 ID", example = "123e4567-e89b-12d3-a456-426614174001")
+    UUID examId,
 
     @Schema(description = "시험명", example = "1학년 중간고사")
     String examName,
@@ -75,8 +76,8 @@ public record ExamResultDetailResponse(
      */
     @Schema(description = "문제별 결과")
     public record QuestionResult(
-        @Schema(description = "문제 ID", example = "1")
-        Long questionId,
+        @Schema(description = "문제 ID", example = "123e4567-e89b-12d3-a456-426614174002")
+        UUID questionId,
 
         @Schema(description = "문제 번호", example = "1")
         int questionNumber,

@@ -1,6 +1,7 @@
 package com.iroomclass.springbackend.domain.admin.info.repository;
 
 import java.util.Optional;
+import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
@@ -14,7 +15,7 @@ import com.iroomclass.springbackend.domain.admin.info.entity.Admin;
  * Spring Data JPA를 활용하여 기본적인 CRUD 작업을 자동으로 제공받습니다.</p>
  */
 @Repository
-public interface AdminRepository extends JpaRepository<Admin, Long> { 
+public interface AdminRepository extends JpaRepository<Admin, UUID> { 
 
     /**
      * 아이디로 관리자 조회

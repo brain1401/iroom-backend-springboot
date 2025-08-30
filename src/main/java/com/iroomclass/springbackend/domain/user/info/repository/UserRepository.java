@@ -6,6 +6,7 @@ import com.iroomclass.springbackend.domain.user.info.entity.User;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import java.time.LocalDate;
 
 /**
@@ -16,7 +17,7 @@ import java.time.LocalDate;
  * @author 이룸클래스
  * @since 2025
  */
-public interface UserRepository extends JpaRepository<User, Long> {
+public interface UserRepository extends JpaRepository<User, UUID> {
     
     /**
      * 이름과 전화번호로 사용자 조회

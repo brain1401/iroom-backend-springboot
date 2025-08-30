@@ -3,6 +3,7 @@ package com.iroomclass.springbackend.domain.admin.unit.dto;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 import java.util.Objects;
+import java.util.UUID;
 
 /**
  * 단원 통계 응답 DTO
@@ -34,8 +35,8 @@ public record UnitStatisticsResponse(
      */
     @Schema(description = "단원별 통계")
     public record UnitStat(
-        @Schema(description = "단원 ID", example = "1")
-        Long unitId,
+        @Schema(description = "단원 ID", example = "123e4567-e89b-12d3-a456-426614174000")
+        UUID unitId,
         
         @Schema(description = "단원명", example = "자연수와 0")
         String unitName,

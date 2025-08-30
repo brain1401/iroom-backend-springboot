@@ -52,7 +52,7 @@ public class PrintService {
      * @param examSheetId 시험지 ID
      * @return 인쇄 가능한 문서 목록
      */
-    public PrintableDocumentResponse getPrintableDocuments(Long examSheetId) {
+    public PrintableDocumentResponse getPrintableDocuments(UUID examSheetId) {
         log.info("인쇄 가능한 문서 목록 조회: examSheetId={}", examSheetId);
         
         // 1단계: 시험지에 속한 문서 목록 조회

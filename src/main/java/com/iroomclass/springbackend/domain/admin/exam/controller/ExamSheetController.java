@@ -1,6 +1,7 @@
 package com.iroomclass.springbackend.domain.admin.exam.controller;
 
 import com.iroomclass.springbackend.common.ApiResponse;
+import java.util.UUID;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -209,7 +210,7 @@ public class ExamSheetController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "존재하지 않는 시험지")
     })
     public ApiResponse<ExamSheetDetailResponse> getExamSheetDetail(
-            @Parameter(description = "시험지 ID", example = "1") @PathVariable Long examSheetId) {
+            @Parameter(description = "시험지 ID", example = "123e4567-e89b-12d3-a456-426614174000") @PathVariable UUID examSheetId) {
         log.info("시험지 {} 상세 조회 요청", examSheetId);
 
         ExamSheetDetailResponse response = examSheetService.getExamSheetDetail(examSheetId);
@@ -235,7 +236,7 @@ public class ExamSheetController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "존재하지 않는 시험지 또는 문제")
     })
     public ApiResponse<ExamSheetDetailResponse> updateExamSheet(
-            @Parameter(description = "시험지 ID", example = "1") @PathVariable Long examSheetId,
+            @Parameter(description = "시험지 ID", example = "123e4567-e89b-12d3-a456-426614174000") @PathVariable UUID examSheetId,
             @Valid @RequestBody ExamSheetUpdateRequest request) {
         log.info("시험지 {} 수정 요청: 문제={}번 교체", examSheetId, request.seqNo());
 
@@ -277,7 +278,7 @@ public class ExamSheetController {
     })
     public ApiResponse<ExamSheetDetailResponse> replaceQuestion(
             @Parameter(description = "시험지 ID", example = "1", required = true) 
-            @PathVariable Long examSheetId,
+            @PathVariable UUID examSheetId,
             @Valid @RequestBody QuestionReplaceRequest request) {
         
         log.info("시험지 {} 문제 교체 요청: {} → {}", 
@@ -324,9 +325,9 @@ public class ExamSheetController {
     })
     public ApiResponse<SelectableQuestionsResponse> getSelectableQuestions(
             @Parameter(description = "시험지 ID", example = "1", required = true) 
-            @PathVariable Long examSheetId,
-            @Parameter(description = "단원 ID", example = "5") 
-            @RequestParam(required = false) Long unitId,
+            @PathVariable UUID examSheetId,
+            @Parameter(description = "단원 ID", example = "550e8400-e29b-41d4-a716-446655440000") 
+            @RequestParam(required = false) UUID unitId,
             @Parameter(description = "난이도", example = "중", schema = @io.swagger.v3.oas.annotations.media.Schema(allowableValues = {"하", "중", "상"})) 
             @RequestParam(required = false) String difficulty,
             @Parameter(description = "문제 유형", example = "SUBJECTIVE", schema = @io.swagger.v3.oas.annotations.media.Schema(allowableValues = {"MULTIPLE_CHOICE", "SUBJECTIVE"})) 
@@ -374,7 +375,7 @@ public class ExamSheetController {
     })
     public ApiResponse<ExamSheetQuestionManageResponse> addQuestionToExamSheet(
             @Parameter(description = "시험지 ID", example = "1", required = true) 
-            @PathVariable Long examSheetId,
+            @PathVariable UUID examSheetId,
             @Valid @RequestBody QuestionSelectionRequest request) {
         
         log.info("시험지 {} 문제 추가 요청: 문제={}, 배점={}, 순서={}", 
@@ -418,9 +419,9 @@ public class ExamSheetController {
     })
     public ApiResponse<ExamSheetQuestionManageResponse> removeQuestionFromExamSheet(
             @Parameter(description = "시험지 ID", example = "1", required = true) 
-            @PathVariable Long examSheetId,
+            @PathVariable UUID examSheetId,
             @Parameter(description = "제거할 문제 ID", example = "123", required = true) 
-            @PathVariable Long questionId) {
+            @PathVariable UUID questionId) {
         
         log.info("시험지 {} 문제 제거 요청: 문제={}", examSheetId, questionId);
         
@@ -461,7 +462,7 @@ public class ExamSheetController {
     })
     public ApiResponse<ExamSheetQuestionManageResponse> getExamSheetQuestionManagement(
             @Parameter(description = "시험지 ID", example = "1", required = true) 
-            @PathVariable Long examSheetId) {
+            @PathVariable UUID examSheetId) {
         
         log.info("시험지 {} 문제 관리 현황 조회 요청", examSheetId);
         
@@ -508,7 +509,7 @@ public class ExamSheetController {
     })
     public ApiResponse<ExamSheetPreviewResponse> getExamSheetPreview(
             @Parameter(description = "시험지 ID", example = "1", required = true) 
-            @PathVariable Long examSheetId) {
+            @PathVariable UUID examSheetId) {
         
         log.info("시험지 {} 미리보기 조회 요청", examSheetId);
         
@@ -556,7 +557,7 @@ public class ExamSheetController {
     })
     public ApiResponse<ExamSheetQuestionManageResponse> replaceQuestionInExamSheet(
             @Parameter(description = "시험지 ID", example = "1", required = true) 
-            @PathVariable Long examSheetId,
+            @PathVariable UUID examSheetId,
             @Valid @RequestBody QuestionReplaceRequest request) {
         
         log.info("시험지 {} 문제 교체 요청: 기존 문제 {} → 새 문제 {}, 배점: {}", 

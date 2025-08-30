@@ -2,6 +2,7 @@ package com.iroomclass.springbackend.domain.user.info.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Objects;
+import java.util.UUID;
 import java.time.LocalDate;
 
 /**
@@ -12,8 +13,8 @@ import java.time.LocalDate;
  */
 @Schema(description = "학생 로그인 응답")
 public record UserLoginResponse(
-    @Schema(description = "학생 ID", example = "1")
-    Long userId,
+    @Schema(description = "학생 ID", example = "123e4567-e89b-12d3-a456-426614174000")
+    UUID userId,
 
     @Schema(description = "학생 이름", example = "김철수")
     String name,

@@ -1,6 +1,7 @@
 package com.iroomclass.springbackend.domain.admin.question.repository;
 
 import java.util.List;
+import java.util.UUID;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -20,7 +21,7 @@ import com.iroomclass.springbackend.domain.admin.question.entity.Question;
  * @since 2025
  */
 @Repository
-public interface QuestionRepository extends JpaRepository<Question, Long> {
+public interface QuestionRepository extends JpaRepository<Question, UUID> {
     
     /**
      * 단원별 문제 목록 조회
@@ -31,7 +32,7 @@ public interface QuestionRepository extends JpaRepository<Question, Long> {
      * @param unitId 단원 ID
      * @return 해당 단원에 속한 문제 목록
      */
-    List<Question> findByUnitId(Long unitId);
+    List<Question> findByUnitId(UUID unitId);
     
     /**
      * 단원별 문제 목록 조회 (다중 단원)
@@ -42,7 +43,7 @@ public interface QuestionRepository extends JpaRepository<Question, Long> {
      * @param unitIds 단원 ID 목록
      * @return 해당 단원들에 속한 문제 목록
      */
-    List<Question> findByUnitIdIn(List<Long> unitIds);
+    List<Question> findByUnitIdIn(List<UUID> unitIds);
     
     /**
      * 단원별, 난이도별 문제 목록 조회
@@ -54,7 +55,7 @@ public interface QuestionRepository extends JpaRepository<Question, Long> {
      * @param difficulty 난이도
      * @return 해당 단원의 특정 난이도 문제 목록
      */
-    List<Question> findByUnitIdAndDifficulty(Long unitId, Question.Difficulty difficulty);
+    List<Question> findByUnitIdAndDifficulty(UUID unitId, Question.Difficulty difficulty);
     
     /**
      * 단원별 문제 수 카운트
@@ -65,7 +66,7 @@ public interface QuestionRepository extends JpaRepository<Question, Long> {
      * @param unitId 단원 ID
      * @return 해당 단원에 속한 문제의 총 개수
      */
-    long countByUnitId(Long unitId);
+    long countByUnitId(UUID unitId);
     
     /**
      * 단원별, 난이도별 문제 수 카운트
@@ -77,7 +78,7 @@ public interface QuestionRepository extends JpaRepository<Question, Long> {
      * @param difficulty 난이도
      * @return 해당 단원의 특정 난이도 문제 개수
      */
-    long countByUnitIdAndDifficulty(Long unitId, Question.Difficulty difficulty);
+    long countByUnitIdAndDifficulty(UUID unitId, Question.Difficulty difficulty);
     
     /**
      * 문제 내용 검색
@@ -99,7 +100,7 @@ public interface QuestionRepository extends JpaRepository<Question, Long> {
      * @param unitIds 단원 ID 목록
      * @return 해당 단원들에 속한 문제의 총 개수
      */
-    long countByUnitIdIn(List<Long> unitIds);
+    long countByUnitIdIn(List<UUID> unitIds);
     
     /**
      * 단원별 문제 목록 조회 (페이징 지원)
@@ -111,7 +112,7 @@ public interface QuestionRepository extends JpaRepository<Question, Long> {
      * @param pageable 페이징 정보
      * @return 페이징된 문제 목록
      */
-    Page<Question> findByUnitId(Long unitId, Pageable pageable);
+    Page<Question> findByUnitId(UUID unitId, Pageable pageable);
     
     /**
      * 단원별, 난이도별 문제 목록 조회 (난이도 문자열 기반)
@@ -121,7 +122,7 @@ public interface QuestionRepository extends JpaRepository<Question, Long> {
      * @return 해당 단원의 특정 난이도 문제 목록
      */
     @Query("SELECT q FROM Question q WHERE q.unit.id = :unitId AND CAST(q.difficulty AS string) = :difficultyName")
-    List<Question> findByUnitIdAndDifficultyName(@Param("unitId") Long unitId, @Param("difficultyName") String difficultyName);
+    List<Question> findByUnitIdAndDifficultyName(@Param("unitId") UUID unitId, @Param("difficultyName") String difficultyName);
     
     /**
      * 단원별, 문제 유형별 문제 목록 조회
@@ -130,7 +131,7 @@ public interface QuestionRepository extends JpaRepository<Question, Long> {
      * @param questionType 문제 유형
      * @return 해당 단원의 특정 유형 문제 목록
      */
-    List<Question> findByUnitIdAndQuestionType(Long unitId, Question.QuestionType questionType);
+    List<Question> findByUnitIdAndQuestionType(UUID unitId, Question.QuestionType questionType);
     
     /**
      * 단원별, 난이도별, 문제 유형별 문제 목록 조회
@@ -141,7 +142,7 @@ public interface QuestionRepository extends JpaRepository<Question, Long> {
      * @return 해당 조건의 문제 목록
      */
     @Query("SELECT q FROM Question q WHERE q.unit.id = :unitId AND CAST(q.difficulty AS string) = :difficultyName AND q.questionType = :questionType")
-    List<Question> findByUnitIdAndDifficultyNameAndQuestionType(@Param("unitId") Long unitId, @Param("difficultyName") String difficultyName, @Param("questionType") Question.QuestionType questionType);
+    List<Question> findByUnitIdAndDifficultyNameAndQuestionType(@Param("unitId") UUID unitId, @Param("difficultyName") String difficultyName, @Param("questionType") Question.QuestionType questionType);
     
     /**
      * 학년별 문제 목록 조회

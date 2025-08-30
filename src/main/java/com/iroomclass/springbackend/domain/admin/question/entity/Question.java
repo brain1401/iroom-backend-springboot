@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.iroomclass.springbackend.domain.admin.unit.entity.Unit;
+import com.iroomclass.springbackend.common.UUIDv7Generator;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -15,6 +16,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -26,6 +28,7 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 /**
  * 문제 정보 Entity
@@ -35,7 +38,7 @@ import java.util.Map;
  * 
  * <p>문제 유형별 특징:</p>
  * <ul>
- *   <li>주관식: questionText와 answerKey 사용</li>
+ *   <li>주관식: questionText와 answerText 사용</li>
  *   <li>객관식: questionText, choices, correctChoice 사용</li>
  * </ul>
  * 
@@ -56,12 +59,12 @@ public class Question {
     
     /**
      * 문제 고유 ID
-     * 자동 증가하는 기본키
+     * UUIDv7로 생성되는 기본키
      */
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(columnDefinition = "BINARY(16)")
     @EqualsAndHashCode.Include
-    private Long id;
+    private UUID id;
 
     /**
      * 단원과의 관계
@@ -93,7 +96,15 @@ public class Question {
      * 문제의 정답을 저장
      */
     @Column(columnDefinition = "LONGTEXT", nullable = false)
-    private String answerKey;
+    private String answerText;
+
+    /**
+     * 채점 기준
+     * 문제의 채점 기준이나 평가 루브릭을 저장
+     * 주관식 문제의 경우 상세한 채점 기준을 제공하여 일관된 평가가 가능하도록 함
+     */
+    @Column(columnDefinition = "TEXT")
+    private String scoringRubric;
 
     /**
      * 문제 이미지 (JSON 형태)
@@ -300,6 +311,16 @@ public class Question {
         }
         
         return html.toString();
+    }
+
+    /**
+     * 엔티티 저장 전 UUID 자동 생성
+     */
+    @PrePersist
+    public void generateId() {
+        if (this.id == null) {
+            this.id = UUIDv7Generator.generate();
+        }
     }
 
     /**

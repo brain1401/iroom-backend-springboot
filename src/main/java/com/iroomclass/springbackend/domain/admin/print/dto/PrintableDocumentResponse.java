@@ -4,11 +4,12 @@ import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.UUID;
 
 @Schema(description = "인쇄 가능한 문서 목록 응답")
 public record PrintableDocumentResponse(
-    @Schema(description = "시험지 ID", example = "1")
-    Long examSheetId,
+    @Schema(description = "시험지 ID", example = "123e4567-e89b-12d3-a456-426614174000")
+    UUID examSheetId,
     
     @Schema(description = "시험명", example = "1학년 중간고사")
     String examName,
@@ -24,8 +25,8 @@ public record PrintableDocumentResponse(
     
     @Schema(description = "문서 정보")
     public record DocumentInfo(
-        @Schema(description = "문서 ID", example = "1")
-        Long documentId,
+        @Schema(description = "문서 ID", example = "123e4567-e89b-12d3-a456-426614174001")
+        UUID documentId,
         
         @Schema(description = "문서 타입", example = "QUESTION_PAPER", allowableValues = {"QUESTION_PAPER", "ANSWER_KEY", "ANSWER_SHEET"})
         String documentType,

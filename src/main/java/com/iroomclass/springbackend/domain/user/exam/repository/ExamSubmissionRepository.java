@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.UUID;
 
 /**
  * 시험 제출 Repository
@@ -18,7 +19,7 @@ import java.util.List;
  * @since 2025
  */
 @Repository
-public interface ExamSubmissionRepository extends JpaRepository<ExamSubmission, Long> {
+public interface ExamSubmissionRepository extends JpaRepository<ExamSubmission, UUID> {
     
     /**
      * 시험별 제출 목록 조회
@@ -40,7 +41,7 @@ public interface ExamSubmissionRepository extends JpaRepository<ExamSubmission, 
      * @param examId 시험 ID
      * @return 해당 시험의 제출 목록 (최신순)
      */
-    List<ExamSubmission> findByExamIdOrderBySubmittedAtDesc(Long examId);
+    List<ExamSubmission> findByExamIdOrderBySubmittedAtDesc(UUID examId);
     
     /**
      * 특정 시험의 제출 학생 수 조회
@@ -51,7 +52,7 @@ public interface ExamSubmissionRepository extends JpaRepository<ExamSubmission, 
      * @param examId 시험 ID
      * @return 해당 시험의 제출 학생 수
      */
-    long countByExamId(Long examId);
+    long countByExamId(UUID examId);
     
     /**
      * 학생 이름과 전화번호로 제출 조회
@@ -112,7 +113,7 @@ public interface ExamSubmissionRepository extends JpaRepository<ExamSubmission, 
      * @param userPhone 학생 전화번호
      * @return 제출 여부 (true: 제출됨, false: 제출 안됨)
      */
-    boolean existsByExamIdAndUserNameAndUserPhone(Long examId, String userName, String userPhone);
+    boolean existsByExamIdAndUserNameAndUserPhone(UUID examId, String userName, String userPhone);
     
     /**
      * 학년별 시험 제출 조회
@@ -134,5 +135,5 @@ public interface ExamSubmissionRepository extends JpaRepository<ExamSubmission, 
      * @param examId 시험 ID
      * @return 해당 시험의 제출 목록
      */
-    List<ExamSubmission> findByExamId(Long examId);
+    List<ExamSubmission> findByExamId(UUID examId);
 }

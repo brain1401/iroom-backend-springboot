@@ -3,6 +3,7 @@ package com.iroomclass.springbackend.domain.admin.exam.dto;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import java.util.Objects;
+import java.util.UUID;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
@@ -17,14 +18,12 @@ import io.swagger.v3.oas.annotations.media.Schema;
 @Schema(description = "시험지 문제 교체 요청")
 public record QuestionReplaceRequest(
     @NotNull(message = "교체할 기존 문제 ID는 필수입니다")
-    @Positive(message = "문제 ID는 양수여야 합니다")
-    @Schema(description = "교체할 기존 문제 ID", example = "123", requiredMode = Schema.RequiredMode.REQUIRED)
-    Long oldQuestionId,
+    @Schema(description = "교체할 기존 문제 ID", example = "550e8400-e29b-41d4-a716-446655440000", requiredMode = Schema.RequiredMode.REQUIRED)
+    UUID oldQuestionId,
     
     @NotNull(message = "새로운 문제 ID는 필수입니다")
-    @Positive(message = "문제 ID는 양수여야 합니다")
-    @Schema(description = "새로운 문제 ID", example = "456", requiredMode = Schema.RequiredMode.REQUIRED)
-    Long newQuestionId,
+    @Schema(description = "새로운 문제 ID", example = "550e8400-e29b-41d4-a716-446655440001", requiredMode = Schema.RequiredMode.REQUIRED)
+    UUID newQuestionId,
     
     @Positive(message = "배점은 양수여야 합니다")
     @Schema(description = "새 문제의 배점 (미지정 시 기존 배점 유지)", example = "5")

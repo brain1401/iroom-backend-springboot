@@ -4,6 +4,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import java.util.Objects;
+import java.util.UUID;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
@@ -18,8 +19,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 @Schema(description = "시험 제출 생성 요청")
 public record ExamSubmissionCreateRequest(
     @NotNull(message = "시험 ID는 필수입니다.")
-    @Schema(description = "시험 ID", example = "1", requiredMode = Schema.RequiredMode.REQUIRED)
-    Long examId,
+    @Schema(description = "시험 ID", example = "123e4567-e89b-12d3-a456-426614174000", requiredMode = Schema.RequiredMode.REQUIRED)
+    UUID examId,
     
     @NotBlank(message = "학생 이름은 필수입니다.")
     @Schema(description = "학생 이름", example = "김철수", requiredMode = Schema.RequiredMode.REQUIRED)

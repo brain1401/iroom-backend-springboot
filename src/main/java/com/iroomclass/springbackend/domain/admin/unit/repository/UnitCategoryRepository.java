@@ -1,6 +1,7 @@
 package com.iroomclass.springbackend.domain.admin.unit.repository;
 
 import java.util.List;
+import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
@@ -16,7 +17,7 @@ import com.iroomclass.springbackend.domain.admin.unit.entity.UnitCategory;
  * @since 2025
  */
 @Repository
-public interface UnitCategoryRepository extends JpaRepository<UnitCategory, Long> {
+public interface UnitCategoryRepository extends JpaRepository<UnitCategory, UUID> {
 
     /**
      * 모든 대분류를 표시 순서로 조회

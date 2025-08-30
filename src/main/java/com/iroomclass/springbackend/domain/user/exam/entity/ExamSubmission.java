@@ -1,9 +1,11 @@
 package com.iroomclass.springbackend.domain.user.exam.entity;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 import com.iroomclass.springbackend.domain.admin.exam.entity.Exam;
 import com.iroomclass.springbackend.domain.user.info.entity.User;
+import com.iroomclass.springbackend.common.UUIDv7Generator;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -41,11 +43,11 @@ public class ExamSubmission {
     
     /**
      * 제출 고유 ID
-     * 자동 증가하는 기본키
+     * UUIDv7 기본키
      */
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @Column(columnDefinition = "BINARY(16)")
+    private UUID id;
     
     /**
      * 시험과의 관계
@@ -81,10 +83,13 @@ public class ExamSubmission {
     
     /**
      * Entity 저장 전 실행되는 메서드
-     * 제출일시를 자동으로 설정합니다.
+     * UUID 및 제출일시를 자동으로 설정합니다.
      */
     @PrePersist
     protected void onCreate() {
+        if (id == null) {
+            id = UUIDv7Generator.generate();
+        }
         submittedAt = LocalDateTime.now();
     }
     

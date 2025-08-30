@@ -3,6 +3,7 @@ package com.iroomclass.springbackend.domain.admin.exam.dto;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.util.UUID;
 
 
 
@@ -17,9 +18,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 public record QuestionSelectionRequest(
     
     @NotNull(message = "문제 ID는 필수입니다")
-    @Positive(message = "문제 ID는 양수여야 합니다")
-    @Schema(description = "선택할 문제 ID", example = "123", requiredMode = Schema.RequiredMode.REQUIRED)
-    Long questionId,
+    @Schema(description = "선택할 문제 ID", example = "550e8400-e29b-41d4-a716-446655440000", requiredMode = Schema.RequiredMode.REQUIRED)
+    UUID questionId,
     
     @NotNull(message = "배점은 필수입니다")
     @Positive(message = "배점은 양수여야 합니다") 
@@ -51,10 +51,7 @@ public record QuestionSelectionRequest(
             throw new NullPointerException("배점은 필수입니다");
         }
         
-        // 범위 체크 - IllegalArgumentException 예상 (Compact Constructor 테스트에서 명시적으로 테스트)
-        if (questionId <= 0) {
-            throw new IllegalArgumentException("문제 ID는 양수여야 합니다: " + questionId);
-        }
+        // UUID는 범위 체크 불필요 (UUID 형식 자체가 유효성을 보장)
         if (points <= 0) {
             throw new IllegalArgumentException("배점은 양수여야 합니다: " + points);
         }

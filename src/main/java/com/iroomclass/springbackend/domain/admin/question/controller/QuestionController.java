@@ -1,6 +1,7 @@
 package com.iroomclass.springbackend.domain.admin.question.controller;
 
 import com.iroomclass.springbackend.common.ApiResponse;
+import java.util.UUID;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -51,7 +52,7 @@ public class QuestionController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "단원을 찾을 수 없음")
     })
     public ApiResponse<QuestionListResponse> getQuestionsByUnit(
-            @Parameter(description = "단원 ID", example = "1") @PathVariable Long unitId) {
+            @Parameter(description = "단원 ID", example = "123e4567-e89b-12d3-a456-426614174000") @PathVariable UUID unitId) {
         log.info("단원 {} 문제 목록 조회 요청", unitId);
 
         QuestionListResponse response = questionService.getQuestionsByUnit(unitId);
@@ -76,7 +77,7 @@ public class QuestionController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "단원을 찾을 수 없음")
     })
     public ApiResponse<QuestionListResponse> getQuestionsByUnitAndDifficulty(
-            @Parameter(description = "단원 ID", example = "1") @PathVariable Long unitId,
+            @Parameter(description = "단원 ID", example = "123e4567-e89b-12d3-a456-426614174000") @PathVariable UUID unitId,
             @Parameter(description = "난이도 (하/중/상)", example = "중") @RequestParam String difficulty) {
         log.info("단원 {} 난이도 {} 문제 목록 조회 요청", unitId, difficulty);
 
@@ -101,7 +102,7 @@ public class QuestionController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "문제를 찾을 수 없음")
     })
     public ApiResponse<QuestionDetailResponse> getQuestionDetail(
-            @Parameter(description = "문제 ID", example = "1") @PathVariable Long questionId) {
+            @Parameter(description = "문제 ID", example = "123e4567-e89b-12d3-a456-426614174000") @PathVariable UUID questionId) {
         log.info("문제 {} 상세 조회 요청", questionId);
 
         QuestionDetailResponse response = questionService.getQuestionDetail(questionId);
@@ -125,7 +126,7 @@ public class QuestionController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "단원을 찾을 수 없음")
     })
     public ApiResponse<QuestionStatisticsResponse> getQuestionStatisticsByUnit(
-            @Parameter(description = "단원 ID", example = "1") @PathVariable Long unitId) {
+            @Parameter(description = "단원 ID", example = "123e4567-e89b-12d3-a456-426614174000") @PathVariable UUID unitId) {
         log.info("단원 {} 문제 통계 조회 요청", unitId);
 
         QuestionStatisticsResponse response = questionService.getQuestionStatisticsByUnit(unitId);
@@ -187,7 +188,7 @@ public class QuestionController {
     })
     public ApiResponse<QuestionDetailResponse> getQuestionPreview(
             @Parameter(description = "문제 ID", example = "1", required = true) 
-            @PathVariable Long questionId) {
+            @PathVariable UUID questionId) {
         log.info("문제 {} 미리보기 조회 요청", questionId);
 
         QuestionDetailResponse response = questionService.getQuestionPreview(questionId);

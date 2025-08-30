@@ -2,6 +2,7 @@ package com.iroomclass.springbackend.domain.user.exam.controller;
 
 import com.iroomclass.springbackend.common.ApiResponse;
 import org.springframework.web.bind.annotation.PathVariable;
+import java.util.UUID;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -84,8 +85,8 @@ public class ExamSubmissionController {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "존재하지 않는 시험 제출")
     })
     public ApiResponse<ExamSubmissionCreateResponse> finalSubmitExam(
-            @Parameter(description = "시험 제출 ID", example = "1") 
-            @PathVariable Long submissionId) {
+            @Parameter(description = "시험 제출 ID", example = "123e4567-e89b-12d3-a456-426614174000") 
+            @PathVariable UUID submissionId) {
         log.info("시험 최종 제출 요청: 제출 ID={}", submissionId);
         
         ExamSubmissionCreateResponse response = examSubmissionService.finalSubmitExam(submissionId);
