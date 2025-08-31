@@ -10,7 +10,7 @@ import jakarta.validation.Valid;
 
 import com.iroomclass.springbackend.domain.user.info.dto.UserLoginRequest;
 import com.iroomclass.springbackend.domain.user.info.dto.UserLoginResponse;
-import com.iroomclass.springbackend.domain.user.info.service.UserService;
+import com.iroomclass.springbackend.domain.user.service.UserService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;

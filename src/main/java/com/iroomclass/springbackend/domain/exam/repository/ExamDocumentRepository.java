@@ -1,0 +1,66 @@
+package com.iroomclass.springbackend.domain.exam.repository;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import com.iroomclass.springbackend.domain.exam.entity.ExamDocument;
+import com.iroomclass.springbackend.domain.exam.entity.ExamSheet;
+
+import java.util.List;
+import java.util.UUID;
+
+/**
+ * 시험지 문서 Repository
+ * 
+ * 시험지 문서(문제지, 답안지) 데이터의 CRUD 작업을 담당합니다.
+ * 
+ * @author 이룸클래스
+ * @since 2025
+ */
+public interface ExamDocumentRepository extends JpaRepository<ExamDocument, UUID> {
+    
+    /**
+     * 시험지별 문서 조회
+     * 
+     * 사용처: 시험지 목록에서 "문제보기", "답안보기" 버튼 클릭 시
+     * 예시: "1학년 중간고사" → 문제지와 답안지 문서 조회
+     * 
+     * @param examSheet 시험지
+     * @return 해당 시험지의 문서 목록 (문제지, 답안지)
+     */
+    List<ExamDocument> findByExamSheet(ExamSheet examSheet);
+
+    /**
+     * 시험지 ID와 문서 타입으로 조회
+     * 
+     * 사용처: 특정 문서만 조회할 때 (문제지만 또는 답안지만)
+     * 예시: "1학년 중간고사" + "문제지" → 문제지 문서만 조회
+     * 
+     * @param examSheetId 시험지 ID
+     * @param documentType 문서 타입 (문제지, 답안지)
+     * @return 해당 조건의 문서
+     */
+    ExamDocument findByExamSheetIdAndDocumentType(UUID examSheetId, ExamDocument.DocumentType documentType);
+    
+    /**
+     * 시험지 ID로 모든 문서 조회
+     * 
+     * 사용처: 시험지의 모든 문서 목록 조회
+     * 예시: "1학년 중간고사" → 답안지, 문제지, 답안 모두 조회
+     * 
+     * @param examSheetId 시험지 ID
+     * @return 해당 시험지의 모든 문서 목록
+     */
+    List<ExamDocument> findByExamSheetId(UUID examSheetId);
+    
+    /**
+     * 시험지와 문서 타입 목록으로 문서 조회
+     * 
+     * 사용처: 인쇄 기능에서 선택된 문서 타입들만 조회
+     * 예시: "1학년 중간고사" + ["문제지", "답안지"] → 선택된 문서들만 조회
+     * 
+     * @param examSheet 시험지
+     * @param documentTypes 문서 타입 목록
+     * @return 해당 조건의 문서 목록
+     */
+    List<ExamDocument> findByExamSheetAndDocumentTypeIn(ExamSheet examSheet, List<ExamDocument.DocumentType> documentTypes);
+}

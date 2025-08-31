@@ -4,8 +4,8 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-import com.iroomclass.springbackend.domain.user.exam.result.entity.QuestionResult;
-import com.iroomclass.springbackend.domain.user.exam.result.entity.QuestionResult.GradingMethod;
+import com.iroomclass.springbackend.domain.exam.entity.QuestionResult;
+import com.iroomclass.springbackend.domain.exam.entity.QuestionResult.GradingMethod;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
@@ -114,7 +114,7 @@ public record QuestionResultDto(
          * @param studentAnswerSheet StudentAnswerSheet 엔티티
          * @return AnswerInfo
          */
-        public static AnswerInfo from(com.iroomclass.springbackend.domain.user.exam.answer.entity.StudentAnswerSheet studentAnswerSheet) {
+        public static AnswerInfo from(com.iroomclass.springbackend.domain.exam.entity.StudentAnswerSheet studentAnswerSheet) {
             return new AnswerInfo(
                 studentAnswerSheet.getId(),
                 studentAnswerSheet.getQuestionId(),

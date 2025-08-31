@@ -5,8 +5,8 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
-import com.iroomclass.springbackend.domain.user.exam.result.entity.ExamResult;
-import com.iroomclass.springbackend.domain.user.exam.result.entity.ExamResult.ResultStatus;
+import com.iroomclass.springbackend.domain.exam.entity.ExamResult;
+import com.iroomclass.springbackend.domain.exam.entity.ExamResult.ResultStatus;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 

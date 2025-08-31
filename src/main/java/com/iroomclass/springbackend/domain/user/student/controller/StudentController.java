@@ -14,7 +14,7 @@ import com.iroomclass.springbackend.domain.user.student.dto.ExamResultDetailResp
 import com.iroomclass.springbackend.domain.user.student.dto.QuestionResultResponse;
 import com.iroomclass.springbackend.domain.user.student.dto.StudentProfileResponse;
 import com.iroomclass.springbackend.domain.user.student.dto.RecentExamSubmissionsResponse;
-import com.iroomclass.springbackend.domain.user.student.service.StudentService;
+import com.iroomclass.springbackend.domain.user.service.StudentService;
 
 import java.time.LocalDate;
 

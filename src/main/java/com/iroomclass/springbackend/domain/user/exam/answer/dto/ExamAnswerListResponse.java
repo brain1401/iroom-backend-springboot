@@ -4,7 +4,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 
-import com.iroomclass.springbackend.domain.user.exam.answer.entity.StudentAnswerSheet;
+import com.iroomclass.springbackend.domain.exam.entity.StudentAnswerSheet;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
