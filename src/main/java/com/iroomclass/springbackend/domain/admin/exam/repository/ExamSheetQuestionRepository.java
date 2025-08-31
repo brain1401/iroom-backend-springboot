@@ -63,38 +63,9 @@ public interface ExamSheetQuestionRepository extends JpaRepository<ExamSheetQues
      */
     java.util.Optional<ExamSheetQuestion> findByExamSheetIdAndQuestionId(UUID examSheetId, UUID questionId);
     
-    /**
-     * 특정 시험지의 문제 목록 조회 (문제 순서 기준 정렬)
-     * 
-     * 문제 직접 선택 시스템에서 questionOrder 필드를 기준으로 정렬된 문제 목록을 조회합니다.
-     * seqNo와 questionOrder가 다를 수 있으므로 별도 메서드로 제공합니다.
-     * 
-     * @param examSheetId 시험지 ID
-     * @return 해당 시험지의 문제 목록 (questionOrder 순서대로)
-     */
-    List<ExamSheetQuestion> findByExamSheetIdOrderByQuestionOrder(UUID examSheetId);
+
     
-    /**
-     * 특정 순서 이후의 문제들 조회 (포함)
-     * 
-     * 문제 추가 시 기존 문제들의 순서를 재조정할 때 사용됩니다.
-     * 예: 3번 위치에 새 문제 추가 시, 기존 3번 이후 문제들을 4번부터 재배치
-     * 
-     * @param examSheetId 시험지 ID
-     * @param questionOrder 기준 순서 (이 순서 이상인 문제들 조회)
-     * @return 기준 순서 이후의 문제 목록
-     */
-    List<ExamSheetQuestion> findByExamSheetIdAndQuestionOrderGreaterThanEqual(UUID examSheetId, Integer questionOrder);
+
     
-    /**
-     * 특정 순서 이후의 문제들 조회 (초과)
-     * 
-     * 문제 제거 시 나머지 문제들의 순서를 재조정할 때 사용됩니다.
-     * 예: 3번 문제 제거 시, 4번 이후 문제들을 3번부터 재배치
-     * 
-     * @param examSheetId 시험지 ID
-     * @param questionOrder 기준 순서 (이 순서 초과인 문제들 조회)
-     * @return 기준 순서 이후의 문제 목록
-     */
-    List<ExamSheetQuestion> findByExamSheetIdAndQuestionOrderGreaterThan(UUID examSheetId, Integer questionOrder);
+
 }

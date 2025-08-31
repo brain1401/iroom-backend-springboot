@@ -51,8 +51,7 @@ public record ExamSheetPreviewResponse(
         @Schema(description = "문제 ID", example = "550e8400-e29b-41d4-a716-446655440000")
         UUID questionId,
         
-        @Schema(description = "문제 순서", example = "1")
-        Integer questionOrder,
+
         
         @Schema(description = "문제 배점", example = "5")
         Integer points,

@@ -67,14 +67,7 @@ public class ExamSheetQuestion {
     @Column(nullable = false)
     private Integer points;
 
-    /**
-     * 문제 출제 순서
-     * 시험지에서 실제 출제되는 순서 (seqNo와 별개의 개념)
-     * 예: seqNo는 관리용 순서, questionOrder는 학생에게 보여지는 순서
-     * 필수 입력
-     */
-    @Column(nullable = false)
-    private Integer questionOrder;
+
 
     /**
      * 문제 선택 방식
@@ -114,18 +107,7 @@ public class ExamSheetQuestion {
         }
     }
 
-    /**
-     * 문제 순서 업데이트
-     * 
-     * @param questionOrder 새로운 문제 순서 (1 이상)
-     * @throws IllegalArgumentException 순서가 1보다 작을 때
-     */
-    public void updateQuestionOrder(Integer questionOrder) {
-        if (questionOrder == null || questionOrder < 1) {
-            throw new IllegalArgumentException("문제 순서는 1 이상이어야 합니다: " + questionOrder);
-        }
-        this.questionOrder = questionOrder;
-    }
+
 
     /**
      * 문제 선택 방식 업데이트

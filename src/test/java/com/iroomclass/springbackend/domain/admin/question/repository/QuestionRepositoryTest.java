@@ -12,6 +12,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
+import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.test.context.ActiveProfiles;
@@ -32,6 +33,17 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @since 2025
  */
 @DataJpaTest
+@EntityScan(basePackages = {
+    "com.iroomclass.springbackend.domain.admin.exam.entity",
+    "com.iroomclass.springbackend.domain.admin.question.entity", 
+    "com.iroomclass.springbackend.domain.admin.unit.entity",
+    "com.iroomclass.springbackend.domain.admin.info.entity",
+    "com.iroomclass.springbackend.domain.user.exam.entity",
+    "com.iroomclass.springbackend.domain.user.exam.answer.entity",
+    "com.iroomclass.springbackend.domain.user.exam.grading.entity",
+    "com.iroomclass.springbackend.domain.user.exam.result.entity",
+    "com.iroomclass.springbackend.domain.user.info.entity"
+})
 @ActiveProfiles("test")
 @DisplayName("QuestionRepository 테스트")
 class QuestionRepositoryTest {

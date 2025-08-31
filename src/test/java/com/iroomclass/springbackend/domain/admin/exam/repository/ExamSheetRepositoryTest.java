@@ -9,10 +9,17 @@ import com.iroomclass.springbackend.domain.admin.unit.repository.UnitRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
+import org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
+import org.springframework.boot.autoconfigure.domain.EntityScan;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.FilterType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -33,8 +40,20 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @since 2025
  */
 @DataJpaTest
+@EntityScan(basePackages = {
+    "com.iroomclass.springbackend.domain.admin.exam.entity",
+    "com.iroomclass.springbackend.domain.admin.question.entity", 
+    "com.iroomclass.springbackend.domain.admin.unit.entity",
+    "com.iroomclass.springbackend.domain.admin.info.entity",
+    "com.iroomclass.springbackend.domain.user.exam.entity",
+    "com.iroomclass.springbackend.domain.user.exam.answer.entity",
+    "com.iroomclass.springbackend.domain.user.exam.grading.entity",
+    "com.iroomclass.springbackend.domain.user.exam.result.entity",
+    "com.iroomclass.springbackend.domain.user.info.entity"
+})
 @ActiveProfiles("test")
 @DisplayName("ExamSheetRepository 테스트")
+@TestMethodOrder(OrderAnnotation.class)
 class ExamSheetRepositoryTest {
 
     @Autowired
@@ -200,7 +219,7 @@ class ExamSheetRepositoryTest {
         @DisplayName("학년별 시험지 조회 - 최신순 정렬")
         void findByGradeOrderByIdDesc_Success() {
             // When
-            List<ExamSheet> result = examSheetRepository.findByGradeOrderByIdDesc(1);
+            List<ExamSheet> result = examSheetRepository.findByGradeOrderByCreatedAtDesc(1);
 
             // Then
             assertThat(result).hasSize(2);
@@ -213,7 +232,7 @@ class ExamSheetRepositoryTest {
         @DisplayName("전체 시험지 조회 - 최신순 정렬")
         void findAllByOrderByIdDesc_Success() {
             // When
-            List<ExamSheet> result = examSheetRepository.findAllByOrderByIdDesc();
+            List<ExamSheet> result = examSheetRepository.findAllByOrderByCreatedAtDesc();
 
             // Then
             assertThat(result).hasSize(3);
@@ -226,7 +245,7 @@ class ExamSheetRepositoryTest {
         @DisplayName("존재하지 않는 학년 조회 - 빈 결과")
         void findByGradeOrderByIdDesc_EmptyResult() {
             // When
-            List<ExamSheet> result = examSheetRepository.findByGradeOrderByIdDesc(3);
+            List<ExamSheet> result = examSheetRepository.findByGradeOrderByCreatedAtDesc(3);
 
             // Then
             assertThat(result).isEmpty();

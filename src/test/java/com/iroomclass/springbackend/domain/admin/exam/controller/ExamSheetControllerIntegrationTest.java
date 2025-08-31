@@ -5,6 +5,14 @@ import com.iroomclass.springbackend.domain.admin.exam.dto.ExamSheetCreateRequest
 import com.iroomclass.springbackend.domain.admin.exam.dto.QuestionReplaceRequest;
 import com.iroomclass.springbackend.domain.admin.exam.dto.QuestionSelectionRequest;
 import com.iroomclass.springbackend.common.UUIDv7Generator;
+import com.iroomclass.springbackend.domain.admin.question.entity.Question;
+import com.iroomclass.springbackend.domain.admin.question.repository.QuestionRepository;
+import com.iroomclass.springbackend.domain.admin.unit.entity.Unit;
+import com.iroomclass.springbackend.domain.admin.unit.entity.UnitCategory;
+import com.iroomclass.springbackend.domain.admin.unit.entity.UnitSubcategory;
+import com.iroomclass.springbackend.domain.admin.unit.repository.UnitCategoryRepository;
+import com.iroomclass.springbackend.domain.admin.unit.repository.UnitRepository;
+import com.iroomclass.springbackend.domain.admin.unit.repository.UnitSubcategoryRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -13,6 +21,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
@@ -40,6 +49,7 @@ import static org.hamcrest.Matchers.*;
 @ActiveProfiles("test")
 @DisplayName("ExamSheetController 통합 테스트")
 @Transactional
+@DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_EACH_TEST_METHOD)
 class ExamSheetControllerIntegrationTest {
 
     @Autowired
@@ -47,6 +57,18 @@ class ExamSheetControllerIntegrationTest {
 
     @Autowired
     private ObjectMapper objectMapper;
+    
+    @Autowired
+    private UnitCategoryRepository unitCategoryRepository;
+    
+    @Autowired
+    private UnitSubcategoryRepository unitSubcategoryRepository;
+    
+    @Autowired
+    private UnitRepository unitRepository;
+    
+    @Autowired
+    private QuestionRepository questionRepository;
 
     private MockMvc mockMvc;
 
@@ -56,6 +78,92 @@ class ExamSheetControllerIntegrationTest {
     void setUp() {
         mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).build();
     }
+    
+    /**
+     * 테스트 데이터 생성
+     */
+    private TestData createTestData(String uniqueSuffix) {
+        String shortSuffix = uniqueSuffix.substring(0, Math.min(10, uniqueSuffix.length()));
+        
+        // UnitCategory 생성
+        UnitCategory category = UnitCategory.builder()
+                .categoryName("테스트카테고리_" + shortSuffix)
+                .displayOrder(1)
+                .description("테스트용 단원 카테고리")
+                .build();
+        category = unitCategoryRepository.save(category);
+
+        // UnitSubcategory 생성
+        UnitSubcategory subcategory = UnitSubcategory.builder()
+                .subcategoryName("테스트서브카테고리_" + shortSuffix)
+                .category(category)
+                .displayOrder(1)
+                .description("테스트용 단원 서브카테고리")
+                .build();
+        subcategory = unitSubcategoryRepository.save(subcategory);
+
+        // Unit 1 생성 
+        Unit unit1 = Unit.builder()
+                .unitName("테스트단원1_" + shortSuffix)
+                .unitCode("TEST1_" + shortSuffix.toUpperCase())
+                .grade(1)
+                .subcategory(subcategory)
+                .displayOrder(1)
+                .description("테스트용 단원1")
+                .build();
+        unit1 = unitRepository.save(unit1);
+
+        // Unit 2 생성
+        Unit unit2 = Unit.builder()
+                .unitName("테스트단원2_" + shortSuffix)
+                .unitCode("TEST2_" + shortSuffix.toUpperCase())
+                .grade(1)
+                .subcategory(subcategory)
+                .displayOrder(2)
+                .description("테스트용 단원2")
+                .build();
+        unit2 = unitRepository.save(unit2);
+
+        // Unit 1에 객관식 문제들 생성 (15개)
+        for (int i = 1; i <= 15; i++) {
+            Question question = Question.builder()
+                    .questionText("테스트객관식문제" + i + "_" + shortSuffix)
+                    .questionType(Question.QuestionType.MULTIPLE_CHOICE)
+                    .choices("{\"1\":\"선택지1\",\"2\":\"선택지2\",\"3\":\"선택지3\",\"4\":\"선택지4\",\"5\":\"선택지5\"}")
+                    .correctChoice(1)
+                    .answerText("1")
+                    .difficulty(Question.Difficulty.하)
+                    .points(5)
+                    .unit(unit1)
+                    .build();
+            questionRepository.save(question);
+        }
+
+        // Unit 2에 주관식 문제들 생성 (10개)
+        for (int i = 1; i <= 10; i++) {
+            Question question = Question.builder()
+                    .questionText("테스트주관식문제" + i + "_" + shortSuffix)
+                    .questionType(Question.QuestionType.SUBJECTIVE)
+                    .answerText("테스트 주관식 정답" + i)
+                    .difficulty(Question.Difficulty.중)
+                    .points(10)
+                    .unit(unit2)
+                    .build();
+            questionRepository.save(question);
+        }
+
+        return new TestData(category, subcategory, unit1, unit2);
+    }
+
+    /**
+     * 테스트 데이터 레코드
+     */
+    private record TestData(
+            UnitCategory category,
+            UnitSubcategory subcategory,
+            Unit unit1,  // 객관식 문제 15개
+            Unit unit2   // 주관식 문제 10개
+    ) {}
 
     @Nested
     @DisplayName("시험지 생성 테스트")
@@ -64,14 +172,16 @@ class ExamSheetControllerIntegrationTest {
         @Test
         @DisplayName("정상적인 시험지 생성 - 성공")
         void createExamSheet_Success() throws Exception {
-            // Given
+            // Given: 테스트 데이터 생성
+            TestData testData = createTestData("create_success_" + System.currentTimeMillis());
+            
             ExamSheetCreateRequest request = new ExamSheetCreateRequest(
                     "통합테스트 시험지",
                     1, // 1학년
-                    20, // 총 문제 수
+                    20, // 총 문제 수 (unit1: 15개, unit2: 10개 총 25개 중 20개 요청)
                     15, // 객관식 문제 수
                     5,  // 주관식 문제 수
-                    List.of(UUIDv7Generator.generate(), UUIDv7Generator.generate()) // 단원 ID 목록
+                    List.of(testData.unit1().getId(), testData.unit2().getId()) // 실제 단원 ID 목록
             );
 
             // When & Then
@@ -92,14 +202,16 @@ class ExamSheetControllerIntegrationTest {
         @Test
         @DisplayName("잘못된 학년으로 시험지 생성 - 실패")
         void createExamSheet_InvalidGrade_Fail() throws Exception {
-            // Given
+            // Given: 테스트 데이터 생성
+            TestData testData = createTestData("invalid_grade_" + System.currentTimeMillis());
+            
             ExamSheetCreateRequest request = new ExamSheetCreateRequest(
                     "잘못된 학년 시험지",
                     5, // 잘못된 학년 (1-3만 허용)
                     10,
                     5,
                     5,
-                    List.of(UUIDv7Generator.generate())
+                    List.of(testData.unit1().getId())
             );
 
             // When & Then
@@ -228,7 +340,7 @@ class ExamSheetControllerIntegrationTest {
                     .andExpect(jsonPath("$.result").value("SUCCESS"))
                     .andExpect(jsonPath("$.message").value("성공"))
                     .andExpect(jsonPath("$.data").exists())
-                    .andExpect(jsonPath("$.data.examSheetId").value(examSheetId))
+                    .andExpect(jsonPath("$.data.examSheetId").value(examSheetId.toString()))
                     .andExpect(jsonPath("$.data.examName").exists())
                     .andExpect(jsonPath("$.data.grade").exists())
                     .andExpect(jsonPath("$.data.units").isArray())
@@ -264,7 +376,7 @@ class ExamSheetControllerIntegrationTest {
                     .andExpect(jsonPath("$.result").value("SUCCESS"))
                     .andExpect(jsonPath("$.message").value("시험지 미리보기 조회 성공"))
                     .andExpect(jsonPath("$.data").exists())
-                    .andExpect(jsonPath("$.data.examSheetId").value(examSheetId))
+                    .andExpect(jsonPath("$.data.examSheetId").value(examSheetId.toString()))
                     .andExpect(jsonPath("$.data.examSheetName").exists())
                     .andExpect(jsonPath("$.data.grade").exists())
                     .andExpect(jsonPath("$.data.totalQuestions").exists())
@@ -322,7 +434,7 @@ class ExamSheetControllerIntegrationTest {
                     .andExpect(jsonPath("$.result").value("SUCCESS"))
                     .andExpect(jsonPath("$.message").value("시험지 문제 관리 현황 조회 성공"))
                     .andExpect(jsonPath("$.data").exists())
-                    .andExpect(jsonPath("$.data.examSheetId").value(examSheetId))
+                    .andExpect(jsonPath("$.data.examSheetId").value(examSheetId.toString()))
                     .andExpect(jsonPath("$.data.currentQuestionCount").exists())
                     .andExpect(jsonPath("$.data.targetQuestionCount").exists())
                     .andExpect(jsonPath("$.data.multipleChoiceCount").exists())
@@ -342,8 +454,7 @@ class ExamSheetControllerIntegrationTest {
             UUID examSheetId = UUIDv7Generator.generate();
             QuestionSelectionRequest request = new QuestionSelectionRequest(
                     UUIDv7Generator.generate(), // 문제 ID
-                    5,  // 배점
-                    1   // 순서
+                    5   // 배점 - questionOrder 매개변수 제거됨
             );
 
             mockMvc.perform(post(BASE_URL + "/{examSheetId}/questions", examSheetId)
@@ -354,7 +465,7 @@ class ExamSheetControllerIntegrationTest {
                     .andExpect(jsonPath("$.result").value("SUCCESS"))
                     .andExpect(jsonPath("$.message").value("문제가 시험지에 추가되었습니다"))
                     .andExpect(jsonPath("$.data").exists())
-                    .andExpect(jsonPath("$.data.examSheetId").value(examSheetId));
+                    .andExpect(jsonPath("$.data.examSheetId").value(examSheetId.toString()));
         }
 
         @Test

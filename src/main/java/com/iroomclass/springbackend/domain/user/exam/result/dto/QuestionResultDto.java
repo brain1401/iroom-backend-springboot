@@ -99,8 +99,7 @@ public record QuestionResultDto(
         @Schema(description = "문제 ID", example = "123e4567-e89b-12d3-a456-426614174005")
         UUID questionId,
         
-        @Schema(description = "문제 순서", example = "1")
-        Integer questionOrder,
+
         
         @Schema(description = "제출된 답안", example = "서울")
         String submittedAnswer,
@@ -119,7 +118,6 @@ public record QuestionResultDto(
             return new AnswerInfo(
                 studentAnswerSheet.getId(),
                 studentAnswerSheet.getQuestionId(),
-                studentAnswerSheet.getQuestionOrder(),
                 studentAnswerSheet.getSubmittedAnswer(),
                 studentAnswerSheet.getAnswerType().name()
             );

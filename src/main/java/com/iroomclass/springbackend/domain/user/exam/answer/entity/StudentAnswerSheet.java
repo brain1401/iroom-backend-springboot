@@ -208,14 +208,7 @@ public class StudentAnswerSheet {
         return question != null ? question.getId() : null;
     }
     
-    /**
-     * 문제 순서 반환
-     * 
-     * @return 문제 순서
-     */
-    public Integer getQuestionOrder() {
-        return question != null ? question.getQuestionOrder() : null;
-    }
+
     
     /**
      * 제출된 답안 반환

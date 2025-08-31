@@ -24,10 +24,7 @@ public record QuestionSelectionRequest(
     @NotNull(message = "배점은 필수입니다")
     @Positive(message = "배점은 양수여야 합니다") 
     @Schema(description = "문제 배점", example = "5", requiredMode = Schema.RequiredMode.REQUIRED)
-    Integer points,
-    
-    @Schema(description = "문제 순서 (지정하지 않으면 마지막에 추가)", example = "1")
-    Integer questionOrder
+    Integer points
 ) {
     
     /**
@@ -55,8 +52,6 @@ public record QuestionSelectionRequest(
         if (points <= 0) {
             throw new IllegalArgumentException("배점은 양수여야 합니다: " + points);
         }
-        if (questionOrder != null && questionOrder <= 0) {
-            throw new IllegalArgumentException("문제 순서는 양수여야 합니다: " + questionOrder);
-        }
+
     }
 }

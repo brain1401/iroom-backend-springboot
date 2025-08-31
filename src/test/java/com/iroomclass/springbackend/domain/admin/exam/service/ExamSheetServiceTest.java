@@ -130,7 +130,6 @@ class ExamSheetServiceTest {
                 .question(testQuestion1)
                 .seqNo(1)
                 .points(5)
-                .questionOrder(1)
                 .selectionMethod(ExamSheetQuestion.SelectionMethod.MANUAL)
                 .build();
     }
@@ -332,8 +331,7 @@ class ExamSheetServiceTest {
             UUID examSheetId = UUIDv7Generator.generate();
             QuestionSelectionRequest request = new QuestionSelectionRequest(
                     UUIDv7Generator.generate(), // 새로운 문제 ID
-                    5, // 배점
-                    2 // 문제 순서
+                    5 // 배점 - questionOrder 매개변수 제거됨
             );
 
             given(examSheetRepository.findById(examSheetId))
@@ -343,12 +341,9 @@ class ExamSheetServiceTest {
             given(examSheetQuestionRepository.findByExamSheetIdAndQuestionId(
                     any(UUID.class), any(UUID.class)))
                     .willReturn(Optional.empty()); // 중복 없음
-            given(examSheetQuestionRepository.findByExamSheetIdAndQuestionOrderGreaterThanEqual(
-                    examSheetId, 2))
-                    .willReturn(List.of()); // 재정렬할 기존 문제 없음
             given(examSheetQuestionRepository.save(any(ExamSheetQuestion.class)))
                     .willReturn(testExamSheetQuestion);
-            given(examSheetQuestionRepository.findByExamSheetIdOrderByQuestionOrder(examSheetId))
+            given(examSheetQuestionRepository.findByExamSheetIdOrderBySeqNo(examSheetId))
                     .willReturn(List.of(testExamSheetQuestion));
 
             // When
@@ -366,7 +361,7 @@ class ExamSheetServiceTest {
         void addQuestionToExamSheet_WithNonExistentExamSheet_ThrowsException() {
             // Given
             UUID examSheetId = UUIDv7Generator.generate();
-            QuestionSelectionRequest request = new QuestionSelectionRequest(UUIDv7Generator.generate(), 5, 1);
+            QuestionSelectionRequest request = new QuestionSelectionRequest(UUIDv7Generator.generate(), 5);
 
             given(examSheetRepository.findById(examSheetId))
                     .willReturn(Optional.empty());
@@ -384,7 +379,7 @@ class ExamSheetServiceTest {
         void addQuestionToExamSheet_WithDuplicateQuestion_ThrowsException() {
             // Given
             UUID examSheetId = UUIDv7Generator.generate();
-            QuestionSelectionRequest request = new QuestionSelectionRequest(UUIDv7Generator.generate(), 5, 1);
+            QuestionSelectionRequest request = new QuestionSelectionRequest(UUIDv7Generator.generate(), 5);
 
             given(examSheetRepository.findById(examSheetId))
                     .willReturn(Optional.of(testExamSheet));
@@ -419,10 +414,7 @@ class ExamSheetServiceTest {
             given(examSheetQuestionRepository.findByExamSheetIdAndQuestionId(
                     examSheetId, questionId))
                     .willReturn(Optional.of(testExamSheetQuestion));
-            given(examSheetQuestionRepository.findByExamSheetIdAndQuestionOrderGreaterThan(
-                    examSheetId, 1))
-                    .willReturn(List.of()); // 재정렬할 문제 없음
-            given(examSheetQuestionRepository.findByExamSheetIdOrderByQuestionOrder(examSheetId))
+            given(examSheetQuestionRepository.findByExamSheetIdOrderBySeqNo(examSheetId))
                     .willReturn(List.of());
 
             // When
@@ -474,7 +466,7 @@ class ExamSheetServiceTest {
 
             given(examSheetRepository.findById(examSheetId))
                     .willReturn(Optional.of(testExamSheet));
-            given(examSheetQuestionRepository.findByExamSheetIdOrderByQuestionOrder(examSheetId))
+            given(examSheetQuestionRepository.findByExamSheetIdOrderBySeqNo(examSheetId))
                     .willReturn(List.of(testExamSheetQuestion));
             given(questionRepository.findById(testQuestion2.getId()))
                     .willReturn(Optional.of(testQuestion2));
@@ -519,7 +511,7 @@ class ExamSheetServiceTest {
 
             given(examSheetRepository.findById(examSheetId))
                     .willReturn(Optional.of(testExamSheet));
-            given(examSheetQuestionRepository.findByExamSheetIdOrderByQuestionOrder(examSheetId))
+            given(examSheetQuestionRepository.findByExamSheetIdOrderBySeqNo(examSheetId))
                     .willReturn(List.of(testExamSheetQuestion));
 
             // When

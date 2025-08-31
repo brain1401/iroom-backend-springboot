@@ -362,8 +362,7 @@ public class ExamSheetController {
             선택한 문제를 시험지에 추가합니다.
             
             기능:
-            - questionOrder 지정 시 해당 순서에 문제 삽입 (기존 문제들은 순서 재조정)
-            - questionOrder 미지정 시 마지막 순서에 추가
+            - 시험지 마지막 순서에 문제 추가
             - 중복 문제 추가 방지
             - 배점 자동 계산 또는 수동 설정 가능
             """
@@ -379,7 +378,7 @@ public class ExamSheetController {
             @Valid @RequestBody QuestionSelectionRequest request) {
         
         log.info("시험지 {} 문제 추가 요청: 문제={}, 배점={}, 순서={}", 
-                examSheetId, request.questionId(), request.points(), request.questionOrder());
+                examSheetId, request.questionId(), request.points());
         
         ExamSheetQuestionManageResponse response = examSheetService.addQuestionToExamSheet(
                 examSheetId, request);

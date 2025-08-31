@@ -113,7 +113,7 @@ public interface StudentAnswerSheetRepository extends JpaRepository<StudentAnswe
      * @param submissionId 시험 제출 ID
      * @return 문제 순서대로 정렬된 답안 목록
      */
-    @Query("SELECT sas FROM StudentAnswerSheet sas JOIN sas.question q WHERE sas.examSubmission.id = :submissionId ORDER BY q.questionOrder ASC")
+    @Query("SELECT sas FROM StudentAnswerSheet sas JOIN sas.question q WHERE sas.examSubmission.id = :submissionId ORDER BY q.id ASC")
     List<StudentAnswerSheet> findByExamSubmissionIdOrderByQuestionOrder(@Param("submissionId") UUID submissionId);
 
     /**
@@ -125,7 +125,7 @@ public interface StudentAnswerSheetRepository extends JpaRepository<StudentAnswe
      * @param submissionId 시험 제출 ID
      * @return 문제 순서대로 정렬된 답안 목록 (Question 정보 포함)
      */
-    @Query("SELECT sas FROM StudentAnswerSheet sas JOIN FETCH sas.question q WHERE sas.examSubmission.id = :submissionId ORDER BY q.questionOrder ASC")
+    @Query("SELECT sas FROM StudentAnswerSheet sas JOIN FETCH sas.question q WHERE sas.examSubmission.id = :submissionId ORDER BY q.id ASC")
     List<StudentAnswerSheet> findBySubmissionIdOrderByQuestionOrderWithQuestion(@Param("submissionId") UUID submissionId);
 
     /**

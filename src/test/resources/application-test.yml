@@ -1,6 +1,6 @@
 spring:
   datasource:
-    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;MODE=MySQL;DATABASE_TO_LOWER=TRUE;CASE_INSENSITIVE_IDENTIFIERS=TRUE
     driver-class-name: org.h2.Driver
     username: sa
     password: 
@@ -16,14 +16,25 @@ spring:
     properties:
       hibernate:
         format_sql: true
+        dialect: org.hibernate.dialect.H2Dialect
+        jdbc:
+          time_zone: UTC
+        hbm2ddl:
+          auto: create-drop
         
-  sql:
-    init:
-      mode: always
-      data-locations: classpath:test-data-h2.sql
+# Temporarily disable SQL data loading
+  # sql:
+  #   init:
+  #     mode: always
+  #     data-locations: classpath:test-data-h2.sql
       
 logging:
   level:
     org.springframework.jdbc: DEBUG
     org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
     com.iroomclass.springbackend: DEBUG
+    com.iroomclass.springbackend.domain.user.exam.result.service: DEBUG
+    com.iroomclass.springbackend.domain.user.exam.result.repository: DEBUG
+    org.springframework.transaction: DEBUG
+    org.springframework.orm.jpa: DEBUG

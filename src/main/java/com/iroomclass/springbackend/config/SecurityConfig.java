@@ -77,9 +77,8 @@ public class SecurityConfig {
                         // 학생 로그인은 공개 허용
                         .requestMatchers("/api/user/login", "/user/login").permitAll()
                         
-                        // 관리자 로그인은 공개 허용
-                        .requestMatchers("/api/admin/login", "/admin/login").permitAll()
-                        .requestMatchers("/api/admin/academy-name", "/admin/academy-name").permitAll()
+                        // 관리자 인증은 공개 허용
+                        .requestMatchers("/api/admin/verify-credentials", "/admin/verify-credentials").permitAll()
                         
                         // 사용자 영역 - 현재는 로그인 로직과 분리되어 있음 (추후 통합 필요)
                         .requestMatchers("/api/user/**", "/user/**").permitAll()

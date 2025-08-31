@@ -36,7 +36,7 @@ public interface QuestionResultRepository extends JpaRepository<QuestionResult, 
     @Query("SELECT qr FROM QuestionResult qr " +
            "LEFT JOIN FETCH qr.studentAnswerSheet " +
            "WHERE qr.examResult.id = :examResultId " +
-           "ORDER BY qr.studentAnswerSheet.question.questionOrder ASC")
+           "ORDER BY qr.studentAnswerSheet.question.id ASC")
     List<QuestionResult> findByExamResultIdOrderByQuestionOrder(@Param("examResultId") UUID examResultId);
     
     /**

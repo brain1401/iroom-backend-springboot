@@ -545,8 +545,8 @@ public class ExamSheetService {
     @Transactional
     public ExamSheetQuestionManageResponse addQuestionToExamSheet(UUID examSheetId,
             QuestionSelectionRequest request) {
-        log.info("시험지 {} 문제 추가: 문제={}, 배점={}, 순서={}",
-                examSheetId, request.questionId(), request.points(), request.questionOrder());
+        log.info("시험지 {} 문제 추가: 문제={}, 배점={}",
+                examSheetId, request.questionId(), request.points());
 
         // 1단계: 시험지 존재 확인
         ExamSheet examSheet = examSheetRepository.findById(examSheetId)
@@ -565,29 +565,16 @@ public class ExamSheetService {
             throw new IllegalArgumentException("이미 시험지에 포함된 문제입니다: " + request.questionId());
         }
 
-        // 4단계: 문제 순서 결정
-        int questionOrder;
-        if (request.questionOrder() != null) {
-            questionOrder = request.questionOrder();
-            // 기존 문제들의 순서 재조정 (해당 순서 이후 문제들을 1씩 증가)
-            List<ExamSheetQuestion> existingQuestions = examSheetQuestionRepository
-                    .findByExamSheetIdAndQuestionOrderGreaterThanEqual(examSheetId, questionOrder);
+        // 4단계: 새 문제의 seqNo 결정 (기존 문제 개수 + 1)
+        int newSeqNo = (int) examSheetQuestionRepository.countByExamSheetId(examSheetId) + 1;
 
-            for (ExamSheetQuestion existingQuestion : existingQuestions) {
-                existingQuestion.updateQuestionOrder(existingQuestion.getQuestionOrder() + 1);
-            }
-            examSheetQuestionRepository.saveAll(existingQuestions);
-        } else {
-            // 마지막 순서에 추가
-            questionOrder = (int) examSheetQuestionRepository.countByExamSheetId(examSheetId) + 1;
-        }
+
 
         // 5단계: 새 문제 추가
         ExamSheetQuestion newExamSheetQuestion = ExamSheetQuestion.builder()
                 .examSheet(examSheet)
                 .question(question)
-                .seqNo(questionOrder) // seqNo와 questionOrder 동일하게 설정
-                .questionOrder(questionOrder)
+                .seqNo(newSeqNo)
                 .points(request.points())
                 .selectionMethod(ExamSheetQuestion.SelectionMethod.MANUAL)
                 .build();
@@ -595,7 +582,7 @@ public class ExamSheetService {
         examSheetQuestionRepository.save(newExamSheetQuestion);
 
         log.info("시험지 {} 문제 추가 완료: 문제={}, 순서={}",
-                examSheetId, request.questionId(), questionOrder);
+                examSheetId, request.questionId(), newSeqNo);
 
         // 6단계: 업데이트된 시험지 문제 관리 정보 반환
         return getExamSheetQuestionManagement(examSheetId);
@@ -624,22 +611,11 @@ public class ExamSheetService {
                 .findByExamSheetIdAndQuestionId(examSheetId, questionId)
                 .orElseThrow(() -> new IllegalArgumentException("시험지에 포함되지 않은 문제입니다: " + questionId));
 
-        int removedOrder = targetQuestion.getQuestionOrder();
-
         // 3단계: 문제 제거
         examSheetQuestionRepository.delete(targetQuestion);
 
-        // 4단계: 나머지 문제들의 순서 재조정 (제거된 문제 이후의 문제들을 1씩 감소)
-        List<ExamSheetQuestion> remainingQuestions = examSheetQuestionRepository
-                .findByExamSheetIdAndQuestionOrderGreaterThan(examSheetId, removedOrder);
-
-        for (ExamSheetQuestion remainingQuestion : remainingQuestions) {
-            remainingQuestion.updateQuestionOrder(remainingQuestion.getQuestionOrder() - 1);
-        }
-        examSheetQuestionRepository.saveAll(remainingQuestions);
-
-        log.info("시험지 {} 문제 제거 완료: 문제={}, 제거된 순서={}",
-                examSheetId, questionId, removedOrder);
+        log.info("시험지 {} 문제 제거 완료: 문제={}",
+                examSheetId, questionId);
 
         // 5단계: 업데이트된 시험지 문제 관리 정보 반환
         return getExamSheetQuestionManagement(examSheetId);
@@ -663,7 +639,7 @@ public class ExamSheetService {
 
         // 2단계: 시험지에 포함된 문제들 조회
         List<ExamSheetQuestion> examSheetQuestions = examSheetQuestionRepository
-                .findByExamSheetIdOrderByQuestionOrder(examSheetId);
+                .findByExamSheetIdOrderBySeqNo(examSheetId);
 
         // 3단계: 문제별 상세 정보 생성
         List<ExamSheetQuestionManageResponse.QuestionInExamSheet> questions = new ArrayList<>();
@@ -686,7 +662,6 @@ public class ExamSheetService {
             totalPoints += esq.getPoints();
 
             ExamSheetQuestionManageResponse.QuestionInExamSheet questionInfo = new ExamSheetQuestionManageResponse.QuestionInExamSheet(
-                    esq.getQuestionOrder(),
                     question.getId(),
                     unit.getId(),
                     unit.getUnitName(),
@@ -733,7 +708,7 @@ public class ExamSheetService {
 
         // 2. 시험지에 포함된 문제들 조회 (순서대로)
         List<ExamSheetQuestion> examSheetQuestions = examSheetQuestionRepository
-                .findByExamSheetIdOrderByQuestionOrder(examSheetId);
+                .findByExamSheetIdOrderBySeqNo(examSheetId);
 
         log.info("시험지 {} 포함 문제 개수: {}", examSheetId, examSheetQuestions.size());
 
@@ -779,7 +754,6 @@ public class ExamSheetService {
 
         return new ExamSheetPreviewResponse.ExamSheetQuestionPreview(
                 question.getId(),
-                examSheetQuestion.getQuestionOrder(),
                 examSheetQuestion.getPoints(),
                 question.getQuestionType().name(),
                 question.getDifficulty().name(),
@@ -897,7 +871,7 @@ public class ExamSheetService {
 
         // 2. 기존 문제가 시험지에 있는지 확인
         List<ExamSheetQuestion> examSheetQuestions = examSheetQuestionRepository
-                .findByExamSheetIdOrderByQuestionOrder(examSheetId);
+                .findByExamSheetIdOrderBySeqNo(examSheetId);
 
         ExamSheetQuestion existingQuestion = examSheetQuestions.stream()
                 .filter(esq -> esq.getQuestion().getId().equals(request.oldQuestionId()))
@@ -928,7 +902,7 @@ public class ExamSheetService {
                 .question(newQuestion) // 새 문제로 교체
                 .seqNo(existingQuestion.getSeqNo()) // 기존 순서 번호 유지
                 .points(newPoints) // 배점 변경 또는 유지
-                .questionOrder(existingQuestion.getQuestionOrder()) // 문제 순서 유지
+
                 .selectionMethod(existingQuestion.getSelectionMethod()) // 선택 방식 유지
                 .build();
 

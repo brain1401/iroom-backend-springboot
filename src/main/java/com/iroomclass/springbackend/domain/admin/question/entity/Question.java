@@ -147,12 +147,7 @@ public class Question {
     @Builder.Default
     private Integer points = 10;
     
-    /**
-     * 문제 순서
-     * 시험지 내에서의 문제 순서
-     */
-    @Column(name = "question_order")
-    private Integer questionOrder;
+
 
     /**
      * JSON 형태의 questionText를 HTML로 변환
@@ -347,14 +342,7 @@ public class Question {
         return points;
     }
     
-    /**
-     * 문제 순서 반환
-     * 
-     * @return 문제 순서
-     */
-    public Integer getQuestionOrder() {
-        return questionOrder;
-    }
+
 
     /**
      * 문제 난이도 열거형
