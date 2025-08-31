@@ -33,7 +33,7 @@ public interface ExamSheetRepository extends JpaRepository<ExamSheet, UUID> {
      * @param grade 학년 (1, 2, 3)
      * @return 해당 학년의 시험지 목록 (최신순)
      */
-    List<ExamSheet> findByGradeOrderByIdDesc(Integer grade);
+    List<ExamSheet> findByGradeOrderByCreatedAtDesc(Integer grade);
     
     /**
      * 전체 시험지 조회 (최신순)
@@ -43,7 +43,7 @@ public interface ExamSheetRepository extends JpaRepository<ExamSheet, UUID> {
      * 
      * @return 전체 시험지 목록 (최신순)
      */
-    List<ExamSheet> findAllByOrderByIdDesc();
+    List<ExamSheet> findAllByOrderByCreatedAtDesc();
     
     /**
      * 시험지 목록 필터링 조회

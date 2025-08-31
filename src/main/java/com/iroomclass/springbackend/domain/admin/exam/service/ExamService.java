@@ -226,7 +226,7 @@ public class ExamService {
         
         // ANSWER_SHEET 타입의 문서 찾기
         ExamDocument answerSheet = documents.stream()
-            .filter(doc -> doc.getDocumentType() == ExamDocument.DocumentType.ANSWER_SHEET)
+            .filter(doc -> doc.getDocumentType() == ExamDocument.DocumentType.STUDENT_ANSWER_SHEET)
             .findFirst()
             .orElseThrow(() -> new IllegalArgumentException("해당 시험지에 대한 답안지가 존재하지 않습니다: " + examSheetId));
         

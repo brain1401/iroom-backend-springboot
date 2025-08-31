@@ -5,7 +5,11 @@ import com.iroomclass.springbackend.domain.user.exam.entity.ExamSubmission;
 import com.iroomclass.springbackend.domain.user.info.entity.User;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+
+import java.util.Optional;
 
 import java.util.List;
 import java.util.UUID;
@@ -136,4 +140,18 @@ public interface ExamSubmissionRepository extends JpaRepository<ExamSubmission, 
      * @return 해당 시험의 제출 목록
      */
     List<ExamSubmission> findByExamId(UUID examId);
+    
+    /**
+     * ID로 ExamSubmission 조회 (Exam과 ExamSheet 함께 fetch)
+     * 
+     * 지연 로딩 문제를 해결하기 위해 Exam과 ExamSheet를 함께 조회합니다.
+     * 
+     * @param id 제출 ID
+     * @return ExamSubmission (Exam, ExamSheet 포함)
+     */
+    @Query("SELECT es FROM ExamSubmission es " +
+           "JOIN FETCH es.exam e " +
+           "JOIN FETCH e.examSheet " +
+           "WHERE es.id = :id")
+    Optional<ExamSubmission> findByIdWithExamAndExamSheet(@Param("id") UUID id);
 }

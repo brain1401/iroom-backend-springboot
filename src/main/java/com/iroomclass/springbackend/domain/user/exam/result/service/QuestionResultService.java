@@ -9,8 +9,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.iroomclass.springbackend.domain.user.exam.answer.entity.ExamAnswer;
-import com.iroomclass.springbackend.domain.user.exam.answer.repository.ExamAnswerRepository;
+import com.iroomclass.springbackend.domain.user.exam.answer.entity.StudentAnswerSheet;
+import com.iroomclass.springbackend.domain.user.exam.answer.repository.StudentAnswerSheetRepository;
 import com.iroomclass.springbackend.domain.user.exam.entity.ExamSubmission;
 import com.iroomclass.springbackend.domain.user.exam.result.entity.ExamResult;
 import com.iroomclass.springbackend.domain.user.exam.result.entity.QuestionResult;
@@ -36,7 +36,7 @@ import lombok.extern.slf4j.Slf4j;
 public class QuestionResultService {
     
     private final QuestionResultRepository questionResultRepository;
-    private final ExamAnswerRepository examAnswerRepository;
+    private final StudentAnswerSheetRepository studentAnswerSheetRepository;
     
     /**
      * 시험 제출에 대한 문제별 자동 채점 시작
@@ -49,9 +49,9 @@ public class QuestionResultService {
         log.info("문제별 자동 채점 시작: examResultId={}, submissionId={}", 
                 examResult.getId(), submission.getId());
         
-        List<ExamAnswer> answers = examAnswerRepository.findBySubmissionIdOrderByQuestionOrder(submission.getId());
+        List<StudentAnswerSheet> answers = studentAnswerSheetRepository.findBySubmissionIdOrderByQuestionOrderWithQuestion(submission.getId());
         
-        for (ExamAnswer answer : answers) {
+        for (StudentAnswerSheet answer : answers) {
             createAndProcessAutoGrading(examResult, answer);
         }
         
@@ -70,12 +70,13 @@ public class QuestionResultService {
         log.info("수동 채점 준비: examResultId={}, submissionId={}", 
                 examResult.getId(), submission.getId());
         
-        List<ExamAnswer> answers = examAnswerRepository.findBySubmissionIdOrderByQuestionOrder(submission.getId());
+        List<StudentAnswerSheet> answers = studentAnswerSheetRepository.findBySubmissionIdOrderByQuestionOrder(submission.getId());
         
-        for (ExamAnswer answer : answers) {
+        for (StudentAnswerSheet answer : answers) {
             QuestionResult questionResult = QuestionResult.builder()
                 .examResult(examResult)
-                .examAnswer(answer)
+                .studentAnswerSheet(answer)
+                .question(answer.getQuestion()) // Question 명시적 설정
                 .gradingMethod(GradingMethod.MANUAL)
                 .maxScore(answer.getMaxScore())
                 .build();
@@ -105,7 +106,8 @@ public class QuestionResultService {
         for (QuestionResult original : originalQuestionResults) {
             QuestionResult newQuestionResult = QuestionResult.builder()
                 .examResult(newResult)
-                .examAnswer(original.getExamAnswer())
+                .studentAnswerSheet(original.getStudentAnswerSheet())
+                .question(original.getQuestion()) // Question 명시적 설정
                 .gradingMethod(GradingMethod.MANUAL) // 재채점은 기본적으로 수동
                 .maxScore(original.getMaxScore())
                 .build();
@@ -119,16 +121,44 @@ public class QuestionResultService {
     }
     
     /**
+     * 재채점용 자동 채점 실행
+     * 
+     * @param examResult 시험 결과
+     */
+    @Transactional
+    public void executeAutoGradingForRegrading(ExamResult examResult) {
+        log.info("재채점 자동 채점 시작: examResultId={}", examResult.getId());
+        
+        List<QuestionResult> questionResults = questionResultRepository.findByExamResultIdOrderByQuestionOrder(examResult.getId());
+        
+        for (QuestionResult questionResult : questionResults) {
+            if (questionResult.getQuestion().isMultipleChoice() && questionResult.getStudentAnswerSheet().getSelectedChoice() != null) {
+                // 객관식 문제에 대해 자동 채점 실행
+                boolean success = questionResult.processAutoGrading();
+                if (success) {
+                    questionResultRepository.save(questionResult);
+                    log.debug("재채점 자동 채점 완료: questionId={}, score={}", 
+                             questionResult.getQuestion().getId(), questionResult.getScore());
+                }
+            }
+        }
+        
+        log.info("재채점 자동 채점 완료: examResultId={}, 처리된 문제 수={}", 
+                examResult.getId(), questionResults.size());
+    }
+    
+    /**
      * 자동 채점 생성 및 처리
      * 
      * @param examResult 시험 결과
-     * @param answer 시험 답안
+     * @param answer 학생 답안지
      */
     @Transactional
-    protected void createAndProcessAutoGrading(ExamResult examResult, ExamAnswer answer) {
+    protected void createAndProcessAutoGrading(ExamResult examResult, StudentAnswerSheet answer) {
         QuestionResult questionResult = QuestionResult.builder()
             .examResult(examResult)
-            .examAnswer(answer)
+            .studentAnswerSheet(answer)
+            .question(answer.getQuestion()) // Question 명시적 설정
             .gradingMethod(GradingMethod.AUTO)
             .maxScore(answer.getMaxScore())
             .confidenceScore(BigDecimal.ONE) // 자동 채점은 신뢰도 100%
@@ -141,7 +171,7 @@ public class QuestionResultService {
         examResult.addQuestionResult(questionResult);
         
         log.debug("자동 채점 완료: questionId={}, score={}, isCorrect={}", 
-                answer.getQuestionId(), questionResult.getScore(), questionResult.getIsCorrect());
+                answer.getQuestion().getId(), questionResult.getScore(), questionResult.getIsCorrect());
     }
     
     /**

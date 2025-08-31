@@ -76,7 +76,7 @@ public record QuestionResultDto(
         return new QuestionResultDto(
             entity.getId(),
             entity.getExamResult().getId(),
-            AnswerInfo.from(entity.getExamAnswer()),
+            AnswerInfo.from(entity.getStudentAnswerSheet()),
             entity.getIsCorrect(),
             entity.getScore(),
             entity.getMaxScore(),
@@ -110,18 +110,18 @@ public record QuestionResultDto(
     ) {
         
         /**
-         * ExamAnswer Entity에서 AnswerInfo로 변환
+         * StudentAnswerSheet Entity에서 AnswerInfo로 변환
          * 
-         * @param examAnswer ExamAnswer 엔티티
+         * @param studentAnswerSheet StudentAnswerSheet 엔티티
          * @return AnswerInfo
          */
-        public static AnswerInfo from(com.iroomclass.springbackend.domain.user.exam.answer.entity.ExamAnswer examAnswer) {
+        public static AnswerInfo from(com.iroomclass.springbackend.domain.user.exam.answer.entity.StudentAnswerSheet studentAnswerSheet) {
             return new AnswerInfo(
-                examAnswer.getId(),
-                examAnswer.getQuestionId(),
-                examAnswer.getQuestionOrder(),
-                examAnswer.getSubmittedAnswer(),
-                examAnswer.getAnswerType().name()
+                studentAnswerSheet.getId(),
+                studentAnswerSheet.getQuestionId(),
+                studentAnswerSheet.getQuestionOrder(),
+                studentAnswerSheet.getSubmittedAnswer(),
+                studentAnswerSheet.getAnswerType().name()
             );
         }
     }

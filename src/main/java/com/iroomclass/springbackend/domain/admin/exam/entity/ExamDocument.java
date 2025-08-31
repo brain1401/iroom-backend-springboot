@@ -11,9 +11,9 @@ import java.util.UUID;
  * 시험지 문서 Entity
  * 
  * 시험지 생성 시 만들어지는 3가지 문서를 관리합니다.
- * 1. 학생 답안지 (QR코드 포함)
- * 2. 시험 문제지
- * 3. 시험 답안 (정답)
+ * 1. 학생이 제출하는 답안지 (주관식만, QR코드 포함)
+ * 2. 실제 학생이 풀었던 시험 문제지
+ * 3. DB에 들어있는 시험의 정답지
  * 
  * @author 이룸클래스
  * @since 2025
@@ -45,7 +45,7 @@ public class ExamDocument {
     
     /**
      * 문서 종류
-     * ANSWER_SHEET: 답안지, QUESTION_PAPER: 문제지, ANSWER_KEY: 답안
+     * STUDENT_ANSWER_SHEET: 학생 답안지, EXAM_SHEET: 시험 문제지, CORRECT_ANSWER_SHEET: 정답지
      */
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -71,9 +71,23 @@ public class ExamDocument {
      * 문서 종류 열거형
      */
     public enum DocumentType {
-        ANSWER_SHEET,    // 답안지
-        QUESTION_PAPER,  // 문제지
-        ANSWER_KEY       // 답안
+        /**
+         * 학생이 시험에 제출하는 답안지 (주관식만)
+         * QR코드가 포함되어 있어 제출 화면으로 이동 가능
+         */
+        STUDENT_ANSWER_SHEET,
+        
+        /**
+         * 실제 학생이 풀었던 시험 문제지
+         * 객관식과 주관식 문제가 모두 포함
+         */
+        EXAM_SHEET,
+        
+        /**
+         * 데이터베이스에 저장된 시험의 정답지
+         * 채점 및 검증용도로 사용
+         */
+        CORRECT_ANSWER_SHEET
     }
     
     /**

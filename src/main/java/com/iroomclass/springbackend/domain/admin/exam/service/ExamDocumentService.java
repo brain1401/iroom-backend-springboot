@@ -236,7 +236,7 @@ public class ExamDocumentService {
 
         return ExamDocument.builder()
                 .examSheet(examSheet)
-                .documentType(ExamDocument.DocumentType.ANSWER_SHEET)
+                .documentType(ExamDocument.DocumentType.STUDENT_ANSWER_SHEET)
                 .documentContent(content.toString())
                 .qrCodeUrl(qrCodeUrl) // 새로 생성한 QR 코드 URL 사용
                 .build();
@@ -293,7 +293,7 @@ public class ExamDocumentService {
 
         return ExamDocument.builder()
                 .examSheet(examSheet)
-                .documentType(ExamDocument.DocumentType.QUESTION_PAPER)
+                .documentType(ExamDocument.DocumentType.EXAM_SHEET)
                 .documentContent(content.toString())
                 .build();
     }
@@ -338,7 +338,7 @@ public class ExamDocumentService {
 
         return ExamDocument.builder()
                 .examSheet(examSheet)
-                .documentType(ExamDocument.DocumentType.ANSWER_KEY)
+                .documentType(ExamDocument.DocumentType.CORRECT_ANSWER_SHEET)
                 .documentContent(content.toString())
                 .build();
     }
@@ -357,11 +357,11 @@ public class ExamDocumentService {
      */
     private String getDocumentTypeName(ExamDocument.DocumentType documentType) {
         switch (documentType) {
-            case ANSWER_SHEET:
+            case STUDENT_ANSWER_SHEET:
                 return "답안지";
-            case QUESTION_PAPER:
+            case EXAM_SHEET:
                 return "문제지";
-            case ANSWER_KEY:
+            case CORRECT_ANSWER_SHEET:
                 return "답안";
             default:
                 return "알 수 없음";

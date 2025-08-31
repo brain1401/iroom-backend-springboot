@@ -7,7 +7,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.iroomclass.springbackend.domain.admin.exam.entity.Exam;
 import com.iroomclass.springbackend.domain.admin.exam.repository.ExamRepository;
-import com.iroomclass.springbackend.domain.user.exam.answer.repository.ExamAnswerRepository;
+import com.iroomclass.springbackend.domain.user.exam.answer.repository.StudentAnswerSheetRepository;
 import com.iroomclass.springbackend.domain.user.exam.dto.ExamSubmissionCreateRequest;
 import com.iroomclass.springbackend.domain.user.exam.dto.ExamSubmissionCreateResponse;
 import com.iroomclass.springbackend.domain.user.exam.entity.ExamSubmission;
@@ -34,7 +34,7 @@ public class ExamSubmissionService {
     
     private final ExamSubmissionRepository examSubmissionRepository;
     private final ExamRepository examRepository;
-    private final ExamAnswerRepository examAnswerRepository;
+    private final StudentAnswerSheetRepository studentAnswerSheetRepository;
     private final UserRepository userRepository;
     
     /**
@@ -106,7 +106,7 @@ public class ExamSubmissionService {
             .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 시험 제출입니다: " + submissionId));
         
         // 2단계: 답안 완료 여부 확인
-        long answerCount = examAnswerRepository.countByExamSubmissionId(submissionId);
+        long answerCount = studentAnswerSheetRepository.countByExamSubmissionId(submissionId);
         if (answerCount == 0) {
             throw new IllegalArgumentException("답안이 완료되지 않았습니다. 답안을 먼저 작성해주세요.");
         }

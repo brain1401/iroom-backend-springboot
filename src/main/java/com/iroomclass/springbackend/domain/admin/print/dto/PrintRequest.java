@@ -15,7 +15,7 @@ public record PrintRequest(
     UUID examSheetId,
     
     @NotEmpty(message = "인쇄할 문서 타입을 선택해주세요")
-    @Schema(description = "인쇄할 문서 타입 목록", example = "[\"ANSWER_SHEET\", \"QUESTION_PAPER\", \"ANSWER_KEY\"]")
+    @Schema(description = "인쇄할 문서 타입 목록", example = "[\"STUDENT_ANSWER_SHEET\", \"EXAM_SHEET\", \"CORRECT_ANSWER_SHEET\"]")
     List<String> documentTypes,
     
     @Schema(description = "파일명 (선택사항)", example = "1학년중간고사_문제지")

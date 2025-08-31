@@ -1,6 +1,6 @@
 package com.iroomclass.springbackend.domain.user.exam.answer.dto;
 
-import com.iroomclass.springbackend.domain.user.exam.answer.entity.ExamAnswer;
+import com.iroomclass.springbackend.domain.user.exam.answer.entity.StudentAnswerSheet;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
@@ -35,11 +35,8 @@ public record ExamAnswerResponse(
     @Schema(description = "선택한 답안 번호 (객관식 문제용)", example = "2", nullable = true)
     Integer selectedChoice,
     
-    @Schema(description = "정답 여부", example = "true", nullable = true)
-    Boolean isCorrect,
-    
-    @Schema(description = "획득 점수", example = "10", nullable = true)
-    Integer score
+    @Schema(description = "AI 해답 처리 과정 (AI가 분석한 문제 해결 과정)", nullable = true)
+    String aiSolutionProcess
 ) {
     public ExamAnswerResponse {
         Objects.requireNonNull(answerId, "answerId은 필수입니다");
@@ -54,17 +51,18 @@ public record ExamAnswerResponse(
     
     /**
      * Entity를 DTO로 변환하는 정적 메서드
+     * 
+     * NOTE: 채점 정보(정답 여부, 점수)는 QuestionResult에서 관리되므로 제외됨
      */
-    public static ExamAnswerResponse from(ExamAnswer examAnswer) {
+    public static ExamAnswerResponse from(StudentAnswerSheet studentAnswerSheet) {
         return new ExamAnswerResponse(
-            examAnswer.getId(),
-            examAnswer.getExamSubmission().getId(),
-            examAnswer.getQuestion().getId(),
-            examAnswer.getAnswerImageUrl(),
-            examAnswer.getAnswerText(),
-            examAnswer.getSelectedChoice(),
-            examAnswer.getIsCorrect(),
-            examAnswer.getScore()
+            studentAnswerSheet.getId(),
+            studentAnswerSheet.getExamSubmission().getId(),
+            studentAnswerSheet.getQuestion().getId(),
+            studentAnswerSheet.getAnswerImageUrl(),
+            studentAnswerSheet.getAnswerText(),
+            studentAnswerSheet.getSelectedChoice(),
+            studentAnswerSheet.getAiSolutionProcess()
         );
     }
 }

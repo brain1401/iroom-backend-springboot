@@ -140,6 +140,21 @@ public class Question {
     private Integer correctChoice;
 
     /**
+     * 문제 배점
+     * 해당 문제의 점수
+     */
+    @Column
+    @Builder.Default
+    private Integer points = 10;
+    
+    /**
+     * 문제 순서
+     * 시험지 내에서의 문제 순서
+     */
+    @Column(name = "question_order")
+    private Integer questionOrder;
+
+    /**
      * JSON 형태의 questionText를 HTML로 변환
      * 
      * @return HTML 형태의 문제 내용
@@ -321,6 +336,24 @@ public class Question {
         if (this.id == null) {
             this.id = UUIDv7Generator.generate();
         }
+    }
+    
+    /**
+     * 문제 배점 반환
+     * 
+     * @return 문제 배점
+     */
+    public Integer getPoints() {
+        return points;
+    }
+    
+    /**
+     * 문제 순서 반환
+     * 
+     * @return 문제 순서
+     */
+    public Integer getQuestionOrder() {
+        return questionOrder;
     }
 
     /**

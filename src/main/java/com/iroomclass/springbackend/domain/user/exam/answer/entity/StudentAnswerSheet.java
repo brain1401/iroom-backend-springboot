@@ -25,7 +25,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 /**
- * 시험 답안 Entity
+ * 학생 답안지 Entity
  * 
  * 학생이 제출한 시험 답안을 관리합니다. (순수 답안 정보만)
  * 주관식과 객관식 문제의 답안을 모두 지원하며, AI 이미지 인식 결과를 포함합니다.
@@ -41,12 +41,12 @@ import lombok.NoArgsConstructor;
  * @since 2025
  */
 @Entity
-@Table(name = "exam_answer")
+@Table(name = "student_answer_sheet")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Builder
-public class ExamAnswer {
+public class StudentAnswerSheet {
     
     /**
      * 답안 고유 ID
@@ -67,7 +67,7 @@ public class ExamAnswer {
     
     /**
      * 문제와의 관계
-     * ManyToOne: 여러 답안이 하나의 문제에 속함
+     * ManyToOne: 여러 답안이 하나의 문제를 참조할 수 있음
      * FetchType.LAZY: 필요할 때만 문제 정보를 조회
      */
     @ManyToOne(fetch = FetchType.LAZY)
@@ -76,41 +76,51 @@ public class ExamAnswer {
     
     /**
      * 답안 이미지 URL
-     * 촬영한 답안 이미지의 URL
-     * 최대 255자
+     * 주관식 문제의 경우 학생이 촬영한 답안 이미지
+     * 최대 500자, 주관식 문제에서 필수
      */
-    @Column(length = 255)
+    @Column(length = 500)
     private String answerImageUrl;
     
     /**
-     * AI가 추출한 답안 텍스트 (주관식용)
-     * AI가 이미지에서 인식한 텍스트 답안
-     * 주관식 문제일 때만 사용
-     * TEXT 타입으로 긴 내용 가능
+     * AI가 인식한 답안 텍스트
+     * 주관식 문제의 경우 AI가 이미지에서 인식한 텍스트
+     * 최대 1000자
      */
-    @Column(columnDefinition = "TEXT")
+    @Column(length = 1000)
     private String answerText;
     
     /**
-     * AI가 추출한 답안 풀이 과정 (주관식용)
-     * AI가 이미지에서 인식한 학생의 문제 풀이 과정
-     * 주관식 문제일 때만 사용
-     * TEXT 타입으로 긴 내용 가능
-     */
-    @Column(columnDefinition = "TEXT")
-    private String aiSolutionProcess;
-
-    /**
-     * 선택한 답안 번호 (객관식용)
-     * 객관식 문제에서 학생이 선택한 번호 (1, 2, 3, 4, 5)
-     * 객관식 문제일 때만 사용
+     * 객관식 선택 답안
+     * 객관식 문제의 경우 선택한 번호 (1~5)
      */
     @Column
     private Integer selectedChoice;
     
     /**
+     * AI 해답 처리 과정
+     * AI가 문제를 분석하고 해결하는 과정을 설명
+     */
+    @Column(columnDefinition = "TEXT")
+    private String aiSolutionProcess;
+    
+    /**
+     * 정답 여부
+     * AI 채점 결과
+     */
+    @Column
+    private Boolean isCorrect;
+    
+    /**
+     * 획득 점수
+     * AI 채점을 통해 부여된 점수
+     */
+    @Column
+    private Integer score;
+    
+    /**
      * Entity 저장 전 실행되는 메서드
-     * UUID 자동 설정
+     * UUID를 자동으로 설정합니다.
      */
     @PrePersist
     protected void onCreate() {
@@ -120,108 +130,137 @@ public class ExamAnswer {
     }
     
     /**
-     * AI 인식 결과 업데이트
+     * 답안 텍스트 업데이트 (주관식용)
+     * 
+     * @param answerText 새로운 답안 텍스트
      */
     public void updateAnswerText(String answerText) {
         this.answerText = answerText;
     }
-
+    
     /**
-     * AI 풀이 과정 업데이트
+     * 선택 답안 업데이트 (객관식용)
      * 
-     * @param aiSolutionProcess AI가 인식한 풀이 과정
+     * @param selectedChoice 새로운 선택 답안
      */
-    public void updateAiSolutionProcess(String aiSolutionProcess) {
-        this.aiSolutionProcess = aiSolutionProcess;
-    }
-
-    /**
-     * AI 인식 결과 전체 업데이트
-     * 답안 텍스트와 풀이 과정을 동시에 업데이트
-     * 
-     * @param answerText AI가 인식한 최종 답안
-     * @param aiSolutionProcess AI가 인식한 풀이 과정
-     */
-    public void updateAiRecognitionResult(String answerText, String aiSolutionProcess) {
-        this.answerText = answerText;
-        this.aiSolutionProcess = aiSolutionProcess;
+    public void updateSelectedChoice(Integer selectedChoice) {
+        this.selectedChoice = selectedChoice;
     }
     
     /**
      * 이미지 URL 업데이트
-     */
-    public void updateImageUrl(String answerImageUrl) {
-        this.answerImageUrl = answerImageUrl;
-    }
-
-    /**
-     * 객관식 답안 선택 업데이트
      * 
-     * @param selectedChoice 선택한 답안 번호 (1~5)
+     * @param imageUrl 새로운 이미지 URL
      */
-    public void updateSelectedChoice(Integer selectedChoice) {
-        if (selectedChoice != null && (selectedChoice < 1 || selectedChoice > 5)) {
-            throw new IllegalArgumentException("선택한 답안 번호는 1~5 사이여야 합니다: " + selectedChoice);
-        }
-        this.selectedChoice = selectedChoice;
+    public void updateImageUrl(String imageUrl) {
+        this.answerImageUrl = imageUrl;
     }
-
+    
+    /**
+     * 채점 결과 업데이트
+     * 
+     * @param isCorrect 정답 여부
+     * @param score 획득 점수
+     */
+    public void updateGradingResult(Boolean isCorrect, Integer score) {
+        this.isCorrect = isCorrect;
+        this.score = score;
+    }
+    
+    /**
+     * 답안 내용 반환 (문제 유형에 따라)
+     * 
+     * @return 답안 내용
+     */
+    public String getAnswerContent() {
+        if (selectedChoice != null) {
+            return selectedChoice.toString();
+        } else if (answerText != null) {
+            return answerText;
+        }
+        return null;
+    }
+    
     /**
      * 객관식 문제 여부 확인
      * 
-     * @return 객관식 문제이면 true, 아니면 false
+     * @return 객관식 문제면 true
      */
     public boolean isMultipleChoiceQuestion() {
         return question != null && question.isMultipleChoice();
     }
-
+    
     /**
-     * 주관식 문제 여부 확인
+     * 답안 제출 여부 확인
      * 
-     * @return 주관식 문제이면 true, 아니면 false
-     */
-    public boolean isSubjectiveQuestion() {
-        return question != null && question.isSubjective();
-    }
-
-    /**
-     * 답안이 제출되었는지 확인
-     * 
-     * @return 답안이 제출되었으면 true, 아니면 false
+     * @return 답안이 제출되었으면 true
      */
     public boolean hasAnswer() {
+        return selectedChoice != null || answerText != null;
+    }
+    
+    /**
+     * 문제 ID 반환
+     * 
+     * @return 문제 ID
+     */
+    public UUID getQuestionId() {
+        return question != null ? question.getId() : null;
+    }
+    
+    /**
+     * 문제 순서 반환
+     * 
+     * @return 문제 순서
+     */
+    public Integer getQuestionOrder() {
+        return question != null ? question.getQuestionOrder() : null;
+    }
+    
+    /**
+     * 제출된 답안 반환
+     * 
+     * @return 제출된 답안
+     */
+    public String getSubmittedAnswer() {
+        return getAnswerContent();
+    }
+    
+    /**
+     * 답안 유형 반환
+     * 
+     * @return 답안 유형
+     */
+    public AnswerType getAnswerType() {
         if (isMultipleChoiceQuestion()) {
-            return selectedChoice != null;
+            return AnswerType.MULTIPLE_CHOICE;
         } else {
-            return answerText != null && !answerText.trim().isEmpty();
+            return AnswerType.SUBJECTIVE;
         }
     }
-
-
+    
     /**
-     * 답안 내용 반환 (타입별)
+     * 최대 점수 반환 (문제에서 가져옴)
      * 
-     * @return 객관식이면 선택 번호, 주관식이면 텍스트 답안
+     * @return 최대 점수
      */
-    public String getAnswerContent() {
-        if (isMultipleChoiceQuestion()) {
-            return selectedChoice != null ? selectedChoice.toString() : null;
-        } else {
-            return answerText;
-        }
+    public Integer getMaxScore() {
+        return question != null ? question.getPoints() : 0;
     }
 
     /**
-     * 답안 상태 확인
-     * 
-     * @return 답안 상태 (ANSWERED, UNANSWERED)
+     * 답안 유형 열거형
      */
-    public AnswerStatus getAnswerStatus() {
-        if (!hasAnswer()) {
-            return AnswerStatus.UNANSWERED;
-        }
+    public enum AnswerType {
+        /**
+         * 객관식 답안
+         */
+        MULTIPLE_CHOICE,
         
-        return AnswerStatus.ANSWERED;
+        /**
+         * 주관식 답안
+         */
+        SUBJECTIVE
     }
 
     /**

@@ -6,8 +6,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-import com.iroomclass.springbackend.domain.admin.info.entity.Admin;
 import com.iroomclass.springbackend.domain.user.exam.entity.ExamSubmission;
+import com.iroomclass.springbackend.domain.admin.exam.entity.ExamSheet;
 import com.iroomclass.springbackend.common.UUIDv7Generator;
 
 import jakarta.persistence.CascadeType;
@@ -33,8 +33,8 @@ import lombok.NoArgsConstructor;
 /**
  * 시험 결과 엔티티
  * 
- * 제출된 시험에 대한 전체 채점 결과를 관리합니다.
- * 재채점 히스토리 및 채점자 정보를 포함합니다.
+ * 제출된 시험에 대한 전체 AI 채점 결과를 관리합니다.
+ * 재채점 히스토리를 포함합니다.
  * 
  * @author 이룸클래스
  * @since 2025
@@ -64,13 +64,13 @@ public class ExamResult {
     private ExamSubmission examSubmission;
     
     /**
-     * 채점자 정보
-     * ManyToOne: 여러 채점이 하나의 관리자에 의해 수행됨
-     * NULL일 경우 자동 채점
+     * 시험지와의 관계
+     * ManyToOne: 여러 채점 결과가 하나의 시험지에 속함
      */
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "graded_by", nullable = true)
-    private Admin gradedBy;
+    @JoinColumn(name = "exam_sheet_id", nullable = false)
+    private ExamSheet examSheet;
+    
     
     /**
      * 채점일시
@@ -195,25 +195,25 @@ public class ExamResult {
     /**
      * 재채점을 위한 새 버전 생성
      * 
-     * @param newGradedBy 새로운 채점자
      * @return 새 버전의 ExamResult
      */
-    public ExamResult createNewVersionForRegrading(Admin newGradedBy) {
+    public ExamResult createNewVersionForRegrading() {
         return ExamResult.builder()
             .examSubmission(this.examSubmission)
-            .gradedBy(newGradedBy)
+            .examSheet(this.examSheet)
             .status(ResultStatus.PENDING)
             .version(this.version + 1)
             .build();
     }
     
     /**
-     * 자동 채점 여부 확인
+     * AI 자동 채점 여부 확인
+     * 모든 채점이 AI에 의해 자동으로 수행됨
      * 
-     * @return 자동 채점이면 true, 수동 채점이면 false
+     * @return 항상 true (모든 채점이 AI 자동 채점)
      */
     public boolean isAutoGrading() {
-        return gradedBy == null;
+        return true;
     }
     
     /**

@@ -19,7 +19,7 @@ import com.iroomclass.springbackend.domain.user.exam.answer.dto.ExamAnswerRespon
 import com.iroomclass.springbackend.domain.user.exam.answer.dto.ExamAnswerUpdateRequest;
 import com.iroomclass.springbackend.domain.user.exam.answer.dto.ExamAnswerSheetCreateRequest;
 import com.iroomclass.springbackend.domain.user.exam.answer.dto.ExamAnswerSheetProcessResponse;
-import com.iroomclass.springbackend.domain.user.exam.answer.service.ExamAnswerService;
+import com.iroomclass.springbackend.domain.user.exam.answer.service.StudentAnswerSheetService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -44,7 +44,7 @@ import lombok.extern.slf4j.Slf4j;
 @Tag(name = "학생 시험 답안 관리", description = "시험 답안 생성, 수정, 조회 API")
 public class ExamAnswerController {
 
-    private final ExamAnswerService examAnswerService;
+    private final StudentAnswerSheetService studentAnswerSheetService;
 
     /**
      * 답안 생성 (AI 이미지 인식 포함)
@@ -62,7 +62,7 @@ public class ExamAnswerController {
     public ApiResponse<ExamAnswerResponse> createExamAnswer(@Valid @RequestBody ExamAnswerCreateRequest request) {
         log.info("답안 생성 요청: 제출 ID={}, 문제 ID={}", request.examSubmissionId(), request.questionId());
 
-        ExamAnswerResponse response = examAnswerService.createExamAnswer(request);
+        ExamAnswerResponse response = studentAnswerSheetService.createExamAnswer(request);
 
         log.info("답안 생성 성공: 답안 ID={}", response.answerId());
 
@@ -88,7 +88,7 @@ public class ExamAnswerController {
             @Parameter(description = "새로운 이미지 URL", example = "/uploads/answers/answer_1_retake.jpg") @RequestParam String newImageUrl) {
         log.info("답안 재촬영 요청: 답안 ID={}, 새 이미지 URL={}", answerId, newImageUrl);
 
-        ExamAnswerResponse response = examAnswerService.retakeExamAnswer(answerId, newImageUrl);
+        ExamAnswerResponse response = studentAnswerSheetService.retakeExamAnswer(answerId, newImageUrl);
 
         log.info("답안 재촬영 성공: 답안 ID={}", response.answerId());
 
@@ -111,7 +111,7 @@ public class ExamAnswerController {
     public ApiResponse<ExamAnswerResponse> updateExamAnswer(@Valid @RequestBody ExamAnswerUpdateRequest request) {
         log.info("답안 수정 요청: 답안 ID={}", request.answerId());
 
-        ExamAnswerResponse response = examAnswerService.updateExamAnswer(request);
+        ExamAnswerResponse response = studentAnswerSheetService.updateExamAnswer(request);
 
         log.info("답안 수정 성공: 답안 ID={}", response.answerId());
 
@@ -134,7 +134,7 @@ public class ExamAnswerController {
             @Parameter(description = "시험 제출 ID", example = "123e4567-e89b-12d3-a456-426614174000") @PathVariable UUID examSubmissionId) {
         log.info("답안 목록 조회 요청: 시험 제출 ID={}", examSubmissionId);
 
-        ExamAnswerListResponse response = examAnswerService.getExamAnswers(examSubmissionId);
+        ExamAnswerListResponse response = studentAnswerSheetService.getExamAnswers(examSubmissionId);
 
         log.info("답안 목록 조회 성공: 시험 제출 ID={}, 답안 수={}", examSubmissionId, response.totalCount());
 
@@ -160,7 +160,7 @@ public class ExamAnswerController {
             @Parameter(description = "문제 ID", example = "123e4567-e89b-12d3-a456-426614174001") @PathVariable UUID questionId) {
         log.info("특정 문제 답안 조회 요청: 시험 제출 ID={}, 문제 ID={}", examSubmissionId, questionId);
 
-        ExamAnswerResponse response = examAnswerService.getExamAnswer(examSubmissionId, questionId);
+        ExamAnswerResponse response = studentAnswerSheetService.getExamAnswer(examSubmissionId, questionId);
 
         log.info("특정 문제 답안 조회 성공: 답안 ID={}, 문제 ID={}", response.answerId(), questionId);
 
@@ -179,11 +179,11 @@ public class ExamAnswerController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "조회 성공"),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "잘못된 시험 제출 ID")
     })
-    public ApiResponse<ExamAnswerService.AnswerStatusSummary> getAnswerStatusSummary(
+    public ApiResponse<StudentAnswerSheetService.AnswerStatusSummary> getAnswerStatusSummary(
             @Parameter(description = "시험 제출 ID", example = "123e4567-e89b-12d3-a456-426614174000") @PathVariable UUID examSubmissionId) {
         log.info("답안 상태 확인 요청: 시험 제출 ID={}", examSubmissionId);
 
-        ExamAnswerService.AnswerStatusSummary response = examAnswerService.getAnswerStatusSummary(examSubmissionId);
+        StudentAnswerSheetService.AnswerStatusSummary response = studentAnswerSheetService.getAnswerStatusSummary(examSubmissionId);
 
         log.info("답안 상태 확인 완료: 총 {}개, 정답 {}개",
                 response.getTotalCount(), response.getCorrectCount());
@@ -208,7 +208,7 @@ public class ExamAnswerController {
             @Valid @RequestBody ExamAnswerSheetCreateRequest request) {
         log.info("답안지 전체 촬영 처리 요청: examSubmissionId={}", request.examSubmissionId());
 
-        ExamAnswerSheetProcessResponse response = examAnswerService.processAnswerSheet(request);
+        ExamAnswerSheetProcessResponse response = studentAnswerSheetService.processAnswerSheet(request);
 
         return ApiResponse.success("성공", response);
     }

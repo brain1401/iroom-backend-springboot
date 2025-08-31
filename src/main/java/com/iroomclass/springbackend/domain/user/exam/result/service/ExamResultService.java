@@ -9,10 +9,10 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.iroomclass.springbackend.domain.admin.info.entity.Admin;
-import com.iroomclass.springbackend.domain.admin.info.repository.AdminRepository;
 import com.iroomclass.springbackend.domain.user.exam.entity.ExamSubmission;
 import com.iroomclass.springbackend.domain.user.exam.repository.ExamSubmissionRepository;
+import com.iroomclass.springbackend.domain.admin.exam.entity.ExamSheet;
+import com.iroomclass.springbackend.domain.admin.exam.repository.ExamSheetRepository;
 import com.iroomclass.springbackend.domain.user.exam.result.entity.ExamResult;
 import com.iroomclass.springbackend.domain.user.exam.result.entity.ExamResult.ResultStatus;
 import com.iroomclass.springbackend.domain.user.exam.result.repository.ExamResultRepository;
@@ -23,8 +23,8 @@ import lombok.extern.slf4j.Slf4j;
 /**
  * 시험 결과 서비스
  * 
- * 시험 채점 결과 관련 비즈니스 로직을 처리합니다.
- * 자동 채점, 수동 채점, 재채점 등의 기능을 제공합니다.
+ * AI 기반 시험 채점 결과 관련 비즈니스 로직을 처리합니다.
+ * AI 자동 채점 및 재채점 기능을 제공합니다.
  * 
  * @author 이룸클래스
  * @since 2025
@@ -37,11 +37,11 @@ public class ExamResultService {
     
     private final ExamResultRepository examResultRepository;
     private final ExamSubmissionRepository examSubmissionRepository;
-    private final AdminRepository adminRepository;
+    private final ExamSheetRepository examSheetRepository;
     private final QuestionResultService questionResultService;
     
     /**
-     * 시험 제출에 대한 자동 채점 시작
+     * 시험 제출에 대한 AI 자동 채점 시작
      * 
      * @param submissionId 시험 제출 ID
      * @return 생성된 시험 결과
@@ -49,102 +49,96 @@ public class ExamResultService {
      */
     @Transactional
     public ExamResult startAutoGrading(UUID submissionId) {
-        log.info("자동 채점 시작: submissionId={}", submissionId);
+        log.info("AI 자동 채점 시작: submissionId={}", submissionId);
         
-        ExamSubmission submission = examSubmissionRepository.findById(submissionId)
-            .orElseThrow(() -> new IllegalArgumentException("시험 제출물을 찾을 수 없습니다: " + submissionId));
-        
-        // 이미 채점이 진행 중인지 확인
-        if (examResultRepository.existsByExamSubmissionId(submissionId)) {
-            ExamResult existingResult = examResultRepository.findLatestBySubmissionId(submissionId)
-                .orElseThrow();
+        try {
+            log.debug("Step 1: ExamSubmission 조회 시작");
+            ExamSubmission submission = examSubmissionRepository.findByIdWithExamAndExamSheet(submissionId)
+                .orElseThrow(() -> new IllegalArgumentException("시험 제출물을 찾을 수 없습니다: " + submissionId));
+            log.debug("Step 1 완료: ExamSubmission 조회 성공, examId={}", submission.getExam().getId());
             
-            if (existingResult.getStatus() == ResultStatus.IN_PROGRESS) {
-                log.warn("이미 채점이 진행 중입니다: submissionId={}", submissionId);
-                return existingResult;
+            log.debug("Step 2: 기존 채점 결과 확인 시작");
+            // 이미 채점이 진행 중인지 확인
+            if (examResultRepository.existsByExamSubmissionId(submissionId)) {
+                ExamResult existingResult = examResultRepository.findLatestBySubmissionId(submissionId)
+                    .orElseThrow();
+                
+                if (existingResult.getStatus() == ResultStatus.IN_PROGRESS) {
+                    log.warn("이미 채점이 진행 중입니다: submissionId={}", submissionId);
+                    return existingResult;
+                }
             }
+            log.debug("Step 2 완료: 기존 채점 결과 확인 완료");
+            
+            log.debug("Step 3: ExamSheet 조회 시작");
+            // ExamSubmission의 Exam에서 직접 ExamSheet 가져오기
+            ExamSheet examSheet = submission.getExam().getExamSheet();
+            if (examSheet == null) {
+                throw new IllegalArgumentException("시험에 연결된 시험지를 찾을 수 없습니다: examId=" + submission.getExam().getId());
+            }
+            log.debug("Step 3 완료: ExamSheet 조회 성공, examSheetId={}", examSheet.getId());
+            
+            log.debug("Step 4: ExamResult 엔티티 생성 시작");
+            // 새로운 AI 채점 결과 생성
+            ExamResult examResult = ExamResult.builder()
+                .examSubmission(submission)
+                .examSheet(examSheet)
+                .status(ResultStatus.IN_PROGRESS)
+                .build();
+            log.debug("Step 4 완료: ExamResult 엔티티 생성 완료");
+            
+            log.debug("Step 5: ExamResult 저장 시작");
+            ExamResult savedResult = examResultRepository.save(examResult);
+            log.info("시험 결과 생성 완료: resultId={}", savedResult.getId());
+            log.debug("Step 5 완료: ExamResult 저장 완료");
+            
+            log.debug("Step 6: QuestionResult 자동 채점 시작");
+            // 문제별 AI 자동 채점 시작
+            questionResultService.startAutoGradingForSubmission(savedResult, submission);
+            log.debug("Step 6 완료: QuestionResult 자동 채점 완료");
+            
+            log.info("AI 자동 채점 전체 프로세스 완료: submissionId={}, resultId={}", submissionId, savedResult.getId());
+            return savedResult;
+            
+        } catch (Exception e) {
+            log.error("AI 자동 채점 중 오류 발생: submissionId={}, error={}", submissionId, e.getMessage(), e);
+            throw e;
         }
-        
-        // 새로운 채점 결과 생성
-        ExamResult examResult = ExamResult.builder()
-            .examSubmission(submission)
-            .gradedBy(null) // 자동 채점
-            .status(ResultStatus.IN_PROGRESS)
-            .build();
-        
-        ExamResult savedResult = examResultRepository.save(examResult);
-        log.info("시험 결과 생성 완료: resultId={}", savedResult.getId());
-        
-        // 문제별 자동 채점 시작
-        questionResultService.startAutoGradingForSubmission(savedResult, submission);
-        
-        return savedResult;
     }
     
-    /**
-     * 수동 채점 시작
-     * 
-     * @param submissionId 시험 제출 ID
-     * @param graderId 채점자 ID
-     * @return 생성된 시험 결과
-     * @throws IllegalArgumentException 제출물 또는 채점자가 존재하지 않을 때
-     */
-    @Transactional
-    public ExamResult startManualGrading(UUID submissionId, UUID graderId) {
-        log.info("수동 채점 시작: submissionId={}, graderId={}", submissionId, graderId);
-        
-        ExamSubmission submission = examSubmissionRepository.findById(submissionId)
-            .orElseThrow(() -> new IllegalArgumentException("시험 제출물을 찾을 수 없습니다: " + submissionId));
-        
-        Admin grader = adminRepository.findById(graderId)
-            .orElseThrow(() -> new IllegalArgumentException("채점자를 찾을 수 없습니다: " + graderId));
-        
-        // 새로운 채점 결과 생성
-        ExamResult examResult = ExamResult.builder()
-            .examSubmission(submission)
-            .gradedBy(grader)
-            .status(ResultStatus.IN_PROGRESS)
-            .build();
-        
-        ExamResult savedResult = examResultRepository.save(examResult);
-        log.info("수동 채점 시작 완료: resultId={}", savedResult.getId());
-        
-        // 문제별 수동 채점 준비
-        questionResultService.prepareManualGrading(savedResult, submission);
-        
-        return savedResult;
-    }
     
     /**
-     * 재채점 시작
+     * AI 재채점 시작
      * 
      * @param originalResultId 기존 채점 결과 ID
-     * @param graderId 새로운 채점자 ID
      * @return 재채점용 새 시험 결과
-     * @throws IllegalArgumentException 기존 결과 또는 채점자가 존재하지 않을 때
+     * @throws IllegalArgumentException 기존 결과가 존재하지 않을 때
      */
     @Transactional
-    public ExamResult startRegrading(UUID originalResultId, UUID graderId) {
-        log.info("재채점 시작: originalResultId={}, graderId={}", originalResultId, graderId);
+    public ExamResult startRegrading(UUID originalResultId) {
+        log.info("AI 재채점 시작: originalResultId={}", originalResultId);
         
         ExamResult originalResult = examResultRepository.findById(originalResultId)
             .orElseThrow(() -> new IllegalArgumentException("기존 채점 결과를 찾을 수 없습니다: " + originalResultId));
-        
-        Admin grader = adminRepository.findById(graderId)
-            .orElseThrow(() -> new IllegalArgumentException("채점자를 찾을 수 없습니다: " + graderId));
         
         // 기존 결과 상태 업데이트
         originalResult.updateStatus(ResultStatus.REGRADED);
         examResultRepository.save(originalResult);
         
-        // 새로운 버전의 채점 결과 생성
-        ExamResult newResult = originalResult.createNewVersionForRegrading(grader);
+        // 새로운 버전의 AI 채점 결과 생성
+        ExamResult newResult = originalResult.createNewVersionForRegrading();
+        
+        // AI 재채점 시작 상태로 변경
+        newResult.updateStatus(ResultStatus.IN_PROGRESS);
         ExamResult savedResult = examResultRepository.save(newResult);
         
-        log.info("재채점 결과 생성 완료: newResultId={}, version={}", savedResult.getId(), savedResult.getVersion());
+        log.info("AI 재채점 결과 생성 완료: newResultId={}, version={}", savedResult.getId(), savedResult.getVersion());
         
-        // 문제별 재채점 준비
+        // 문제별 AI 재채점 준비
         questionResultService.prepareRegrading(savedResult, originalResult);
+        
+        // 객관식 문제에 대한 자동 채점 실행
+        questionResultService.executeAutoGradingForRegrading(savedResult);
         
         return savedResult;
     }
@@ -172,8 +166,9 @@ public class ExamResultService {
         // 총점 계산 및 업데이트
         examResult.calculateAndUpdateTotalScore();
         
-        // 채점 완료 상태로 변경
-        examResult.updateStatus(ResultStatus.COMPLETED);
+        // 채점 완료 상태로 변경 (재채점인 경우 REGRADED, 아닌 경우 COMPLETED)
+        ResultStatus newStatus = examResult.getVersion() > 1 ? ResultStatus.REGRADED : ResultStatus.COMPLETED;
+        examResult.updateStatus(newStatus);
         examResult.updateGradingComment(comment);
         
         examResultRepository.save(examResult);
@@ -212,22 +207,12 @@ public class ExamResultService {
             .orElseThrow(() -> new IllegalArgumentException("시험 결과를 찾을 수 없습니다: " + resultId));
     }
     
-    /**
-     * 채점자별 결과 조회
-     * 
-     * @param graderId 채점자 ID
-     * @param pageable 페이징 정보
-     * @return 채점 결과 페이지
-     */
-    public Page<ExamResult> findResultsByGrader(UUID graderId, Pageable pageable) {
-        return examResultRepository.findByGraderId(graderId, pageable);
-    }
     
     /**
-     * 자동 채점 결과 조회
+     * AI 자동 채점 결과 조회
      * 
      * @param pageable 페이징 정보
-     * @return 자동 채점 결과 페이지
+     * @return AI 자동 채점 결과 페이지
      */
     public Page<ExamResult> findAutoGradedResults(Pageable pageable) {
         return examResultRepository.findAutoGradedResults(pageable);
@@ -288,20 +273,11 @@ public class ExamResultService {
         return examResultRepository.countByStatus(status);
     }
     
-    /**
-     * 채점자별 채점 개수 조회
-     * 
-     * @param graderId 채점자 ID
-     * @return 채점 개수
-     */
-    public long countByGrader(UUID graderId) {
-        return examResultRepository.countByGraderId(graderId);
-    }
     
     /**
-     * 자동 채점 개수 조회
+     * AI 자동 채점 개수 조회
      * 
-     * @return 자동 채점 개수
+     * @return AI 자동 채점 개수
      */
     public long countAutoGradedResults() {
         return examResultRepository.countAutoGradedResults();

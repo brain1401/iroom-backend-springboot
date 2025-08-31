@@ -28,7 +28,7 @@ public record PrintableDocumentResponse(
         @Schema(description = "문서 ID", example = "123e4567-e89b-12d3-a456-426614174001")
         UUID documentId,
         
-        @Schema(description = "문서 타입", example = "QUESTION_PAPER", allowableValues = {"QUESTION_PAPER", "ANSWER_KEY", "ANSWER_SHEET"})
+        @Schema(description = "문서 타입", example = "EXAM_SHEET", allowableValues = {"EXAM_SHEET", "CORRECT_ANSWER_SHEET", "STUDENT_ANSWER_SHEET"})
         String documentType,
         
         @Schema(description = "문서 타입명", example = "문제지")

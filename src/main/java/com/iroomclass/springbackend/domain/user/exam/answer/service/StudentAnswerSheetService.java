@@ -15,20 +15,22 @@ import com.iroomclass.springbackend.domain.user.exam.answer.dto.ExamAnswerUpdate
 import com.iroomclass.springbackend.domain.user.exam.answer.dto.ExamAnswerSheetCreateRequest;
 import com.iroomclass.springbackend.domain.user.exam.answer.dto.ExamAnswerSheetProcessResponse;
 import com.iroomclass.springbackend.domain.user.exam.answer.dto.RecognizedAnswer;
-import com.iroomclass.springbackend.domain.user.exam.answer.entity.ExamAnswer;
-import com.iroomclass.springbackend.domain.user.exam.answer.repository.ExamAnswerRepository;
+import com.iroomclass.springbackend.domain.user.exam.answer.entity.StudentAnswerSheet;
+import com.iroomclass.springbackend.domain.user.exam.answer.repository.StudentAnswerSheetRepository;
 import com.iroomclass.springbackend.domain.user.exam.entity.ExamSubmission;
 import com.iroomclass.springbackend.domain.user.exam.repository.ExamSubmissionRepository;
 import com.iroomclass.springbackend.domain.admin.question.entity.Question;
 import com.iroomclass.springbackend.domain.admin.question.repository.QuestionRepository;
 import com.iroomclass.springbackend.domain.admin.exam.entity.ExamSheetQuestion;
 import com.iroomclass.springbackend.domain.admin.exam.repository.ExamSheetQuestionRepository;
+import com.iroomclass.springbackend.domain.user.exam.result.service.QuestionResultService;
+import com.iroomclass.springbackend.domain.user.exam.result.entity.QuestionResult;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * 시험 답안 관리 서비스
+ * 학생 답안지 관리 서비스
  * 
  * 답안 생성, 수정, 조회 등의 기능을 제공합니다.
  * AI 이미지 인식과 연동하여 답안을 처리합니다.
@@ -40,13 +42,14 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 @Slf4j
 @Transactional(readOnly = true)
-public class ExamAnswerService {
+public class StudentAnswerSheetService {
     
-    private final ExamAnswerRepository examAnswerRepository;
+    private final StudentAnswerSheetRepository studentAnswerSheetRepository;
     private final ExamSubmissionRepository examSubmissionRepository;
     private final QuestionRepository questionRepository;
     private final ExamSheetQuestionRepository examSheetQuestionRepository;
     private final AiImageRecognitionService aiImageRecognitionService;
+    private final QuestionResultService questionResultService;
     
     /**
      * 답안 생성 (주관식은 AI 이미지 인식, 객관식은 선택지 저장)
@@ -55,7 +58,7 @@ public class ExamAnswerService {
      * @return 생성된 답안 정보
      */
     @Transactional
-    public ExamAnswerResponse createExamAnswer(ExamAnswerCreateRequest request) {
+    public ExamAnswerResponse createStudentAnswer(ExamAnswerCreateRequest request) {
         log.info("답안 생성 요청: 제출 ID={}, 문제 ID={}, 이미지 URL={}, 선택 답안={}", 
             request.examSubmissionId(), request.questionId(), request.answerImageUrl(), request.selectedChoice());
         
@@ -68,34 +71,29 @@ public class ExamAnswerService {
             .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 문제입니다: " + request.questionId()));
         
         // 3단계: 중복 답안 방지
-        if (examAnswerRepository.existsByExamSubmissionIdAndQuestionId(
+        if (studentAnswerSheetRepository.existsByExamSubmissionIdAndQuestionId(
                 request.examSubmissionId(), request.questionId())) {
             throw new IllegalArgumentException("이미 답안이 존재하는 문제입니다: " + request.questionId());
         }
         
         // 4단계: 답안 생성
-        ExamAnswer examAnswer = ExamAnswer.builder()
+        StudentAnswerSheet studentAnswerSheet = StudentAnswerSheet.builder()
             .examSubmission(examSubmission)
             .question(question)
             .answerImageUrl(request.answerImageUrl())
             .selectedChoice(request.selectedChoice())
             .build();
         
-        examAnswer = examAnswerRepository.save(examAnswer);
+        studentAnswerSheet = studentAnswerSheetRepository.save(studentAnswerSheet);
         
         // 5단계: 문제 유형에 따른 처리
         if (question.isMultipleChoice()) {
-            // 객관식 문제: 자동 채점
-            log.info("객관식 문제 자동 채점 시작: 답안 ID={}", examAnswer.getId());
+            // 객관식 문제: QuestionResultService를 통한 자동 채점
+            log.info("객관식 문제 자동 채점 시작: 답안 ID={}", studentAnswerSheet.getId());
             
-            boolean gradingResult = examAnswer.autoGradeMultipleChoice();
-            if (gradingResult) {
-                examAnswer = examAnswerRepository.save(examAnswer);
-                log.info("객관식 자동 채점 완료: 답안 ID={}, 정답 여부={}, 점수={}", 
-                    examAnswer.getId(), examAnswer.getIsCorrect(), examAnswer.getScore());
-            } else {
-                log.warn("객관식 자동 채점 실패: 답안 ID={}", examAnswer.getId());
-            }
+            // TODO: ExamResult 생성 후 QuestionResult 생성 및 자동 채점 처리
+            // 현재는 답안 저장만 수행하고, 채점은 별도 프로세스에서 처리
+            log.info("객관식 답안 저장 완료: 답안 ID={}", studentAnswerSheet.getId());
         } else {
             // 주관식 문제: AI 이미지 인식 수행
             if (request.answerImageUrl() != null) {
@@ -103,19 +101,19 @@ public class ExamAnswerService {
                     AiImageRecognitionService.AiRecognitionResult recognitionResult = 
                         aiImageRecognitionService.recognizeTextFromImage(request.answerImageUrl());
                     
-                    examAnswer.updateAnswerText(recognitionResult.getRecognizedText());
-                    examAnswer = examAnswerRepository.save(examAnswer);
+                    studentAnswerSheet.updateAnswerText(recognitionResult.getRecognizedText());
+                    studentAnswerSheet = studentAnswerSheetRepository.save(studentAnswerSheet);
                     
                     log.info("주관식 답안 생성 및 AI 인식 완료: 답안 ID={}, 인식 결과={}", 
-                        examAnswer.getId(), recognitionResult.getRecognizedText());
+                        studentAnswerSheet.getId(), recognitionResult.getRecognizedText());
                         
                 } catch (Exception e) {
-                    log.error("AI 인식 실패: 답안 ID={}, 오류={}", examAnswer.getId(), e.getMessage());
+                    log.error("AI 인식 실패: 답안 ID={}, 오류={}", studentAnswerSheet.getId(), e.getMessage());
                 }
             }
         }
         
-        return ExamAnswerResponse.from(examAnswer);
+        return ExamAnswerResponse.from(studentAnswerSheet);
     }
     
     /**
@@ -126,32 +124,32 @@ public class ExamAnswerService {
      * @return 수정된 답안 정보
      */
     @Transactional
-    public ExamAnswerResponse retakeExamAnswer(UUID answerId, String newImageUrl) {
+    public ExamAnswerResponse retakeStudentAnswer(UUID answerId, String newImageUrl) {
         log.info("답안 재촬영 요청: 답안 ID={}, 새 이미지 URL={}", answerId, newImageUrl);
         
-        ExamAnswer examAnswer = examAnswerRepository.findById(answerId)
+        StudentAnswerSheet studentAnswerSheet = studentAnswerSheetRepository.findById(answerId)
             .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 답안입니다: " + answerId));
         
         // 재촬영 처리
-        examAnswer.updateImageUrl(newImageUrl);
-        examAnswer = examAnswerRepository.save(examAnswer);
+        studentAnswerSheet.updateImageUrl(newImageUrl);
+        studentAnswerSheet = studentAnswerSheetRepository.save(studentAnswerSheet);
         
         // AI 이미지 인식 수행
         try {
             AiImageRecognitionService.AiRecognitionResult recognitionResult = 
                 aiImageRecognitionService.recognizeTextFromImage(newImageUrl);
             
-            examAnswer.updateAnswerText(recognitionResult.getRecognizedText());
-            examAnswer = examAnswerRepository.save(examAnswer);
+            studentAnswerSheet.updateAnswerText(recognitionResult.getRecognizedText());
+            studentAnswerSheet = studentAnswerSheetRepository.save(studentAnswerSheet);
             
             log.info("답안 재촬영 및 AI 인식 완료: 답안 ID={}, 인식 결과={}", 
-                examAnswer.getId(), recognitionResult.getRecognizedText());
+                studentAnswerSheet.getId(), recognitionResult.getRecognizedText());
                 
         } catch (Exception e) {
-            log.error("AI 인식 실패: 답안 ID={}, 오류={}", examAnswer.getId(), e.getMessage());
+            log.error("AI 인식 실패: 답안 ID={}, 오류={}", studentAnswerSheet.getId(), e.getMessage());
         }
         
-        return ExamAnswerResponse.from(examAnswer);
+        return ExamAnswerResponse.from(studentAnswerSheet);
     }
     
     /**
@@ -161,76 +159,39 @@ public class ExamAnswerService {
      * @return 수정된 답안 정보
      */
     @Transactional
-    public ExamAnswerResponse updateExamAnswer(ExamAnswerUpdateRequest request) {
+    public ExamAnswerResponse updateStudentAnswer(ExamAnswerUpdateRequest request) {
         log.info("답안 수정 요청: 답안 ID={}, 수정된 답안={}, 선택 답안={}", 
             request.answerId(), request.answerText(), request.selectedChoice());
         
-        ExamAnswer examAnswer = examAnswerRepository.findById(request.answerId())
+        StudentAnswerSheet studentAnswerSheet = studentAnswerSheetRepository.findById(request.answerId())
             .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 답안입니다: " + request.answerId()));
         
         // 1단계: 답안 정보 업데이트 (문제 유형에 따라)
-        Question question = examAnswer.getQuestion();
+        Question question = studentAnswerSheet.getQuestion();
         
         if (question.isMultipleChoice() && request.selectedChoice() != null) {
             // 객관식: 선택 답안 업데이트
-            examAnswer.updateSelectedChoice(request.selectedChoice());
+            studentAnswerSheet.updateSelectedChoice(request.selectedChoice());
             
-            // 자동 채점 수행
-            examAnswer.autoGradeMultipleChoice();
+            // TODO: QuestionResultService를 통한 자동 재채점 처리
+            log.info("객관식 답안 업데이트 완료: 답안 ID={}", studentAnswerSheet.getId());
             
         } else if (!question.isMultipleChoice() && request.answerText() != null) {
             // 주관식: 답안 텍스트 업데이트
-            examAnswer.updateAnswerText(request.answerText());
+            studentAnswerSheet.updateAnswerText(request.answerText());
             
-            // 수동 채점 로직 (기존 로직 유지)
-            String correctAnswer = question.getAnswerText();
-            String studentAnswer = request.answerText();
-            
-            // 정답 비교 (공백 제거 후 비교)
-            boolean isCorrect = correctAnswer != null && 
-                correctAnswer.trim().equalsIgnoreCase(studentAnswer.trim());
-            
-            // ExamSheetQuestion에서 해당 문제의 배점 가져오기
-            Integer score = 0;
-            if (isCorrect) {
-                try {
-                    UUID examSheetId = examAnswer.getExamSubmission().getExam().getExamSheet().getId();
-                    UUID questionId = question.getId();
-                    
-                    ExamSheetQuestion examSheetQuestion = examSheetQuestionRepository
-                        .findByExamSheetIdAndQuestionId(examSheetId, questionId)
-                        .orElse(null);
-                    
-                    if (examSheetQuestion != null) {
-                        score = examSheetQuestion.getPoints();
-                        log.info("ExamSheetQuestion에서 배점 조회: examSheetId={}, questionId={}, points={}", 
-                            examSheetId, questionId, score);
-                    } else {
-                        score = 5; // 기본값
-                        log.warn("ExamSheetQuestion을 찾을 수 없어 기본 배점 사용: examSheetId={}, questionId={}", 
-                            examSheetId, questionId);
-                    }
-                } catch (Exception e) {
-                    score = 5; // 기본값
-                    log.error("배점 조회 중 오류 발생, 기본 배점 사용: {}", e.getMessage());
-                }
-            }
-            
-            // 채점 결과 업데이트
-            examAnswer.updateGrading(isCorrect, score);
-            
-            log.info("주관식 답안 채점 완료: 답안 ID={}, 학생 답안={}, 정답={}, 정답 여부={}, 점수={}", 
-                examAnswer.getId(), studentAnswer, correctAnswer, isCorrect, score);
+            // TODO: QuestionResultService를 통한 수동 채점 처리
+            log.info("주관식 답안 업데이트 완료: 답안 ID={}", studentAnswerSheet.getId());
         } else {
             throw new IllegalArgumentException("문제 유형에 맞지 않는 답안 수정 요청입니다");
         }
 
         
-        examAnswer = examAnswerRepository.save(examAnswer);
+        studentAnswerSheet = studentAnswerSheetRepository.save(studentAnswerSheet);
         
-        log.info("답안 수정 완료: 답안 ID={}", examAnswer.getId());
+        log.info("답안 수정 완료: 답안 ID={}", studentAnswerSheet.getId());
         
-        return ExamAnswerResponse.from(examAnswer);
+        return ExamAnswerResponse.from(studentAnswerSheet);
     }
     
     /**
@@ -239,14 +200,14 @@ public class ExamAnswerService {
      * @param examSubmissionId 시험 제출 ID
      * @return 해당 시험 제출의 모든 답안 목록
      */
-    public ExamAnswerListResponse getExamAnswers(UUID examSubmissionId) {
+    public ExamAnswerListResponse getStudentAnswers(UUID examSubmissionId) {
         log.info("답안 목록 조회 요청: 시험 제출 ID={}", examSubmissionId);
         
-        List<ExamAnswer> examAnswers = examAnswerRepository.findByExamSubmissionId(examSubmissionId);
+        List<StudentAnswerSheet> studentAnswerSheets = studentAnswerSheetRepository.findByExamSubmissionId(examSubmissionId);
         
-        log.info("답안 목록 조회 완료: 시험 제출 ID={}, 답안 수={}", examSubmissionId, examAnswers.size());
+        log.info("답안 목록 조회 완료: 시험 제출 ID={}, 답안 수={}", examSubmissionId, studentAnswerSheets.size());
         
-        return ExamAnswerListResponse.from(examAnswers, examSubmissionId);
+        return ExamAnswerListResponse.from(studentAnswerSheets, examSubmissionId);
     }
     
     /**
@@ -256,15 +217,15 @@ public class ExamAnswerService {
      * @param questionId 문제 ID
      * @return 해당 문제의 답안 정보
      */
-    public ExamAnswerResponse getExamAnswer(UUID examSubmissionId, UUID questionId) {
+    public ExamAnswerResponse getStudentAnswer(UUID examSubmissionId, UUID questionId) {
         log.info("특정 문제 답안 조회 요청: 시험 제출 ID={}, 문제 ID={}", examSubmissionId, questionId);
         
-        ExamAnswer examAnswer = examAnswerRepository.findByExamSubmissionIdAndQuestionId(examSubmissionId, questionId)
+        StudentAnswerSheet studentAnswerSheet = studentAnswerSheetRepository.findByExamSubmissionIdAndQuestionId(examSubmissionId, questionId)
             .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 답안입니다: 시험 제출 ID=" + examSubmissionId + ", 문제 ID=" + questionId));
         
-        log.info("특정 문제 답안 조회 완료: 답안 ID={}", examAnswer.getId());
+        log.info("특정 문제 답안 조회 완료: 답안 ID={}", studentAnswerSheet.getId());
         
-        return ExamAnswerResponse.from(examAnswer);
+        return ExamAnswerResponse.from(studentAnswerSheet);
     }
     
     /**
@@ -276,8 +237,8 @@ public class ExamAnswerService {
     public AnswerStatusSummary getAnswerStatusSummary(UUID examSubmissionId) {
         log.info("답안 상태 확인 요청: 시험 제출 ID={}", examSubmissionId);
         
-        long totalCount = examAnswerRepository.countByExamSubmissionId(examSubmissionId);
-        long correctCount = examAnswerRepository.countByExamSubmissionIdAndIsCorrectTrue(examSubmissionId);
+        long totalCount = studentAnswerSheetRepository.countByExamSubmissionId(examSubmissionId);
+        long correctCount = studentAnswerSheetRepository.countByExamSubmissionIdAndIsCorrectTrue(examSubmissionId);
         
         AnswerStatusSummary summary = AnswerStatusSummary.builder()
             .totalCount((int) totalCount)
@@ -310,7 +271,7 @@ public class ExamAnswerService {
         );
         
         // 3단계: 인식된 답안들을 DB에 저장
-        List<ExamAnswer> createdAnswers = new ArrayList<>();
+        List<StudentAnswerSheet> createdAnswers = new ArrayList<>();
         for (RecognizedAnswer recognizedAnswer : recognizedAnswers) {
             // TODO: URGENT - 문제 번호를 UUID로 매핑하는 올바른 비즈니스 로직 필요
             // 현재 recognizedAnswer.questionNumber()는 시험지에서의 문제 순서 (1, 2, 3...)를 반환하지만,
@@ -345,13 +306,72 @@ public class ExamAnswerService {
     }
     
     /**
-     * ExamAnswer를 ExamAnswerResponse로 변환
+     * StudentAnswerSheet를 ExamAnswerResponse로 변환
      * 
-     * @param examAnswer 답안 엔티티
+     * @param studentAnswerSheet 답안 엔티티
      * @return 답안 응답 DTO
      */
-    private ExamAnswerResponse convertToResponse(ExamAnswer examAnswer) {
-        return ExamAnswerResponse.from(examAnswer);
+    private ExamAnswerResponse convertToResponse(StudentAnswerSheet studentAnswerSheet) {
+        return ExamAnswerResponse.from(studentAnswerSheet);
+    }
+    
+    // =================================================================================
+    // ExamAnswerController 호환성을 위한 Method Aliases
+    // =================================================================================
+    
+    /**
+     * 답안 생성 (ExamAnswerController 호환 메서드)
+     * 
+     * @param request 답안 생성 요청
+     * @return 생성된 답안 정보
+     */
+    @Transactional
+    public ExamAnswerResponse createExamAnswer(ExamAnswerCreateRequest request) {
+        return createStudentAnswer(request);
+    }
+    
+    /**
+     * 답안 수정 (재촬영) (ExamAnswerController 호환 메서드)
+     * 
+     * @param answerId 답안 ID
+     * @param newImageUrl 새로운 이미지 URL
+     * @return 수정된 답안 정보
+     */
+    @Transactional
+    public ExamAnswerResponse retakeExamAnswer(UUID answerId, String newImageUrl) {
+        return retakeStudentAnswer(answerId, newImageUrl);
+    }
+    
+    /**
+     * 답안 수정 (ExamAnswerController 호환 메서드)
+     * 
+     * @param request 답안 수정 요청
+     * @return 수정된 답안 정보
+     */
+    @Transactional
+    public ExamAnswerResponse updateExamAnswer(ExamAnswerUpdateRequest request) {
+        return updateStudentAnswer(request);
+    }
+    
+    /**
+     * 답안 목록 조회 (ExamAnswerController 호환 메서드)
+     * 
+     * @param examSubmissionId 시험 제출 ID
+     * @return 해당 시험 제출의 모든 답안 목록
+     */
+    public ExamAnswerListResponse getExamAnswers(UUID examSubmissionId) {
+        return getStudentAnswers(examSubmissionId);
+    }
+    
+    /**
+     * 특정 문제 답안 조회 (ExamAnswerController 호환 메서드)
+     * 
+     * @param examSubmissionId 시험 제출 ID
+     * @param questionId 문제 ID
+     * @return 해당 문제의 답안 정보
+     */
+    public ExamAnswerResponse getExamAnswer(UUID examSubmissionId, UUID questionId) {
+        return getStudentAnswer(examSubmissionId, questionId);
     }
     
     /**

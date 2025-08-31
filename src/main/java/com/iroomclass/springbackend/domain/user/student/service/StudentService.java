@@ -17,8 +17,8 @@ import com.iroomclass.springbackend.domain.user.info.entity.User;
 import com.iroomclass.springbackend.domain.user.info.repository.UserRepository;
 import com.iroomclass.springbackend.domain.user.exam.entity.ExamSubmission;
 import com.iroomclass.springbackend.domain.user.exam.repository.ExamSubmissionRepository;
-import com.iroomclass.springbackend.domain.user.exam.answer.entity.ExamAnswer;
-import com.iroomclass.springbackend.domain.user.exam.answer.repository.ExamAnswerRepository;
+import com.iroomclass.springbackend.domain.user.exam.answer.entity.StudentAnswerSheet;
+import com.iroomclass.springbackend.domain.user.exam.answer.repository.StudentAnswerSheetRepository;
 import com.iroomclass.springbackend.domain.admin.question.entity.Question;
 import com.iroomclass.springbackend.domain.admin.question.repository.QuestionRepository;
 import com.iroomclass.springbackend.domain.admin.exam.entity.ExamSheetQuestion;
@@ -42,7 +42,7 @@ import lombok.extern.slf4j.Slf4j;
 public class StudentService {
     
     private final ExamSubmissionRepository examSubmissionRepository;
-    private final ExamAnswerRepository examAnswerRepository;
+    private final StudentAnswerSheetRepository studentAnswerSheetRepository;
     private final QuestionRepository questionRepository;
     private final ExamSheetQuestionRepository examSheetQuestionRepository;
     private final UserRepository userRepository;
@@ -164,14 +164,15 @@ public class StudentService {
         }
         
         // 2단계: 답안 목록 조회
-        List<ExamAnswer> answers = examAnswerRepository.findByExamSubmissionId(submissionId);
+        List<StudentAnswerSheet> answers = studentAnswerSheetRepository.findByExamSubmissionId(submissionId);
         
         // 3단계: 응답 데이터 구성
         List<ExamResultDetailResponse.QuestionResult> questionResults = answers.stream()
             .map(this::convertToQuestionResult)
             .collect(Collectors.toList());
         
-        int correctCount = (int) answers.stream().filter(answer -> answer.getIsCorrect()).count();
+        // TODO: 정답 개수는 QuestionResultService를 통해 조회해야 함
+        int correctCount = 0; // QuestionResult에서 조회 필요
         int incorrectCount = answers.size() - correctCount;
         
         // 문제 타입별 개수 계산
@@ -239,7 +240,7 @@ public class StudentService {
         }
         
         // 2단계: 답안 조회
-        ExamAnswer answer = examAnswerRepository.findByExamSubmissionIdAndQuestionId(submissionId, questionId)
+        StudentAnswerSheet answer = studentAnswerSheetRepository.findByExamSubmissionIdAndQuestionId(submissionId, questionId)
             .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 답안입니다: 제출 ID=" + submissionId + ", 문제 ID=" + questionId));
         
         // 3단계: 문제 정보 조회
@@ -250,15 +251,15 @@ public class StudentService {
             submission.getExam().getExamSheet().getId(), questionId);
         
         log.info("문제별 결과 조회 완료: 제출 ID={}, 문제 ID={}, 정답 여부={}, 점수={}", 
-            submissionId, questionId, answer.getIsCorrect(), answer.getScore());
+            submissionId, questionId, null, 0); // TODO: QuestionResult에서 조회
         
         return new QuestionResultResponse(
             submissionId,
             questionId,
             examSheetQuestion != null ? examSheetQuestion.getSeqNo() : 0,
             question.getQuestionTextAsHtml(),
-            answer.getIsCorrect(),
-            answer.getScore(),
+            null, // TODO: QuestionResult에서 조회
+            0, // TODO: QuestionResult에서 조회
             examSheetQuestion != null ? examSheetQuestion.getPoints() : 0,
             question.getUnit().getUnitName(),
             question.getUnit().getSubcategory().getSubcategoryName(),
@@ -274,8 +275,9 @@ public class StudentService {
      * ExamSubmission을 RecentExamInfo로 변환 (최근 시험 목록용)
      */
     private RecentExamSubmissionsResponse.RecentExamInfo convertToRecentExamInfo(ExamSubmission submission) {
-        List<ExamAnswer> answers = examAnswerRepository.findByExamSubmissionId(submission.getId());
-        int correctCount = (int) answers.stream().filter(answer -> answer.getIsCorrect()).count();
+        List<StudentAnswerSheet> answers = studentAnswerSheetRepository.findByExamSubmissionId(submission.getId());
+        // TODO: 정답 개수는 QuestionResultService를 통해 조회해야 함
+        int correctCount = 0; // QuestionResult에서 조회 필요
         double correctRate = answers.size() > 0 ? (double) correctCount / answers.size() * 100 : 0.0;
         
         // 단원명 목록 가져오기 (중복 제거)
@@ -300,8 +302,9 @@ public class StudentService {
      * ExamSubmission을 SubmissionInfo로 변환
      */
     private StudentSubmissionHistoryResponse.SubmissionInfo convertToSubmissionInfo(ExamSubmission submission) {
-        List<ExamAnswer> answers = examAnswerRepository.findByExamSubmissionId(submission.getId());
-        int correctCount = (int) answers.stream().filter(answer -> answer.getIsCorrect()).count();
+        List<StudentAnswerSheet> answers = studentAnswerSheetRepository.findByExamSubmissionId(submission.getId());
+        // TODO: 정답 개수는 QuestionResultService를 통해 조회해야 함
+        int correctCount = 0; // QuestionResult에서 조회 필요
         int incorrectCount = answers.size() - correctCount;
         double correctRate = answers.size() > 0 ? (double) correctCount / answers.size() * 100 : 0.0;
         
@@ -320,9 +323,9 @@ public class StudentService {
     }
     
     /**
-     * ExamAnswer를 QuestionResult로 변환
+     * StudentAnswerSheet를 QuestionResult로 변환
      */
-    private ExamResultDetailResponse.QuestionResult convertToQuestionResult(ExamAnswer answer) {
+    private ExamResultDetailResponse.QuestionResult convertToQuestionResult(StudentAnswerSheet answer) {
         Question question = answer.getQuestion();
         
         // ExamSheetQuestion 조회 (문제 번호와 배점)
@@ -332,8 +335,8 @@ public class StudentService {
         return new ExamResultDetailResponse.QuestionResult(
             question.getId(),
             examSheetQuestion != null ? examSheetQuestion.getSeqNo() : 0,
-            answer.getIsCorrect(),
-            answer.getScore(),
+            null, // TODO: QuestionResult에서 조회
+            0, // TODO: QuestionResult에서 조회
             examSheetQuestion != null ? examSheetQuestion.getPoints() : 0,
             question.getUnit().getUnitName(),
             question.getDifficulty().name(),

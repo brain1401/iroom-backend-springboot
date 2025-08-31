@@ -16,10 +16,10 @@ import com.iroomclass.springbackend.domain.user.exam.result.entity.ExamResult;
 import com.iroomclass.springbackend.domain.user.exam.result.entity.ExamResult.ResultStatus;
 
 /**
- * 시험 결과 Repository
+ * AI 시험 결과 Repository
  * 
- * 시험 채점 결과에 대한 데이터 접근 계층을 제공합니다.
- * 재채점 히스토리, 채점자별 조회, 상태별 필터링 등을 지원합니다.
+ * AI 기반 시험 채점 결과에 대한 데이터 접근 계층을 제공합니다.
+ * AI 재채점 히스토리, 상태별 필터링, 점수별 조회 등을 지원합니다.
  * 
  * @author 이룸클래스
  * @since 2025
@@ -50,26 +50,15 @@ public interface ExamResultRepository extends JpaRepository<ExamResult, UUID> {
            "LIMIT 1")
     Optional<ExamResult> findLatestBySubmissionId(@Param("submissionId") UUID submissionId);
     
-    /**
-     * 채점자별 채점 결과 조회
-     * 
-     * @param graderId 채점자 ID
-     * @param pageable 페이징 정보
-     * @return 채점 결과 페이지
-     */
-    @Query("SELECT er FROM ExamResult er " +
-           "WHERE er.gradedBy.id = :graderId " +
-           "ORDER BY er.gradedAt DESC")
-    Page<ExamResult> findByGraderId(@Param("graderId") UUID graderId, Pageable pageable);
+    // AI 자동 채점 시스템으로 인해 채점자별 조회는 더 이상 필요하지 않음
     
     /**
-     * 자동 채점 결과 조회
+     * AI 자동 채점 결과 조회 (모든 채점 결과)
      * 
      * @param pageable 페이징 정보
-     * @return 자동 채점 결과 페이지
+     * @return AI 자동 채점 결과 페이지
      */
     @Query("SELECT er FROM ExamResult er " +
-           "WHERE er.gradedBy IS NULL " +
            "ORDER BY er.gradedAt DESC")
     Page<ExamResult> findAutoGradedResults(Pageable pageable);
     
@@ -149,21 +138,14 @@ public interface ExamResultRepository extends JpaRepository<ExamResult, UUID> {
      */
     long countByStatus(ResultStatus status);
     
-    /**
-     * 특정 채점자의 채점 개수 조회
-     * 
-     * @param graderId 채점자 ID
-     * @return 채점 개수
-     */
-    @Query("SELECT COUNT(er) FROM ExamResult er WHERE er.gradedBy.id = :graderId")
-    long countByGraderId(@Param("graderId") UUID graderId);
+    // AI 자동 채점 시스템으로 인해 채점자별 개수 조회는 더 이상 필요하지 않음
     
     /**
-     * 자동 채점 개수 조회
+     * AI 자동 채점 개수 조회 (전체 채점 개수)
      * 
-     * @return 자동 채점 개수
+     * @return AI 자동 채점 개수
      */
-    @Query("SELECT COUNT(er) FROM ExamResult er WHERE er.gradedBy IS NULL")
+    @Query("SELECT COUNT(er) FROM ExamResult er")
     long countAutoGradedResults();
     
     /**

@@ -76,6 +76,13 @@ public class ExamSubmission {
     private LocalDateTime submittedAt;
     
     /**
+     * 총 점수
+     * 채점 완료 후 계산된 총점
+     */
+    @Column(name = "total_score")
+    private Integer totalScore;
+    
+    /**
      * Entity 저장 전 실행되는 메서드
      * UUID 및 제출일시를 자동으로 설정합니다.
      */
@@ -95,5 +102,23 @@ public class ExamSubmission {
      */
     public void updateSubmittedAt() {
         this.submittedAt = LocalDateTime.now();
+    }
+    
+    /**
+     * 총 점수 반환
+     * 
+     * @return 총 점수
+     */
+    public Integer getTotalScore() {
+        return totalScore;
+    }
+    
+    /**
+     * 총 점수 업데이트
+     * 
+     * @param totalScore 총 점수
+     */
+    public void updateTotalScore(Integer totalScore) {
+        this.totalScore = totalScore;
     }
 }

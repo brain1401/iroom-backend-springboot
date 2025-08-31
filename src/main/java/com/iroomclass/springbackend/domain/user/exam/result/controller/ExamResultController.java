@@ -33,16 +33,16 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
+
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 /**
- * 시험 결과 컨트롤러
+ * AI 시험 결과 컨트롤러
  * 
- * 시험 채점 결과 관련 REST API를 제공합니다.
- * 자동/수동 채점, 재채점, 조회 등의 기능을 지원합니다.
+ * AI 기반 시험 채점 결과 관련 REST API를 제공합니다.
+ * AI 자동 채점, AI 재채점, 조회 등의 기능을 지원합니다.
  * 
  * @author 이룸클래스
  * @since 2025
@@ -50,13 +50,13 @@ import lombok.RequiredArgsConstructor;
 @RestController
 @RequestMapping("/api/exam-results")
 @RequiredArgsConstructor
-@Tag(name = "시험 결과 API", description = "시험 채점 결과 관리 API")
+@Tag(name = "AI 시험 결과 API", description = "AI 기반 시험 채점 결과 관리 API")
 public class ExamResultController {
     
     private final ExamResultService examResultService;
     
     /**
-     * 채점 시작
+     * AI 자동 채점 시작
      * 
      * @param request 채점 시작 요청
      * @return 생성된 시험 결과
@@ -64,12 +64,12 @@ public class ExamResultController {
     @PostMapping("/start")
     @ResponseStatus(HttpStatus.CREATED)
     @Operation(
-        summary = "채점 시작",
-        description = "시험 제출에 대한 채점을 시작합니다. 자동 채점 또는 수동 채점을 선택할 수 있습니다.",
+        summary = "AI 자동 채점 시작",
+        description = "시험 제출에 대한 AI 자동 채점을 시작합니다.",
         responses = {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(
                 responseCode = "201",
-                description = "채점 시작 성공",
+                description = "AI 자동 채점 시작 성공",
                 content = @Content(schema = @Schema(implementation = ExamResultDto.class))
             ),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(
@@ -78,27 +78,20 @@ public class ExamResultController {
             ),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(
                 responseCode = "404",
-                description = "시험 제출물 또는 채점자를 찾을 수 없음"
+                description = "시험 제출물을 찾을 수 없음"
             )
         }
     )
     public ApiResponse<ExamResultDto> startGrading(@Valid @RequestBody StartGradingRequest request) {
-        ExamResult result;
-        
-        if (request.isAutoGrading()) {
-            result = examResultService.startAutoGrading(request.submissionId());
-        } else {
-            result = examResultService.startManualGrading(request.submissionId(), request.graderId());
-        }
-        
+        // AI 자동 채점만 지원
+        ExamResult result = examResultService.startAutoGrading(request.submissionId());
         ExamResultDto dto = ExamResultDto.from(result);
-        String message = request.isAutoGrading() ? "자동 채점이 시작되었습니다" : "수동 채점이 시작되었습니다";
         
-        return ApiResponse.success(message, dto);
+        return ApiResponse.success("AI 자동 채점이 시작되었습니다", dto);
     }
     
     /**
-     * 재채점 시작
+     * AI 재채점 시작
      * 
      * @param request 재채점 시작 요청
      * @return 새로 생성된 시험 결과
@@ -106,12 +99,12 @@ public class ExamResultController {
     @PostMapping("/regrade")
     @ResponseStatus(HttpStatus.CREATED)
     @Operation(
-        summary = "재채점 시작",
-        description = "기존 채점 결과에 대한 재채점을 시작합니다.",
+        summary = "AI 재채점 시작",
+        description = "기존 채점 결과에 대한 AI 재채점을 시작합니다.",
         responses = {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(
                 responseCode = "201",
-                description = "재채점 시작 성공"
+                description = "AI 재채점 시작 성공"
             ),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(
                 responseCode = "400",
@@ -119,15 +112,16 @@ public class ExamResultController {
             ),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(
                 responseCode = "404",
-                description = "기존 채점 결과 또는 채점자를 찾을 수 없음"
+                description = "기존 채점 결과를 찾을 수 없음"
             )
         }
     )
     public ApiResponse<ExamResultDto> startRegrading(@Valid @RequestBody StartRegradingRequest request) {
-        ExamResult result = examResultService.startRegrading(request.originalResultId(), request.newGraderId());
+        // AI 재채점은 기존 결과 ID만 필요
+        ExamResult result = examResultService.startRegrading(request.originalResultId());
         ExamResultDto dto = ExamResultDto.from(result);
         
-        return ApiResponse.success("재채점이 시작되었습니다", dto);
+        return ApiResponse.success("AI 재채점이 시작되었습니다", dto);
     }
     
     /**
@@ -252,11 +246,9 @@ public class ExamResultController {
     }
     
     /**
-     * 채점 결과 목록 조회
+     * AI 채점 결과 목록 조회
      * 
      * @param status 채점 상태 필터
-     * @param graderId 채점자 ID 필터
-     * @param isAutoGrading 자동 채점 필터
      * @param page 페이지 번호
      * @param size 페이지 크기
      * @param sort 정렬 기준
@@ -265,8 +257,8 @@ public class ExamResultController {
      */
     @GetMapping
     @Operation(
-        summary = "채점 결과 목록 조회",
-        description = "다양한 조건으로 채점 결과 목록을 조회합니다.",
+        summary = "AI 채점 결과 목록 조회",
+        description = "상태별로 AI 채점 결과 목록을 조회합니다.",
         responses = {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(
                 responseCode = "200",
@@ -277,12 +269,6 @@ public class ExamResultController {
     public ApiResponse<Page<ExamResultDto>> getExamResults(
         @Parameter(description = "채점 상태 필터", example = "COMPLETED")
         @RequestParam(required = false) ResultStatus status,
-        
-        @Parameter(description = "채점자 ID 필터", example = "123e4567-e89b-12d3-a456-426614174002")
-        @RequestParam(required = false) UUID graderId,
-        
-        @Parameter(description = "자동 채점 필터", example = "false")
-        @RequestParam(required = false) Boolean isAutoGrading,
         
         @Parameter(description = "페이지 번호 (0부터 시작)", example = "0")
         @RequestParam(defaultValue = "0") int page,
@@ -303,18 +289,14 @@ public class ExamResultController {
         
         if (status != null) {
             results = examResultService.findResultsByStatus(status, pageable);
-        } else if (graderId != null) {
-            results = examResultService.findResultsByGrader(graderId, pageable);
-        } else if (Boolean.TRUE.equals(isAutoGrading)) {
-            results = examResultService.findAutoGradedResults(pageable);
         } else {
-            // 기본적으로 모든 결과 조회는 구현되지 않음 - 필터 조건 필요
-            throw new IllegalArgumentException("조회 조건을 지정해주세요 (status, graderId, isAutoGrading 중 하나)");
+            // 기본적으로 모든 AI 자동 채점 결과 조회
+            results = examResultService.findAutoGradedResults(pageable);
         }
         
         Page<ExamResultDto> dtos = results.map(ExamResultDto::fromWithoutQuestions);
         
-        return ApiResponse.success("채점 결과 목록 조회 성공", dtos);
+        return ApiResponse.success("AI 채점 결과 목록 조회 성공", dtos);
     }
     
     /**

@@ -28,7 +28,7 @@ public class PdfGenerator {
      * 단일 문서를 PDF로 변환
      * 
      * @param htmlContent HTML 내용
-     * @param documentType 문서 타입 (QUESTION_PAPER, ANSWER_KEY, ANSWER_SHEET)
+     * @param documentType 문서 타입 (EXAM_SHEET, CORRECT_ANSWER_SHEET, STUDENT_ANSWER_SHEET)
      * @return PDF 바이트 배열
      */
     public byte[] generatePdfFromHtml(String htmlContent, String documentType) {
@@ -179,7 +179,7 @@ public class PdfGenerator {
         enhancedHtml.append("<div class='header-content'>");
         
         // QR 코드 추가 (답안지인 경우)
-        if ("ANSWER_SHEET".equals(documentType)) {
+        if ("STUDENT_ANSWER_SHEET".equals(documentType)) {
             enhancedHtml.append("<div class='qr-code'>");
             
             // DB에 저장된 QR 코드 URL이 있으면 사용, 없으면 기본값 생성
@@ -189,7 +189,7 @@ public class PdfGenerator {
                 log.debug("DB에 저장된 QR 코드 URL 사용: {}", qrCodeUrl);
             } else {
                 // 기본 QR 코드 생성 (fallback)
-                String fallbackQrCode = qrCodeGenerator.generateQrCodeBase64("ANSWER_SHEET");
+                String fallbackQrCode = qrCodeGenerator.generateQrCodeBase64("STUDENT_ANSWER_SHEET");
                 enhancedHtml.append("<img src='data:image/png;base64,")
                     .append(fallbackQrCode)
                     .append("' alt='QR Code'/>");
@@ -300,10 +300,10 @@ public class PdfGenerator {
         fallbackHtml.append("<div class='header-content'>");
         
         // QR 코드 추가 (답안지인 경우)
-        if ("ANSWER_SHEET".equals(documentType)) {
+        if ("STUDENT_ANSWER_SHEET".equals(documentType)) {
             fallbackHtml.append("<div class='qr-code'>");
             fallbackHtml.append("<img src='data:image/png;base64,")
-                .append(qrCodeGenerator.generateQrCodeBase64("ANSWER_SHEET"))
+                .append(qrCodeGenerator.generateQrCodeBase64("STUDENT_ANSWER_SHEET"))
                 .append("' alt='QR Code'/>");
             fallbackHtml.append("<p>QR 코드</p>");
             fallbackHtml.append("</div>");
@@ -331,11 +331,11 @@ public class PdfGenerator {
      */
     private String getDocumentTypeName(String documentType) {
         switch (documentType) {
-            case "QUESTION_PAPER":
+            case "EXAM_SHEET":
                 return "문제지";
-            case "ANSWER_KEY":
+            case "CORRECT_ANSWER_SHEET":
                 return "답안지";
-            case "ANSWER_SHEET":
+            case "STUDENT_ANSWER_SHEET":
                 return "학생 답안지";
             default:
                 return "문서";
@@ -397,7 +397,7 @@ public class PdfGenerator {
             mergedHtml.append("<div class='header-content'>");
             
             // QR 코드 추가 (답안지인 경우)
-            if ("ANSWER_SHEET".equals(doc.documentType)) {
+            if ("STUDENT_ANSWER_SHEET".equals(doc.documentType)) {
                 mergedHtml.append("<div class='qr-code'>");
                 
                 // DB에 저장된 QR 코드 URL이 있으면 사용, 없으면 기본값 생성
@@ -407,7 +407,7 @@ public class PdfGenerator {
                     log.debug("DB에 저장된 QR 코드 URL 사용: {}", doc.qrCodeUrl);
                 } else {
                     // 기본 QR 코드 생성 (fallback)
-                    String fallbackQrCode = qrCodeGenerator.generateQrCodeBase64("ANSWER_SHEET");
+                    String fallbackQrCode = qrCodeGenerator.generateQrCodeBase64("STUDENT_ANSWER_SHEET");
                     mergedHtml.append("<img src='data:image/png;base64,")
                         .append(fallbackQrCode)
                         .append("' alt='QR Code'/>");

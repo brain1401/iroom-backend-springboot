@@ -27,7 +27,7 @@ public record ExamDocumentDetailResponse(
     @Schema(description = "학년", example = "1")
     Integer grade,
     
-    @Schema(description = "문서 타입", example = "QUESTION_PAPER", allowableValues = {"ANSWER_SHEET", "QUESTION_PAPER", "ANSWER_KEY"})
+    @Schema(description = "문서 타입", example = "EXAM_SHEET", allowableValues = {"STUDENT_ANSWER_SHEET", "EXAM_SHEET", "CORRECT_ANSWER_SHEET"})
     String documentType,
     
     @Schema(description = "문서 타입 한글명", example = "문제지")

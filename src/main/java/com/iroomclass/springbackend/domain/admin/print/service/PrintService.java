@@ -211,11 +211,11 @@ public class PrintService {
      */
     private String getDocumentTypeName(String documentType) {
         switch (documentType) {
-            case "QUESTION_PAPER":
+            case "EXAM_SHEET":
                 return "문제지";
-            case "ANSWER_KEY":
+            case "CORRECT_ANSWER_SHEET":
                 return "답안지";
-            case "ANSWER_SHEET":
+            case "STUDENT_ANSWER_SHEET":
                 return "학생 답안지";
             default:
                 return "문서";

@@ -7,7 +7,7 @@ import java.util.UUID;
 import com.iroomclass.springbackend.common.UUIDv7Generator;
 
 /**
- * 사용자 Entity
+ * 학생 Entity
  * 
  * 시험을 치르는 학생들의 기본 정보를 관리합니다.
  * 이름, 전화번호, 학년, 생년월일을 저장합니다.
@@ -16,7 +16,7 @@ import com.iroomclass.springbackend.common.UUIDv7Generator;
  * @since 2025
  */
 @Entity
-@Table(name = "users")
+@Table(name = "student")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
@@ -24,7 +24,7 @@ import com.iroomclass.springbackend.common.UUIDv7Generator;
 public class User {
     
     /**
-     * 사용자 고유 ID
+     * 학생 고유 ID
      * UUIDv7로 생성되는 기본키
      */
     @Id
@@ -32,7 +32,7 @@ public class User {
     private UUID id;
     
     /**
-     * 사용자 이름
+     * 학생 이름
      * 학생의 이름을 저장
      * 최대 50자, 필수 입력
      */
@@ -40,7 +40,7 @@ public class User {
     private String name;
     
     /**
-     * 사용자 전화번호
+     * 학생 전화번호
      * 학생의 연락처 정보
      * 최대 20자, 선택 입력
      */

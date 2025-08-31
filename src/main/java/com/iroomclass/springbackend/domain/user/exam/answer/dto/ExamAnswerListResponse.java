@@ -4,7 +4,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 
-import com.iroomclass.springbackend.domain.user.exam.answer.entity.ExamAnswer;
+import com.iroomclass.springbackend.domain.user.exam.answer.entity.StudentAnswerSheet;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
@@ -41,18 +41,15 @@ public record ExamAnswerListResponse(
     /**
      * Entity 리스트를 DTO로 변환하는 정적 메서드
      */
-    public static ExamAnswerListResponse from(List<ExamAnswer> examAnswers, UUID examSubmissionId) {
-        List<ExamAnswerResponse> answerResponses = examAnswers.stream()
+    public static ExamAnswerListResponse from(List<StudentAnswerSheet> studentAnswerSheets, UUID examSubmissionId) {
+        List<ExamAnswerResponse> answerResponses = studentAnswerSheets.stream()
             .map(ExamAnswerResponse::from)
             .toList();
         
         int totalCount = answerResponses.size();
-        int correctCount = (int) answerResponses.stream()
-            .filter(answer -> Boolean.TRUE.equals(answer.isCorrect()))
-            .count();
-        int totalScore = answerResponses.stream()
-            .mapToInt(answer -> answer.score() != null ? answer.score() : 0)
-            .sum();
+        // TODO: 정답 개수와 점수는 QuestionResult에서 조회해야 함
+        int correctCount = 0; // QuestionResultService를 통해 조회 필요
+        int totalScore = 0; // QuestionResultService를 통해 조회 필요
         
         return new ExamAnswerListResponse(
             examSubmissionId,

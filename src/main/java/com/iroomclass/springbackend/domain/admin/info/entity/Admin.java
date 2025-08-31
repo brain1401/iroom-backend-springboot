@@ -50,6 +50,18 @@ public class Admin {
     private String academyName;
     
     /**
+     * 관리자 이름
+     */
+    @Column(length = 50)
+    private String name;
+    
+    /**
+     * 관리자 이메일
+     */
+    @Column(length = 100)
+    private String email;
+    
+    /**
      * 엔티티 저장 전 UUID 자동 생성
      */
     @PrePersist
@@ -57,6 +69,24 @@ public class Admin {
         if (this.id == null) {
             this.id = UUIDv7Generator.generate();
         }
+    }
+    
+    /**
+     * 관리자 이름 반환
+     * 
+     * @return 관리자 이름
+     */
+    public String getName() {
+        return name;
+    }
+    
+    /**
+     * 관리자 이메일 반환
+     * 
+     * @return 관리자 이메일
+     */
+    public String getEmail() {
+        return email;
     }
     
 }

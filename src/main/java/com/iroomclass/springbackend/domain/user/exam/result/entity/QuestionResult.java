@@ -5,7 +5,7 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 import com.iroomclass.springbackend.domain.admin.question.entity.Question;
-import com.iroomclass.springbackend.domain.user.exam.answer.entity.ExamAnswer;
+import com.iroomclass.springbackend.domain.user.exam.answer.entity.StudentAnswerSheet;
 import com.iroomclass.springbackend.common.UUIDv7Generator;
 
 import jakarta.persistence.Column;
@@ -27,16 +27,16 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 /**
- * 문제별 채점 결과 엔티티
+ * 시험결과별 문제 채점 엔티티
  * 
- * 각 문제에 대한 상세 채점 정보를 관리합니다.
+ * 시험 결과 내에서 각 문제별 상세 채점 정보를 관리합니다.
  * 자동 채점, 수동 채점, AI 보조 채점을 모두 지원합니다.
  * 
  * @author 이룸클래스
  * @since 2025
  */
 @Entity
-@Table(name = "question_result")
+@Table(name = "exam_result_question")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
@@ -44,7 +44,7 @@ import lombok.NoArgsConstructor;
 public class QuestionResult {
     
     /**
-     * 문제별 채점 결과 고유 ID
+     * 시험결과별 문제 채점 고유 ID
      * UUIDv7 기본키
      */
     @Id
@@ -73,7 +73,7 @@ public class QuestionResult {
      */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "answer_id", nullable = false)
-    private ExamAnswer examAnswer;
+    private StudentAnswerSheet studentAnswerSheet;
     
     /**
      * 정답 여부
@@ -207,11 +207,11 @@ public class QuestionResult {
      * @return 채점 성공 여부
      */
     public boolean performAutoGrading() {
-        if (!question.isMultipleChoice() || examAnswer.getSelectedChoice() == null) {
+        if (!question.isMultipleChoice() || studentAnswerSheet.getSelectedChoice() == null) {
             return false;
         }
         
-        boolean correct = question.isCorrectChoice(examAnswer.getSelectedChoice());
+        boolean correct = question.isCorrectChoice(studentAnswerSheet.getSelectedChoice());
         this.isCorrect = correct;
         this.score = correct ? maxScore : 0;
         this.gradingMethod = GradingMethod.AUTO;
@@ -288,6 +288,56 @@ public class QuestionResult {
     public boolean needsReview() {
         return (isAiAssistedGrading() && hasLowConfidence()) || 
                (score != null && score > 0 && score < maxScore);
+    }
+    
+    /**
+     * 자동 채점 처리
+     * 
+     * @return 채점 성공 여부
+     */
+    public boolean processAutoGrading() {
+        return performAutoGrading();
+    }
+    
+    /**
+     * 수동 채점 처리
+     * 
+     * @param score 획득 점수
+     * @param isCorrect 정답 여부
+     * @param feedback 피드백
+     */
+    public void processManualGrading(Integer score, Boolean isCorrect, String feedback) {
+        updateManualGradingResult(isCorrect, score, feedback);
+    }
+    
+    /**
+     * AI 보조 채점 처리
+     * 
+     * @param score 획득 점수
+     * @param isCorrect 정답 여부
+     * @param confidence 신뢰도
+     * @param aiAnalysis AI 분석 결과
+     */
+    public void processAIAssistedGrading(Integer score, Boolean isCorrect, BigDecimal confidence, String aiAnalysis) {
+        updateAiGradingResult(isCorrect, score, confidence, aiAnalysis);
+    }
+    
+    /**
+     * 채점 피드백 반환
+     * 
+     * @return 채점 코멘트
+     */
+    public String getFeedback() {
+        return gradingComment;
+    }
+    
+    /**
+     * AI 분석 결과 반환
+     * 
+     * @return AI 분석 결과 (현재는 채점 코멘트와 동일)
+     */
+    public String getAiAnalysis() {
+        return gradingComment;
     }
     
     /**

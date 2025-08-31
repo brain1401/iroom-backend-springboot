@@ -145,7 +145,7 @@ public class ExamSheetService {
 
         log.info("전체 시험지 목록 조회 요청");
 
-        List<ExamSheet> examSheets = examSheetRepository.findAllByOrderByIdDesc();
+        List<ExamSheet> examSheets = examSheetRepository.findAllByOrderByCreatedAtDesc();
 
         List<ExamSheetListResponse.ExamSheetInfo> examSheetInfos = new ArrayList<>();
         for (ExamSheet examSheet : examSheets) {
@@ -184,7 +184,7 @@ public class ExamSheetService {
             throw new IllegalArgumentException("학년은 1, 2, 3만 가능합니다: " + grade);
         }
 
-        List<ExamSheet> examSheets = examSheetRepository.findByGradeOrderByIdDesc(grade);
+        List<ExamSheet> examSheets = examSheetRepository.findByGradeOrderByCreatedAtDesc(grade);
 
         List<ExamSheetListResponse.ExamSheetInfo> examSheetInfos = new ArrayList<>();
         for (ExamSheet examSheet : examSheets) {

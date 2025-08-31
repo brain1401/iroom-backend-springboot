@@ -46,7 +46,7 @@ public record ExamDocumentListResponse(
         @Schema(description = "문서 ID", example = "550e8400-e29b-41d4-a716-446655440001")
         UUID documentId,
         
-        @Schema(description = "문서 타입", example = "QUESTION_PAPER", allowableValues = {"ANSWER_SHEET", "QUESTION_PAPER", "ANSWER_KEY"})
+        @Schema(description = "문서 타입", example = "EXAM_SHEET", allowableValues = {"STUDENT_ANSWER_SHEET", "EXAM_SHEET", "CORRECT_ANSWER_SHEET"})
         String documentType,
         
         @Schema(description = "문서 타입 한글명", example = "문제지")

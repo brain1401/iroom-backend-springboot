@@ -34,9 +34,9 @@ public interface QuestionResultRepository extends JpaRepository<QuestionResult, 
      * @return 문제별 결과 목록 (문제 순서대로)
      */
     @Query("SELECT qr FROM QuestionResult qr " +
-           "LEFT JOIN FETCH qr.examAnswer " +
+           "LEFT JOIN FETCH qr.studentAnswerSheet " +
            "WHERE qr.examResult.id = :examResultId " +
-           "ORDER BY qr.examAnswer.questionOrder ASC")
+           "ORDER BY qr.studentAnswerSheet.question.questionOrder ASC")
     List<QuestionResult> findByExamResultIdOrderByQuestionOrder(@Param("examResultId") UUID examResultId);
     
     /**
@@ -47,8 +47,8 @@ public interface QuestionResultRepository extends JpaRepository<QuestionResult, 
      * @return 해당 문제의 채점 결과 페이지
      */
     @Query("SELECT qr FROM QuestionResult qr " +
-           "JOIN qr.examAnswer ea " +
-           "WHERE ea.questionId = :questionId " +
+           "JOIN qr.studentAnswerSheet sas " +
+           "WHERE sas.question.id = :questionId " +
            "ORDER BY qr.createdAt DESC")
     Page<QuestionResult> findByQuestionId(@Param("questionId") UUID questionId, Pageable pageable);
     
@@ -112,8 +112,8 @@ public interface QuestionResultRepository extends JpaRepository<QuestionResult, 
      */
     @Query("SELECT CAST(COUNT(CASE WHEN qr.isCorrect = true THEN 1 END) AS DOUBLE) / COUNT(*) " +
            "FROM QuestionResult qr " +
-           "JOIN qr.examAnswer ea " +
-           "WHERE ea.questionId = :questionId")
+           "JOIN qr.studentAnswerSheet sas " +
+           "WHERE sas.question.id = :questionId")
     Double calculateCorrectRateByQuestionId(@Param("questionId") UUID questionId);
     
     /**
@@ -156,10 +156,10 @@ public interface QuestionResultRepository extends JpaRepository<QuestionResult, 
     /**
      * 특정 답안에 대한 채점 결과 조회
      * 
-     * @param examAnswerId 답안 ID
+     * @param studentAnswerSheetId 답안 ID
      * @return 해당 답안의 채점 결과
      */
-    Optional<QuestionResult> findByExamAnswerId(UUID examAnswerId);
+    Optional<QuestionResult> findByStudentAnswerSheetId(UUID studentAnswerSheetId);
     
     /**
      * 수동 채점이 필요한 결과 조회
@@ -218,8 +218,8 @@ public interface QuestionResultRepository extends JpaRepository<QuestionResult, 
      */
     @Query("SELECT AVG(qr.score) " +
            "FROM QuestionResult qr " +
-           "JOIN qr.examAnswer ea " +
-           "WHERE ea.questionId = :questionId AND qr.score IS NOT NULL")
+           "JOIN qr.studentAnswerSheet sas " +
+           "WHERE sas.question.id = :questionId AND qr.score IS NOT NULL")
     Double calculateAverageScoreByQuestionId(@Param("questionId") UUID questionId);
     
     /**
