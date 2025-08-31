@@ -12,10 +12,10 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 
 import jakarta.validation.Valid;
 
-import com.iroomclass.springbackend.domain.exam.dto.ExamDocumentCreateRequest;
-import com.iroomclass.springbackend.domain.exam.dto.ExamDocumentCreateResponse;
-import com.iroomclass.springbackend.domain.exam.dto.ExamDocumentDetailResponse;
-import com.iroomclass.springbackend.domain.exam.dto.ExamDocumentListResponse;
+import com.iroomclass.springbackend.domain.exam.dto.exam.ExamDocumentCreateRequest;
+import com.iroomclass.springbackend.domain.exam.dto.exam.ExamDocumentCreateResponse;
+import com.iroomclass.springbackend.domain.exam.dto.exam.ExamDocumentDetailResponse;
+import com.iroomclass.springbackend.domain.exam.dto.exam.ExamDocumentListResponse;
 import com.iroomclass.springbackend.domain.exam.service.ExamDocumentService;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -37,7 +37,7 @@ import lombok.extern.slf4j.Slf4j;
 @RequestMapping("/exam-document")
 @RequiredArgsConstructor
 @Slf4j
-@Tag(name = "관리자 - 시험지 문서 관리", description = "시험지 문서 생성, 조회 API")
+@Tag(name = "시험지 문서 관리", description = "시험지 문서 생성, 조회 API")
 public class ExamDocumentController {
 
     private final ExamDocumentService examDocumentService;
@@ -55,7 +55,8 @@ public class ExamDocumentController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "잘못된 요청"),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "존재하지 않는 시험지 초안")
     })
-    public ApiResponse<ExamDocumentCreateResponse> createExamDocuments(@Valid @RequestBody ExamDocumentCreateRequest request) {
+    public ApiResponse<ExamDocumentCreateResponse> createExamDocuments(
+            @Valid @RequestBody ExamDocumentCreateRequest request) {
         log.info("시험지 문서 생성 요청: 시험지 ID={}", request.examSheetId());
 
         ExamDocumentCreateResponse response = examDocumentService.createExamDocuments(request);

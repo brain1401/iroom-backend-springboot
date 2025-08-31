@@ -7,10 +7,10 @@ import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.iroomclass.springbackend.domain.exam.dto.ExamDocumentCreateRequest;
-import com.iroomclass.springbackend.domain.exam.dto.ExamDocumentCreateResponse;
-import com.iroomclass.springbackend.domain.exam.dto.ExamDocumentDetailResponse;
-import com.iroomclass.springbackend.domain.exam.dto.ExamDocumentListResponse;
+import com.iroomclass.springbackend.domain.exam.dto.exam.ExamDocumentCreateRequest;
+import com.iroomclass.springbackend.domain.exam.dto.exam.ExamDocumentCreateResponse;
+import com.iroomclass.springbackend.domain.exam.dto.exam.ExamDocumentDetailResponse;
+import com.iroomclass.springbackend.domain.exam.dto.exam.ExamDocumentListResponse;
 import com.iroomclass.springbackend.domain.exam.entity.ExamDocument;
 import com.iroomclass.springbackend.domain.exam.entity.ExamSheet;
 import com.iroomclass.springbackend.domain.exam.entity.ExamSheetQuestion;

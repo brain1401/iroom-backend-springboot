@@ -1,9 +1,10 @@
 package com.iroomclass.springbackend.domain.exam.controller;
 
-import com.iroomclass.springbackend.domain.exam.dto.PrintRequest;
 import java.util.UUID;
-import com.iroomclass.springbackend.domain.exam.dto.PrintResponse;
-import com.iroomclass.springbackend.domain.exam.dto.PrintableDocumentResponse;
+
+import com.iroomclass.springbackend.domain.exam.dto.print.PrintRequest;
+import com.iroomclass.springbackend.domain.exam.dto.print.PrintResponse;
+import com.iroomclass.springbackend.domain.exam.dto.print.PrintableDocumentResponse;
 import com.iroomclass.springbackend.domain.exam.service.PrintService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -21,9 +22,9 @@ import jakarta.validation.Valid;
 
 @Slf4j
 @RestController
-@RequestMapping("/admin/print")
+@RequestMapping("/print")
 @RequiredArgsConstructor
-@Tag(name = "관리자 - 인쇄", description = "관리자 인쇄 관련 API")
+@Tag(name = "인쇄", description = "관리자 인쇄 관련 API")
 public class PrintController {
 
     private final PrintService printService;

@@ -7,10 +7,10 @@ import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
 
 import com.iroomclass.springbackend.domain.exam.dto.exam.ExamCreateRequest;
-import com.iroomclass.springbackend.domain.exam.dto.ExamCreateResponse;
-import com.iroomclass.springbackend.domain.exam.dto.ExamDetailResponse;
+import com.iroomclass.springbackend.domain.exam.dto.exam.ExamCreateResponse;
+import com.iroomclass.springbackend.domain.exam.dto.exam.ExamDetailResponse;
 import com.iroomclass.springbackend.domain.exam.dto.exam.ExamListResponse;
-import com.iroomclass.springbackend.domain.exam.dto.ExamUpdateRequest;
+import com.iroomclass.springbackend.domain.exam.dto.exam.ExamUpdateRequest;
 import com.iroomclass.springbackend.domain.exam.service.ExamService;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -32,7 +32,7 @@ import lombok.extern.slf4j.Slf4j;
 @RequestMapping("/exam")
 @RequiredArgsConstructor
 @Slf4j
-@Tag(name = "관리자 - 실제 시험 관리", description = "실제 시험 등록, 조회, 수정, 삭제 API")
+@Tag(name = "실제 시험 관리", description = "실제 시험 등록, 조회, 수정, 삭제 API")
 public class ExamController {
 
     private final ExamService examService;

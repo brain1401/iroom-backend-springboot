@@ -15,16 +15,16 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.iroomclass.springbackend.domain.exam.dto.ExamSheetCreateRequest;
-import com.iroomclass.springbackend.domain.exam.dto.ExamSheetCreateResponse;
-import com.iroomclass.springbackend.domain.exam.dto.ExamSheetDetailResponse;
-import com.iroomclass.springbackend.domain.exam.dto.ExamSheetListResponse;
-import com.iroomclass.springbackend.domain.exam.dto.ExamSheetQuestionManageResponse;
-import com.iroomclass.springbackend.domain.exam.dto.ExamSheetPreviewResponse;
-import com.iroomclass.springbackend.domain.exam.dto.ExamSheetUpdateRequest;
-import com.iroomclass.springbackend.domain.exam.dto.QuestionReplaceRequest;
-import com.iroomclass.springbackend.domain.exam.dto.QuestionSelectionRequest;
-import com.iroomclass.springbackend.domain.exam.dto.SelectableQuestionsResponse;
+import com.iroomclass.springbackend.domain.exam.dto.exam.ExamSheetCreateRequest;
+import com.iroomclass.springbackend.domain.exam.dto.exam.ExamSheetCreateResponse;
+import com.iroomclass.springbackend.domain.exam.dto.exam.ExamSheetDetailResponse;
+import com.iroomclass.springbackend.domain.exam.dto.exam.ExamSheetListResponse;
+import com.iroomclass.springbackend.domain.exam.dto.exam.ExamSheetPreviewResponse;
+import com.iroomclass.springbackend.domain.exam.dto.exam.ExamSheetQuestionManageResponse;
+import com.iroomclass.springbackend.domain.exam.dto.exam.ExamSheetUpdateRequest;
+import com.iroomclass.springbackend.domain.exam.dto.question.QuestionReplaceRequest;
+import com.iroomclass.springbackend.domain.exam.dto.question.QuestionSelectionRequest;
+import com.iroomclass.springbackend.domain.exam.dto.question.SelectableQuestionsResponse;
 import com.iroomclass.springbackend.domain.exam.entity.ExamSheet;
 import com.iroomclass.springbackend.domain.exam.entity.ExamSheetQuestion;
 import com.iroomclass.springbackend.domain.exam.entity.ExamSheetSelectedUnit;
@@ -567,8 +567,6 @@ public class ExamSheetService {
 
         // 4단계: 새 문제의 seqNo 결정 (기존 문제 개수 + 1)
         int newSeqNo = (int) examSheetQuestionRepository.countByExamSheetId(examSheetId) + 1;
-
-
 
         // 5단계: 새 문제 추가
         ExamSheetQuestion newExamSheetQuestion = ExamSheetQuestion.builder()
