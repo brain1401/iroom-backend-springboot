@@ -3,6 +3,7 @@ package com.iroomclass.springbackend.domain.user.dto;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
+import com.iroomclass.springbackend.common.ValidationConstants;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Objects;
 import java.time.LocalDate;
@@ -16,11 +17,11 @@ import java.time.LocalDate;
  */
 @Schema(description = "학생 로그인 요청")
 public record StudentLoginRequest(
-        @NotBlank(message = "학생 이름은 필수입니다.") @Schema(description = "학생 이름", example = "김철수") String name,
+        @NotBlank(message = ValidationConstants.REQUIRED_STUDENT_NAME) @Schema(description = "학생 이름", example = "김철수") String name,
 
-        @NotBlank(message = "학생 전화번호는 필수입니다.") @Pattern(regexp = "^01[0-9]-[0-9]{3,4}-[0-9]{4}$", message = "올바른 전화번호 형식이 아닙니다.") @Schema(description = "학생 전화번호", example = "010-1234-5678") String phone,
+        @NotBlank(message = ValidationConstants.REQUIRED_STUDENT_PHONE) @Pattern(regexp = ValidationConstants.PHONE_NUMBER_PATTERN, message = ValidationConstants.INVALID_PHONE_FORMAT) @Schema(description = "학생 전화번호", example = "010-1234-5678") String phone,
 
-        @NotNull(message = "생년월일은 필수입니다.") @Schema(description = "생년월일", example = "2008-03-15", requiredMode = Schema.RequiredMode.REQUIRED) LocalDate birthDate) {
+        @NotNull(message = ValidationConstants.REQUIRED_BIRTH_DATE) @Schema(description = "생년월일", example = "2008-03-15", requiredMode = Schema.RequiredMode.REQUIRED) LocalDate birthDate) {
     /**
      * Compact Constructor - 입력 검증 수행
      */

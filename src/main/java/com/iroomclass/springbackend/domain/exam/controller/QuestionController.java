@@ -33,7 +33,7 @@ import lombok.extern.slf4j.Slf4j;
  * @since 2025
  */
 @RestController
-@RequestMapping("/questions")
+@RequestMapping("questions")
 @RequiredArgsConstructor
 @Slf4j
 @Tag(name = "문제 관리", description = "문제 목록 조회, 상세 조회, 통계, 검색 API")
@@ -50,43 +50,20 @@ public class QuestionController {
     @GetMapping("/unit/{unitId}")
     @Operation(summary = "단원별 문제 목록 조회", description = "특정 단원에 속한 모든 문제의 목록을 조회합니다. 문제 ID와 난이도 정보를 포함합니다.")
     @io.swagger.v3.oas.annotations.responses.ApiResponses({
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200",
-                            description = "성공",
-                            content = @Content(
-                                mediaType = "application/json",
-                                schema = @Schema(implementation = ApiResponse.SuccessResponse.class),
-                    examples = @ExampleObject(
-                        name = "잘못된 단원 ID",
-                        summary = "단원 ID 형식이 잘못됨",
-                        value = """
-                        {
-                          "result": "ERROR",
-                          "message": "파라미터 'unitId'의 값이 올바르지 않습니다",
-                          "data": null
-                        }
-                        """
-                    )
-                )
-            ),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(
-                responseCode = "404",
-                            description = "오류",
-                            content = @Content(
-                                mediaType = "application/json",
-                                schema = @Schema(implementation = ApiResponse.ErrorResponse.class),
-                    examples = @ExampleObject(
-                        name = "단원 없음",
-                        summary = "단원을 찾을 수 없음",
-                        value = """
-                        {
-                          "result": "ERROR",
-                          "message": "단원을 찾을 수 없습니다",
-                          "data": null
-                        }
-                        """
-                    )
-                )
-            )
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "성공", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiResponse.SuccessResponse.class), examples = @ExampleObject(name = "잘못된 단원 ID", summary = "단원 ID 형식이 잘못됨", value = """
+                    {
+                      "result": "ERROR",
+                      "message": "파라미터 'unitId'의 값이 올바르지 않습니다",
+                      "data": null
+                    }
+                    """))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "오류", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiResponse.ErrorResponse.class), examples = @ExampleObject(name = "단원 없음", summary = "단원을 찾을 수 없음", value = """
+                    {
+                      "result": "ERROR",
+                      "message": "단원을 찾을 수 없습니다",
+                      "data": null
+                    }
+                    """)))
     })
     public ApiResponse<QuestionListResponse> getQuestionsByUnit(
             @Parameter(description = "단원 ID", example = "123e4567-e89b-12d3-a456-426614174000") @PathVariable UUID unitId) {
@@ -109,43 +86,20 @@ public class QuestionController {
     @GetMapping("/unit/{unitId}/difficulty")
     @Operation(summary = "난이도별 문제 목록 조회", description = "특정 단원의 특정 난이도(하/중/상) 문제 목록을 조회합니다.")
     @io.swagger.v3.oas.annotations.responses.ApiResponses({
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200",
-                            description = "성공",
-                            content = @Content(
-                                mediaType = "application/json",
-                                schema = @Schema(implementation = ApiResponse.SuccessResponse.class),
-                            examples = @ExampleObject(
-                                    name = "입력 검증 실패",
-                                    summary = "잘못된 UUID 형식 또는 난이도 값",
-                                    value = """
-                                    {
-                                      "result": "ERROR",
-                                      "message": "입력 데이터 검증에 실패했습니다",
-                                      "data": null
-                                    }
-                                    """
-                            )
-                    )
-            ),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(
-                    responseCode = "404",
-                            description = "오류",
-                            content = @Content(
-                                mediaType = "application/json",
-                                schema = @Schema(implementation = ApiResponse.ErrorResponse.class),
-                            examples = @ExampleObject(
-                                    name = "단원 없음",
-                                    summary = "해당 ID의 단원이 존재하지 않음",
-                                    value = """
-                                    {
-                                      "result": "ERROR",
-                                      "message": "단원을 찾을 수 없습니다",
-                                      "data": null
-                                    }
-                                    """
-                            )
-                    )
-            )
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "성공", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiResponse.SuccessResponse.class), examples = @ExampleObject(name = "입력 검증 실패", summary = "잘못된 UUID 형식 또는 난이도 값", value = """
+                    {
+                      "result": "ERROR",
+                      "message": "입력 데이터 검증에 실패했습니다",
+                      "data": null
+                    }
+                    """))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "오류", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiResponse.ErrorResponse.class), examples = @ExampleObject(name = "단원 없음", summary = "해당 ID의 단원이 존재하지 않음", value = """
+                    {
+                      "result": "ERROR",
+                      "message": "단원을 찾을 수 없습니다",
+                      "data": null
+                    }
+                    """)))
     })
     public ApiResponse<QuestionListResponse> getQuestionsByUnitAndDifficulty(
             @Parameter(description = "단원 ID", example = "123e4567-e89b-12d3-a456-426614174000") @PathVariable UUID unitId,
@@ -168,43 +122,20 @@ public class QuestionController {
     @GetMapping("/{questionId}")
     @Operation(summary = "문제 상세 조회", description = "특정 문제의 상세 정보를 조회합니다. 문제 내용(HTML), 정답, 단원 정보를 포함합니다.")
     @io.swagger.v3.oas.annotations.responses.ApiResponses({
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200",
-                            description = "성공",
-                            content = @Content(
-                                mediaType = "application/json",
-                                schema = @Schema(implementation = ApiResponse.SuccessResponse.class),
-                            examples = @ExampleObject(
-                                    name = "입력 검증 실패",
-                                    summary = "잘못된 UUID 형식",
-                                    value = """
-                                    {
-                                      "result": "ERROR",
-                                      "message": "입력 데이터 검증에 실패했습니다",
-                                      "data": null
-                                    }
-                                    """
-                            )
-                    )
-            ),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(
-                    responseCode = "404",
-                            description = "오류",
-                            content = @Content(
-                                mediaType = "application/json",
-                                schema = @Schema(implementation = ApiResponse.ErrorResponse.class),
-                            examples = @ExampleObject(
-                                    name = "문제 없음",
-                                    summary = "해당 ID의 문제가 존재하지 않음",
-                                    value = """
-                                    {
-                                      "result": "ERROR",
-                                      "message": "문제를 찾을 수 없습니다",
-                                      "data": null
-                                    }
-                                    """
-                            )
-                    )
-            )
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "성공", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiResponse.SuccessResponse.class), examples = @ExampleObject(name = "입력 검증 실패", summary = "잘못된 UUID 형식", value = """
+                    {
+                      "result": "ERROR",
+                      "message": "입력 데이터 검증에 실패했습니다",
+                      "data": null
+                    }
+                    """))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "오류", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiResponse.ErrorResponse.class), examples = @ExampleObject(name = "문제 없음", summary = "해당 ID의 문제가 존재하지 않음", value = """
+                    {
+                      "result": "ERROR",
+                      "message": "문제를 찾을 수 없습니다",
+                      "data": null
+                    }
+                    """)))
     })
     public ApiResponse<QuestionDetailResponse> getQuestionDetail(
             @Parameter(description = "문제 ID", example = "123e4567-e89b-12d3-a456-426614174000") @PathVariable UUID questionId) {
@@ -226,43 +157,20 @@ public class QuestionController {
     @GetMapping("/unit/{unitId}/statistics")
     @Operation(summary = "단원별 문제 통계 조회", description = "특정 단원의 문제 통계를 조회합니다. 전체 문제 수와 난이도별 문제 수를 제공합니다.")
     @io.swagger.v3.oas.annotations.responses.ApiResponses({
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200",
-                            description = "성공",
-                            content = @Content(
-                                mediaType = "application/json",
-                                schema = @Schema(implementation = ApiResponse.SuccessResponse.class),
-                            examples = @ExampleObject(
-                                    name = "입력 검증 실패",
-                                    summary = "잘못된 UUID 형식",
-                                    value = """
-                                    {
-                                      "result": "ERROR",
-                                      "message": "입력 데이터 검증에 실패했습니다",
-                                      "data": null
-                                    }
-                                    """
-                            )
-                    )
-            ),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(
-                    responseCode = "404",
-                            description = "오류",
-                            content = @Content(
-                                mediaType = "application/json",
-                                schema = @Schema(implementation = ApiResponse.ErrorResponse.class),
-                            examples = @ExampleObject(
-                                    name = "단원 없음",
-                                    summary = "해당 ID의 단원이 존재하지 않음",
-                                    value = """
-                                    {
-                                      "result": "ERROR",
-                                      "message": "단원을 찾을 수 없습니다",
-                                      "data": null
-                                    }
-                                    """
-                            )
-                    )
-            )
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "성공", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiResponse.SuccessResponse.class), examples = @ExampleObject(name = "입력 검증 실패", summary = "잘못된 UUID 형식", value = """
+                    {
+                      "result": "ERROR",
+                      "message": "입력 데이터 검증에 실패했습니다",
+                      "data": null
+                    }
+                    """))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "오류", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiResponse.ErrorResponse.class), examples = @ExampleObject(name = "단원 없음", summary = "해당 ID의 단원이 존재하지 않음", value = """
+                    {
+                      "result": "ERROR",
+                      "message": "단원을 찾을 수 없습니다",
+                      "data": null
+                    }
+                    """)))
     })
     public ApiResponse<QuestionStatisticsResponse> getQuestionStatisticsByUnit(
             @Parameter(description = "단원 ID", example = "123e4567-e89b-12d3-a456-426614174000") @PathVariable UUID unitId) {
@@ -286,24 +194,13 @@ public class QuestionController {
     @GetMapping("/search")
     @Operation(summary = "문제 검색", description = "키워드로 문제를 검색합니다. 문제 내용(HTML)에서 키워드를 포함하는 문제들을 찾습니다.")
     @io.swagger.v3.oas.annotations.responses.ApiResponses({
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200",
-                            description = "성공",
-                            content = @Content(
-                                mediaType = "application/json",
-                                schema = @Schema(implementation = ApiResponse.SuccessResponse.class),
-                            examples = @ExampleObject(
-                                    name = "입력 검증 실패",
-                                    summary = "검색 키워드가 누락되거나 비어있음",
-                                    value = """
-                                    {
-                                      "result": "ERROR",
-                                      "message": "입력 데이터 검증에 실패했습니다",
-                                      "data": null
-                                    }
-                                    """
-                            )
-                    )
-            )
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "성공", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiResponse.SuccessResponse.class), examples = @ExampleObject(name = "입력 검증 실패", summary = "검색 키워드가 누락되거나 비어있음", value = """
+                    {
+                      "result": "ERROR",
+                      "message": "입력 데이터 검증에 실패했습니다",
+                      "data": null
+                    }
+                    """)))
     })
     public ApiResponse<QuestionSearchResponse> searchQuestions(
             @Parameter(description = "검색 키워드", example = "정수") @RequestParam String keyword) {
@@ -334,43 +231,20 @@ public class QuestionController {
             - 난이도 및 단원 정보
             """)
     @io.swagger.v3.oas.annotations.responses.ApiResponses({
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200",
-                            description = "성공",
-                            content = @Content(
-                                mediaType = "application/json",
-                                schema = @Schema(implementation = ApiResponse.SuccessResponse.class),
-                            examples = @ExampleObject(
-                                    name = "입력 검증 실패",
-                                    summary = "잘못된 UUID 형식",
-                                    value = """
-                                    {
-                                      "result": "ERROR",
-                                      "message": "입력 데이터 검증에 실패했습니다",
-                                      "data": null
-                                    }
-                                    """
-                            )
-                    )
-            ),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(
-                    responseCode = "404",
-                            description = "오류",
-                            content = @Content(
-                                mediaType = "application/json",
-                                schema = @Schema(implementation = ApiResponse.ErrorResponse.class),
-                            examples = @ExampleObject(
-                                    name = "문제 없음",
-                                    summary = "해당 ID의 문제가 존재하지 않음",
-                                    value = """
-                                    {
-                                      "result": "ERROR",
-                                      "message": "문제를 찾을 수 없습니다",
-                                      "data": null
-                                    }
-                                    """
-                            )
-                    )
-            )
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "성공", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiResponse.SuccessResponse.class), examples = @ExampleObject(name = "입력 검증 실패", summary = "잘못된 UUID 형식", value = """
+                    {
+                      "result": "ERROR",
+                      "message": "입력 데이터 검증에 실패했습니다",
+                      "data": null
+                    }
+                    """))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "오류", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiResponse.ErrorResponse.class), examples = @ExampleObject(name = "문제 없음", summary = "해당 ID의 문제가 존재하지 않음", value = """
+                    {
+                      "result": "ERROR",
+                      "message": "문제를 찾을 수 없습니다",
+                      "data": null
+                    }
+                    """)))
     })
     public ApiResponse<QuestionDetailResponse> getQuestionPreview(
             @Parameter(description = "문제 ID", example = "1", required = true) @PathVariable UUID questionId) {

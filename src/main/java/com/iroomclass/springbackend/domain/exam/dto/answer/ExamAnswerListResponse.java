@@ -20,7 +20,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 public record ExamAnswerListResponse(
         @Schema(description = "시험 제출 ID", example = "123e4567-e89b-12d3-a456-426614174000") UUID examSubmissionId,
 
-        @Schema(description = "답안 목록") List<ExamAnswerResponse> answers,
+        @Schema(description = "답안 목록") List<StudentExamAnswerResponse> answers,
 
         @Schema(description = "총 답안 수", example = "10") int totalCount,
 
@@ -36,8 +36,8 @@ public record ExamAnswerListResponse(
      * Entity 리스트를 DTO로 변환하는 정적 메서드
      */
     public static ExamAnswerListResponse from(List<StudentAnswerSheet> studentAnswerSheets, UUID examSubmissionId) {
-        List<ExamAnswerResponse> answerResponses = studentAnswerSheets.stream()
-                .map(ExamAnswerResponse::from)
+        List<StudentExamAnswerResponse> answerResponses = studentAnswerSheets.stream()
+                .map(StudentExamAnswerResponse::from)
                 .toList();
 
         int totalCount = answerResponses.size();

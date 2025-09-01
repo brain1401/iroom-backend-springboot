@@ -19,14 +19,11 @@ import org.springframework.transaction.annotation.Transactional;
 import com.iroomclass.springbackend.domain.exam.dto.exam.PrintRequest;
 import com.iroomclass.springbackend.domain.exam.dto.exam.PrintResponse;
 import com.iroomclass.springbackend.domain.exam.dto.exam.PrintableDocumentResponse;
-import com.iroomclass.springbackend.domain.exam.dto.exam.PrintRequest;
 import com.iroomclass.springbackend.domain.exam.entity.ExamDocument;
 import com.iroomclass.springbackend.domain.exam.entity.ExamSheet;
 import com.iroomclass.springbackend.domain.exam.repository.ExamDocumentRepository;
 import com.iroomclass.springbackend.domain.exam.repository.ExamSheetRepository;
-import com.iroomclass.springbackend.domain.exam.repository.ExamRepository;
 import com.iroomclass.springbackend.domain.exam.util.PdfGenerator;
-import com.iroomclass.springbackend.domain.exam.util.QrCodeGenerator;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -37,11 +34,9 @@ import lombok.extern.slf4j.Slf4j;
 @Transactional(readOnly = true)
 public class PrintService {
 
-    private final ExamRepository examRepository;
     private final ExamDocumentRepository examDocumentRepository;
     private final ExamSheetRepository examSheetRepository;
     private final PdfGenerator pdfGenerator;
-    private final QrCodeGenerator qrCodeGenerator;
 
     private final S3FileStorageService s3FileStorageService;
 
@@ -159,7 +154,7 @@ public class PrintService {
         if (!uploadSuccess) {
             throw new RuntimeException("S3에 PDF 파일 저장에 실패했습니다: " + printJobId);
         }
-        log.info("PDF 파일 S3 저장 완료: printJobId={}, fileSize={}", 
+        log.info("PDF 파일 S3 저장 완료: printJobId={}, fileSize={}",
                 printJobId, pdfContent.length);
     }
 
@@ -173,7 +168,7 @@ public class PrintService {
         if (printJobId == null || printJobId.trim().isEmpty()) {
             throw new IllegalArgumentException("printJobId가 비어있습니다");
         }
-        
+
         boolean exists = s3FileStorageService.isPdfFileExists(printJobId);
         if (exists) {
             log.info("PDF 파일이 S3에 존재합니다: printJobId={}", printJobId);
@@ -192,7 +187,7 @@ public class PrintService {
         if (printJobId == null || printJobId.trim().isEmpty()) {
             throw new IllegalArgumentException("printJobId가 비어있습니다");
         }
-        
+
         s3FileStorageService.deletePdfFile(printJobId);
         log.info("PDF 파일 S3 삭제 요청 완료: printJobId={}", printJobId);
     }
@@ -266,7 +261,7 @@ public class PrintService {
         if (printJobId == null || printJobId.trim().isEmpty()) {
             throw new IllegalArgumentException("printJobId가 비어있습니다");
         }
-        
+
         String presignedUrl = s3FileStorageService.generatePresignedDownloadUrl(printJobId);
         log.info("프리사인드 다운로드 URL 생성 완료: printJobId={}", printJobId);
         return presignedUrl;

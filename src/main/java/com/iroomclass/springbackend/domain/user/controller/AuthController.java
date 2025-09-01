@@ -31,7 +31,7 @@ import org.springframework.web.bind.annotation.*;
  * @since 2025
  */
 @RestController
-@RequestMapping("/auth")
+@RequestMapping("auth")
 @RequiredArgsConstructor
 @Slf4j
 @Tag(name = "통합 인증 API", description = "학생/관리자 로그인 및 JWT 토큰 관리 API")

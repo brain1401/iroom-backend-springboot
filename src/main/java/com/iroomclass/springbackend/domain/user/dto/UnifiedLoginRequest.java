@@ -5,6 +5,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Email;
+import com.iroomclass.springbackend.common.ValidationConstants;
 import java.time.LocalDate;
 import java.util.Objects;
 
@@ -41,8 +42,8 @@ public record UnifiedLoginRequest(
             requiredMode = Schema.RequiredMode.NOT_REQUIRED)
     String name,
     
-    @Pattern(regexp = "^01[0-9]-[0-9]{3,4}-[0-9]{4}$", 
-             message = "올바른 전화번호 형식이 아닙니다")
+    @Pattern(regexp = ValidationConstants.PHONE_NUMBER_PATTERN, 
+             message = ValidationConstants.INVALID_PHONE_FORMAT)
     @Schema(description = "학생 전화번호 (STUDENT 타입 전용)", 
             example = "010-1234-5678", 
             requiredMode = Schema.RequiredMode.NOT_REQUIRED)

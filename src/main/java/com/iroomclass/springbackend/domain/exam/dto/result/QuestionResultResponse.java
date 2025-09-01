@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+import com.iroomclass.springbackend.common.BaseRecord;
 import com.iroomclass.springbackend.domain.exam.entity.QuestionResult;
 import com.iroomclass.springbackend.domain.exam.entity.QuestionResult.GradingMethod;
 
@@ -28,7 +29,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
  * @author 이룸클래스
  * @since 2025
  */
-public record QuestionResultDto(
+public record QuestionResultResponse(
         @Schema(description = "문제별 결과 ID", example = "123e4567-e89b-12d3-a456-426614174003") UUID id,
 
         @Schema(description = "시험 결과 ID", example = "123e4567-e89b-12d3-a456-426614174000") UUID examResultId,
@@ -51,16 +52,31 @@ public record QuestionResultDto(
 
         @Schema(description = "생성일시", example = "2025-08-17T14:00:00") LocalDateTime createdAt,
 
-        @Schema(description = "수정일시", example = "2025-08-17T14:30:00") LocalDateTime updatedAt) {
+        @Schema(description = "수정일시", example = "2025-08-17T14:30:00") LocalDateTime updatedAt) implements BaseRecord {
+
+    /**
+     * Compact constructor with validation
+     */
+    public QuestionResultResponse {
+        requireNonNull(id, "id");
+        requireNonNull(examResultId, "examResultId");
+        requireNonNull(answerInfo, "answerInfo");
+        requireNonNull(isCorrect, "isCorrect");
+        requireNonNull(score, "score");
+        requireNonNull(maxScore, "maxScore");
+        requireNonNull(gradingMethod, "gradingMethod");
+        requireNonNull(createdAt, "createdAt");
+        requireNonNull(updatedAt, "updatedAt");
+    }
 
     /**
      * Entity에서 DTO로 변환
      * 
      * @param entity QuestionResult 엔티티
-     * @return QuestionResultDto
+     * @return QuestionResultResponse
      */
-    public static QuestionResultDto from(QuestionResult entity) {
-        return new QuestionResultDto(
+    public static QuestionResultResponse from(QuestionResult entity) {
+        return new QuestionResultResponse(
                 entity.getId(),
                 entity.getExamResult().getId(),
                 AnswerInfo.from(entity.getStudentAnswerSheet()),
@@ -85,7 +101,17 @@ public record QuestionResultDto(
 
             @Schema(description = "제출된 답안", example = "서울") String submittedAnswer,
 
-            @Schema(description = "답안 타입", example = "TEXT") String answerType) {
+            @Schema(description = "답안 타입", example = "TEXT") String answerType) implements BaseRecord {
+
+        /**
+         * Compact constructor with validation
+         */
+        public AnswerInfo {
+            requireNonNull(id, "id");
+            requireNonNull(questionId, "questionId");
+            requireNonNull(submittedAnswer, "submittedAnswer");
+            requireNonNull(answerType, "answerType");
+        }
 
         /**
          * StudentAnswerSheet Entity에서 AnswerInfo로 변환

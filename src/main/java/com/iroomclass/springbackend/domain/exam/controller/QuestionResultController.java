@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.iroomclass.springbackend.common.ApiResponse;
 import com.iroomclass.springbackend.domain.exam.dto.result.ManualGradingRequest;
-import com.iroomclass.springbackend.domain.exam.dto.result.QuestionResultDto;
+import com.iroomclass.springbackend.domain.exam.dto.result.QuestionResultResponse;
 import com.iroomclass.springbackend.domain.exam.entity.QuestionResult;
 import com.iroomclass.springbackend.domain.exam.entity.QuestionResult.GradingMethod;
 import com.iroomclass.springbackend.domain.exam.service.QuestionResultService;
@@ -42,7 +42,7 @@ import lombok.RequiredArgsConstructor;
  * @since 2025
  */
 @RestController
-@RequestMapping("/question-results")
+@RequestMapping("question-results")
 @RequiredArgsConstructor
 @Tag(name = "문제별 채점 결과 API", description = "문제별 채점 결과 관리 API")
 public class QuestionResultController {
@@ -79,13 +79,13 @@ public class QuestionResultController {
      */
     @GetMapping("/{resultId}")
     @Operation(summary = "문제별 결과 조회", description = "문제별 결과 ID로 특정 채점 결과를 조회합니다.", responses = {
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "조회 성공", content = @Content(schema = @Schema(implementation = QuestionResultDto.class))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "조회 성공", content = @Content(schema = @Schema(implementation = QuestionResultResponse.class))),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "문제별 결과를 찾을 수 없음")
     })
-    public ApiResponse<QuestionResultDto> getQuestionResult(
+    public ApiResponse<QuestionResultResponse> getQuestionResult(
             @Parameter(description = "문제별 결과 ID", example = "123e4567-e89b-12d3-a456-426614174003") @PathVariable UUID resultId) {
         QuestionResult result = questionResultService.findById(resultId);
-        QuestionResultDto dto = QuestionResultDto.from(result);
+        QuestionResultResponse dto = QuestionResultResponse.from(result);
 
         return ApiResponse.success("문제별 결과 조회 성공", dto);
     }
@@ -100,11 +100,11 @@ public class QuestionResultController {
     @Operation(summary = "시험 결과의 문제별 결과 목록 조회", description = "특정 시험 결과에 속한 모든 문제별 결과를 조회합니다.", responses = {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "조회 성공")
     })
-    public ApiResponse<List<QuestionResultDto>> getQuestionResultsByExamResult(
+    public ApiResponse<List<QuestionResultResponse>> getQuestionResultsByExamResult(
             @Parameter(description = "시험 결과 ID", example = "123e4567-e89b-12d3-a456-426614174000") @PathVariable UUID examResultId) {
         List<QuestionResult> results = questionResultService.findByExamResultId(examResultId);
-        List<QuestionResultDto> dtos = results.stream()
-                .map(QuestionResultDto::from)
+        List<QuestionResultResponse> dtos = results.stream()
+                .map(QuestionResultResponse::from)
                 .toList();
 
         return ApiResponse.success("문제별 결과 목록 조회 성공", dtos);
@@ -122,7 +122,7 @@ public class QuestionResultController {
     @Operation(summary = "특정 문제의 채점 결과 조회", description = "특정 문제에 대한 모든 채점 결과를 조회합니다.", responses = {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "조회 성공")
     })
-    public ApiResponse<Page<QuestionResultDto>> getResultsByQuestionId(
+    public ApiResponse<Page<QuestionResultResponse>> getResultsByQuestionId(
             @Parameter(description = "문제 ID", example = "123e4567-e89b-12d3-a456-426614174005") @PathVariable UUID questionId,
 
             @Parameter(description = "페이지 번호 (0부터 시작)", example = "0") @RequestParam(defaultValue = "0") int page,
@@ -130,7 +130,7 @@ public class QuestionResultController {
             @Parameter(description = "페이지 크기", example = "20") @RequestParam(defaultValue = "20") int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
         Page<QuestionResult> results = questionResultService.findByQuestionId(questionId, pageable);
-        Page<QuestionResultDto> dtos = results.map(QuestionResultDto::from);
+        Page<QuestionResultResponse> dtos = results.map(QuestionResultResponse::from);
 
         return ApiResponse.success("문제별 채점 결과 조회 성공", dtos);
     }
@@ -147,7 +147,7 @@ public class QuestionResultController {
     @Operation(summary = "채점 방법별 결과 조회", description = "특정 채점 방법으로 처리된 결과들을 조회합니다.", responses = {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "조회 성공")
     })
-    public ApiResponse<Page<QuestionResultDto>> getResultsByGradingMethod(
+    public ApiResponse<Page<QuestionResultResponse>> getResultsByGradingMethod(
             @Parameter(description = "채점 방법", example = "AUTO") @PathVariable GradingMethod gradingMethod,
 
             @Parameter(description = "페이지 번호 (0부터 시작)", example = "0") @RequestParam(defaultValue = "0") int page,
@@ -155,7 +155,7 @@ public class QuestionResultController {
             @Parameter(description = "페이지 크기", example = "20") @RequestParam(defaultValue = "20") int size) {
         Pageable pageable = PageRequest.of(page, size);
         Page<QuestionResult> results = questionResultService.findByGradingMethod(gradingMethod, pageable);
-        Page<QuestionResultDto> dtos = results.map(QuestionResultDto::from);
+        Page<QuestionResultResponse> dtos = results.map(QuestionResultResponse::from);
 
         return ApiResponse.success("채점 방법별 결과 조회 성공", dtos);
     }
@@ -171,13 +171,13 @@ public class QuestionResultController {
     @Operation(summary = "수동 채점 대기 목록 조회", description = "수동 채점이 필요한 문제별 결과들을 조회합니다.", responses = {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "조회 성공")
     })
-    public ApiResponse<Page<QuestionResultDto>> getPendingManualGrading(
+    public ApiResponse<Page<QuestionResultResponse>> getPendingManualGrading(
             @Parameter(description = "페이지 번호 (0부터 시작)", example = "0") @RequestParam(defaultValue = "0") int page,
 
             @Parameter(description = "페이지 크기", example = "20") @RequestParam(defaultValue = "20") int size) {
         Pageable pageable = PageRequest.of(page, size);
         Page<QuestionResult> results = questionResultService.findPendingManualGrading(pageable);
-        Page<QuestionResultDto> dtos = results.map(QuestionResultDto::from);
+        Page<QuestionResultResponse> dtos = results.map(QuestionResultResponse::from);
 
         return ApiResponse.success("수동 채점 대기 목록 조회 성공", dtos);
     }
@@ -194,7 +194,7 @@ public class QuestionResultController {
     @Operation(summary = "낮은 신뢰도 AI 채점 결과 조회", description = "지정된 임계값보다 낮은 신뢰도를 가진 AI 채점 결과들을 조회합니다.", responses = {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "조회 성공")
     })
-    public ApiResponse<Page<QuestionResultDto>> getLowConfidenceAIResults(
+    public ApiResponse<Page<QuestionResultResponse>> getLowConfidenceAIResults(
             @Parameter(description = "신뢰도 임계값", example = "0.7") @RequestParam(defaultValue = "0.7") BigDecimal confidenceThreshold,
 
             @Parameter(description = "페이지 번호 (0부터 시작)", example = "0") @RequestParam(defaultValue = "0") int page,
@@ -202,7 +202,7 @@ public class QuestionResultController {
             @Parameter(description = "페이지 크기", example = "20") @RequestParam(defaultValue = "20") int size) {
         Pageable pageable = PageRequest.of(page, size);
         Page<QuestionResult> results = questionResultService.findLowConfidenceAIResults(confidenceThreshold, pageable);
-        Page<QuestionResultDto> dtos = results.map(QuestionResultDto::from);
+        Page<QuestionResultResponse> dtos = results.map(QuestionResultResponse::from);
 
         return ApiResponse.success("낮은 신뢰도 AI 채점 결과 조회 성공", dtos);
     }

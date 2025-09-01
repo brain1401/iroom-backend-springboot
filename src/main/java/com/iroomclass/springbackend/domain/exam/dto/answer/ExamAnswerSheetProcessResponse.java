@@ -15,7 +15,7 @@ public record ExamAnswerSheetProcessResponse(
 
         @Schema(description = "생성된 답안 개수", example = "20") Integer createdAnswerCount,
 
-        @Schema(description = "생성된 답안 목록") List<ExamAnswerResponse> answers,
+        @Schema(description = "생성된 답안 목록") List<StudentExamAnswerResponse> answers,
 
         @Schema(description = "처리 상태", example = "COMPLETED") String status,
 

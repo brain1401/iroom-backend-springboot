@@ -32,7 +32,7 @@ import java.util.Map;
  * </p>
  */
 @RestController
-@RequestMapping("/ai/grading")
+@RequestMapping("/admin/ai/grading")
 @RequiredArgsConstructor
 @Slf4j
 @Tag(name = "AI 채점 API", description = "AI 서버 채점 기능 프록시 API")

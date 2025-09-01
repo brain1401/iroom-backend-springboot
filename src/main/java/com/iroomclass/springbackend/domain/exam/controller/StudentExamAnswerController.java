@@ -13,9 +13,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import jakarta.validation.Valid;
 
-import com.iroomclass.springbackend.domain.exam.dto.answer.ExamAnswerCreateRequest;
 import com.iroomclass.springbackend.domain.exam.dto.answer.ExamAnswerListResponse;
-import com.iroomclass.springbackend.domain.exam.dto.answer.ExamAnswerResponse;
+import com.iroomclass.springbackend.domain.exam.dto.answer.StudentExamAnswerResponse;
 import com.iroomclass.springbackend.domain.exam.dto.answer.ExamAnswerSheetCreateRequest;
 import com.iroomclass.springbackend.domain.exam.dto.answer.ExamAnswerSheetProcessResponse;
 import com.iroomclass.springbackend.domain.exam.dto.answer.ExamAnswerUpdateRequest;
@@ -38,36 +37,13 @@ import lombok.extern.slf4j.Slf4j;
  * @since 2025
  */
 @RestController
-@RequestMapping("/student-exam-answer")
+@RequestMapping("/student/exam-answers")
 @RequiredArgsConstructor
 @Slf4j
 @Tag(name = "학생 시험 답안 관리", description = "시험 답안 생성, 수정, 조회 API")
-public class ExamAnswerController {
+public class StudentExamAnswerController {
 
     private final StudentAnswerSheetService studentAnswerSheetService;
-
-    /**
-     * 답안 생성 (AI 이미지 인식 포함)
-     * 
-     * @param request 답안 생성 요청
-     * @return 생성된 답안 정보
-     */
-    @PostMapping
-    @Operation(summary = "답안 생성", description = "답안 이미지를 업로드하고 AI 인식을 수행합니다.")
-    @io.swagger.v3.oas.annotations.responses.ApiResponses({
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "생성 성공"),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "잘못된 입력값 또는 이미 존재하는 답안"),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "존재하지 않는 시험 제출 또는 문제")
-    })
-    public ApiResponse<ExamAnswerResponse> createExamAnswer(@Valid @RequestBody ExamAnswerCreateRequest request) {
-        log.info("답안 생성 요청: 제출 ID={}, 문제 ID={}", request.examSubmissionId(), request.questionId());
-
-        ExamAnswerResponse response = studentAnswerSheetService.createExamAnswer(request);
-
-        log.info("답안 생성 성공: 답안 ID={}", response.answerId());
-
-        return ApiResponse.success("시험 답안 조회 성공", response);
-    }
 
     /**
      * 답안 수정 (재촬영)
@@ -83,12 +59,12 @@ public class ExamAnswerController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "잘못된 답안 ID"),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "존재하지 않는 답안")
     })
-    public ApiResponse<ExamAnswerResponse> retakeExamAnswer(
+    public ApiResponse<StudentExamAnswerResponse> retakeExamAnswer(
             @Parameter(description = "답안 ID", example = "123e4567-e89b-12d3-a456-426614174000") @PathVariable UUID answerId,
             @Parameter(description = "새로운 이미지 URL", example = "/uploads/answers/answer_1_retake.jpg") @RequestParam String newImageUrl) {
         log.info("답안 재촬영 요청: 답안 ID={}, 새 이미지 URL={}", answerId, newImageUrl);
 
-        ExamAnswerResponse response = studentAnswerSheetService.retakeExamAnswer(answerId, newImageUrl);
+        StudentExamAnswerResponse response = studentAnswerSheetService.retakeExamAnswer(answerId, newImageUrl);
 
         log.info("답안 재촬영 성공: 답안 ID={}", response.answerId());
 
@@ -108,10 +84,11 @@ public class ExamAnswerController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "잘못된 입력값"),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "존재하지 않는 답안")
     })
-    public ApiResponse<ExamAnswerResponse> updateExamAnswer(@Valid @RequestBody ExamAnswerUpdateRequest request) {
+    public ApiResponse<StudentExamAnswerResponse> updateExamAnswer(
+            @Valid @RequestBody ExamAnswerUpdateRequest request) {
         log.info("답안 수정 요청: 답안 ID={}", request.answerId());
 
-        ExamAnswerResponse response = studentAnswerSheetService.updateExamAnswer(request);
+        StudentExamAnswerResponse response = studentAnswerSheetService.updateExamAnswer(request);
 
         log.info("답안 수정 성공: 답안 ID={}", response.answerId());
 
@@ -155,12 +132,12 @@ public class ExamAnswerController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "잘못된 입력값"),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "존재하지 않는 답안")
     })
-    public ApiResponse<ExamAnswerResponse> getExamAnswer(
+    public ApiResponse<StudentExamAnswerResponse> getExamAnswer(
             @Parameter(description = "시험 제출 ID", example = "123e4567-e89b-12d3-a456-426614174000") @PathVariable UUID examSubmissionId,
             @Parameter(description = "문제 ID", example = "123e4567-e89b-12d3-a456-426614174001") @PathVariable UUID questionId) {
         log.info("특정 문제 답안 조회 요청: 시험 제출 ID={}, 문제 ID={}", examSubmissionId, questionId);
 
-        ExamAnswerResponse response = studentAnswerSheetService.getExamAnswer(examSubmissionId, questionId);
+        StudentExamAnswerResponse response = studentAnswerSheetService.getExamAnswer(examSubmissionId, questionId);
 
         log.info("특정 문제 답안 조회 성공: 답안 ID={}, 문제 ID={}", response.answerId(), questionId);
 

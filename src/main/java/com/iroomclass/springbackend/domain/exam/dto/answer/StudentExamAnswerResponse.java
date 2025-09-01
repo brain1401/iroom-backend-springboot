@@ -16,7 +16,7 @@ import java.util.UUID;
  * @since 2025
  */
 @Schema(description = "시험 답안 응답")
-public record ExamAnswerResponse(
+public record StudentExamAnswerResponse(
         @Schema(description = "답안 ID", example = "123e4567-e89b-12d3-a456-426614174000") UUID answerId,
 
         @Schema(description = "시험 제출 ID", example = "123e4567-e89b-12d3-a456-426614174001") UUID examSubmissionId,
@@ -30,7 +30,7 @@ public record ExamAnswerResponse(
         @Schema(description = "선택한 답안 번호 (객관식 문제용)", example = "2", nullable = true) Integer selectedChoice,
 
         @Schema(description = "AI 해답 처리 과정 (AI가 분석한 문제 해결 과정)", nullable = true) String aiSolutionProcess) {
-    public ExamAnswerResponse {
+    public StudentExamAnswerResponse {
         Objects.requireNonNull(answerId, "answerId은 필수입니다");
         Objects.requireNonNull(examSubmissionId, "examSubmissionId은 필수입니다");
         Objects.requireNonNull(questionId, "questionId은 필수입니다");
@@ -46,8 +46,8 @@ public record ExamAnswerResponse(
      * 
      * NOTE: 채점 정보(정답 여부, 점수)는 QuestionResult에서 관리되므로 제외됨
      */
-    public static ExamAnswerResponse from(StudentAnswerSheet studentAnswerSheet) {
-        return new ExamAnswerResponse(
+    public static StudentExamAnswerResponse from(StudentAnswerSheet studentAnswerSheet) {
+        return new StudentExamAnswerResponse(
                 studentAnswerSheet.getId(),
                 studentAnswerSheet.getExamSubmission().getId(),
                 studentAnswerSheet.getQuestion().getId(),

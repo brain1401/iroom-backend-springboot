@@ -1,6 +1,7 @@
 package com.iroomclass.springbackend.domain.exam.controller;
 
 import com.iroomclass.springbackend.common.ApiResponse;
+import com.iroomclass.springbackend.common.ApiResponseConstants;
 import org.springframework.web.bind.annotation.PathVariable;
 import java.util.UUID;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -35,7 +36,7 @@ import lombok.extern.slf4j.Slf4j;
  * @since 2025
  */
 @RestController
-@RequestMapping("/user/exam-submission")
+@RequestMapping("/exam-submissions")
 @RequiredArgsConstructor
 @Slf4j
 @Tag(name = "학생 시험 제출", description = "학생 시험 제출 생성, 최종 제출 API")
@@ -52,56 +53,29 @@ public class ExamSubmissionController {
     @PostMapping
     @Operation(summary = "시험 제출 생성", description = "학생이 시험을 제출할 때 사용됩니다. 중복 제출은 방지됩니다.")
     @io.swagger.v3.oas.annotations.responses.ApiResponses({
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200",
-                    description = "성공",
-                    content = @Content(
-                        mediaType = "application/json",
-                        schema = @Schema(implementation = ApiResponse.SuccessResponse.class),
-                    examples = {
-                        @ExampleObject(
-                            name = "입력 검증 실패",
-                            summary = "입력 데이터 검증 실패",
-                            value = """
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "성공", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiResponse.SuccessResponse.class), examples = {
+                    @ExampleObject(name = "입력 검증 실패", summary = "입력 데이터 검증 실패", value = """
                             {
                               "result": "ERROR",
                               "message": "입력 데이터 검증에 실패했습니다",
                               "data": null
                             }
-                            """
-                        ),
-                        @ExampleObject(
-                            name = "중복 제출",
-                            summary = "이미 제출한 시험",
-                            value = """
+                            """),
+                    @ExampleObject(name = "중복 제출", summary = "이미 제출한 시험", value = """
                             {
                               "result": "ERROR",
                               "message": "이미 제출된 시험입니다",
                               "data": null
                             }
-                            """
-                        )
+                            """)
+            })),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "오류", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiResponse.ErrorResponse.class), examples = @ExampleObject(name = "시험 없음", summary = "시험을 찾을 수 없음", value = """
+                    {
+                      "result": "ERROR",
+                      "message": "시험을 찾을 수 없습니다",
+                      "data": null
                     }
-                )
-            ),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(
-                responseCode = "404",
-                    description = "오류",
-                    content = @Content(
-                        mediaType = "application/json",
-                        schema = @Schema(implementation = ApiResponse.ErrorResponse.class),
-                    examples = @ExampleObject(
-                        name = "시험 없음",
-                        summary = "시험을 찾을 수 없음",
-                        value = """
-                        {
-                          "result": "ERROR",
-                          "message": "시험을 찾을 수 없습니다",
-                          "data": null
-                        }
-                        """
-                    )
-                )
-            )
+                    """)))
     })
     public ApiResponse<ExamSubmissionCreateResponse> createExamSubmission(
             @Valid @RequestBody ExamSubmissionCreateRequest request) {
@@ -113,7 +87,7 @@ public class ExamSubmissionController {
         log.info("시험 제출 생성 성공: ID={}, 학생={}, 시험={}",
                 response.submissionId(), response.studentName(), response.examName());
 
-        return ApiResponse.success("시험 제출 생성 성공", response);
+        return ApiResponse.success(ApiResponseConstants.SUBMISSION_CREATE_SUCCESS, response);
     }
 
     /**
@@ -125,43 +99,20 @@ public class ExamSubmissionController {
     @PostMapping("/{submissionId}/final-submit")
     @Operation(summary = "시험 최종 제출", description = "모든 답안이 완료된 후 시험을 최종 제출합니다.")
     @io.swagger.v3.oas.annotations.responses.ApiResponses({
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200",
-                    description = "성공",
-                    content = @Content(
-                        mediaType = "application/json",
-                        schema = @Schema(implementation = ApiResponse.SuccessResponse.class),
-                    examples = @ExampleObject(
-                        name = "답안 미완료",
-                        summary = "답안이 완료되지 않음",
-                        value = """
-                        {
-                          "result": "ERROR",
-                          "message": "답안이 완료되지 않았습니다",
-                          "data": null
-                        }
-                        """
-                    )
-                )
-            ),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(
-                responseCode = "404",
-                    description = "오류",
-                    content = @Content(
-                        mediaType = "application/json",
-                        schema = @Schema(implementation = ApiResponse.ErrorResponse.class),
-                    examples = @ExampleObject(
-                        name = "시험 제출 없음",
-                        summary = "시험 제출을 찾을 수 없음",
-                        value = """
-                        {
-                          "result": "ERROR",
-                          "message": "시험 제출을 찾을 수 없습니다",
-                          "data": null
-                        }
-                        """
-                    )
-                )
-            )
+                    responseCode = "200", 
+                    description = "성공", 
+                    content = @Content(schema = @Schema(implementation = ApiResponse.SuccessResponse.class))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "400", 
+                    description = "답안 미완료", 
+                    content = @Content(schema = @Schema(implementation = ApiResponse.ErrorResponse.class), 
+                            examples = @ExampleObject(name = "답안 미완료", value = ApiResponseConstants.SUBMISSION_NOT_COMPLETED_EXAMPLE))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "404", 
+                    description = "시험 제출 없음", 
+                    content = @Content(schema = @Schema(implementation = ApiResponse.ErrorResponse.class), 
+                            examples = @ExampleObject(name = "시험 제출 없음", value = ApiResponseConstants.SUBMISSION_NOT_FOUND_EXAMPLE)))
     })
     public ApiResponse<ExamSubmissionCreateResponse> finalSubmitExam(
             @Parameter(description = "시험 제출 ID", example = "123e4567-e89b-12d3-a456-426614174000") @PathVariable UUID submissionId) {
@@ -172,6 +123,6 @@ public class ExamSubmissionController {
         log.info("시험 최종 제출 성공: 제출 ID={}, 학생={}",
                 response.submissionId(), response.studentName());
 
-        return ApiResponse.success("시험 제출 생성 성공", response);
+        return ApiResponse.success(ApiResponseConstants.SUBMISSION_FINAL_SUCCESS, response);
     }
 }
