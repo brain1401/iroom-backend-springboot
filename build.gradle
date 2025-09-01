@@ -54,6 +54,11 @@ dependencies {
 	implementation 'org.scilab.forge:jlatexmath-font-greek:1.0.7'
 	implementation 'org.scilab.forge:jlatexmath-font-cyrillic:1.0.7'
 	
+	// AWS S3 SDK for Java v2 - PDF 파일 업로드를 위한 S3 클라이언트
+	implementation 'software.amazon.awssdk:s3:2.32.14'
+	implementation 'software.amazon.awssdk:s3-transfer-manager:2.32.14'
+	implementation 'software.amazon.awssdk.crt:aws-crt:0.33.11'
+	
 	compileOnly 'org.projectlombok:lombok'
 	developmentOnly 'org.springframework.boot:spring-boot-devtools'
 	runtimeOnly 'com.mysql:mysql-connector-j'

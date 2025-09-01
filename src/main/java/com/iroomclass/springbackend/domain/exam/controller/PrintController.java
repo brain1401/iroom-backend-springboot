@@ -15,6 +15,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import com.iroomclass.springbackend.common.ApiResponse;
+import com.iroomclass.springbackend.common.ResultStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -68,30 +69,74 @@ public class PrintController {
     }
 
     @GetMapping("/download/{printJobId}")
-    @Operation(summary = "PDF 다운로드", description = "생성된 PDF 파일을 다운로드합니다.")
+    @Operation(summary = "PDF 다운로드", description = "S3 프리사인드 URL을 통해 생성된 PDF 파일을 다운로드합니다.")
     @io.swagger.v3.oas.annotations.responses.ApiResponses({
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "✅ PDF 다운로드 성공 - 파일 다운로드 시작"),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "❌ 리소스 없음 - 존재하지 않는 인쇄 작업 또는 PDF 파일")
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "302", description = "✅ PDF 다운로드 리디렉션 성공 - S3 프리사인드 URL로 리디렉션"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "❌ 리소스 없음 - 존재하지 않는 인쇄 작업 또는 PDF 파일"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "❌ 서버 오류 - S3 프리사인드 URL 생성 실패")
     })
-    public ResponseEntity<byte[]> downloadPdf(
+    public ResponseEntity<Void> downloadPdf(
             @Parameter(description = "인쇄 작업 ID", example = "print_123456") @PathVariable String printJobId) {
 
-        log.info("PDF 다운로드 요청: printJobId={}", printJobId);
+        log.info("PDF 다운로드 요청 (S3 프리사인드 URL): printJobId={}", printJobId);
 
-        // 실제 PDF 파일 조회
-        byte[] pdfContent = printService.getPdfFile(printJobId);
+        try {
+            // PDF 파일 존재 여부 먼저 확인
+            boolean pdfExists = printService.getPdfFile(printJobId);
+            if (!pdfExists) {
+                log.warn("PDF 파일을 S3에서 찾을 수 없습니다: printJobId={}", printJobId);
+                return ResponseEntity.notFound().build();
+            }
 
-        if (pdfContent == null) {
-            log.warn("PDF 파일을 찾을 수 없습니다: printJobId={}", printJobId);
-            return ResponseEntity.notFound().build();
+            // S3 프리사인드 다운로드 URL 생성
+            String presignedUrl = printService.generatePresignedDownloadUrl(printJobId);
+            
+            log.info("PDF 다운로드 리디렉션 성공: printJobId={}, presignedUrl={}", printJobId, presignedUrl);
+
+            // S3 프리사인드 URL로 리디렉션 (302 Found)
+            return ResponseEntity.status(302)
+                    .header("Location", presignedUrl)
+                    .header("Cache-Control", "no-cache, no-store, must-revalidate")
+                    .header("Pragma", "no-cache")
+                    .header("Expires", "0")
+                    .build();
+
+        } catch (RuntimeException e) {
+            log.error("PDF 다운로드 중 오류 발생: printJobId={}, error={}", printJobId, e.getMessage(), e);
+            return ResponseEntity.internalServerError().build();
         }
+    }
 
-        log.info("PDF 다운로드 성공: printJobId={}, fileSize={}", printJobId, pdfContent.length);
+    @GetMapping("/download-url/{printJobId}")
+    @Operation(summary = "PDF 다운로드 URL 조회", description = "S3 프리사인드 다운로드 URL을 JSON 형태로 반환합니다.")
+    @io.swagger.v3.oas.annotations.responses.ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "✅ 다운로드 URL 조회 성공", content = @Content(schema = @Schema(implementation = ApiResponse.class))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "❌ 리소스 없음 - 존재하지 않는 인쇄 작업 또는 PDF 파일"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "❌ 서버 오류 - S3 프리사인드 URL 생성 실패")
+    })
+    public ApiResponse<String> getDownloadUrl(
+            @Parameter(description = "인쇄 작업 ID", example = "print_123456") @PathVariable String printJobId) {
 
-        return ResponseEntity.ok()
-                .header("Content-Disposition", "attachment; filename=\"" + printJobId + ".pdf\"")
-                .header("Content-Type", "application/pdf")
-                .header("Content-Length", String.valueOf(pdfContent.length))
-                .body(pdfContent);
+        log.info("PDF 다운로드 URL 조회 요청: printJobId={}", printJobId);
+
+        try {
+            // PDF 파일 존재 여부 먼저 확인
+            boolean pdfExists = printService.getPdfFile(printJobId);
+            if (!pdfExists) {
+                log.warn("PDF 파일을 S3에서 찾을 수 없습니다: printJobId={}", printJobId);
+                return new ApiResponse<>(ResultStatus.ERROR, "PDF 파일을 찾을 수 없습니다", null);
+            }
+
+            // S3 프리사인드 다운로드 URL 생성
+            String presignedUrl = printService.generatePresignedDownloadUrl(printJobId);
+            
+            log.info("PDF 다운로드 URL 조회 성공: printJobId={}", printJobId);
+
+            return ApiResponse.success("다운로드 URL 조회 성공", presignedUrl);
+
+        } catch (RuntimeException e) {
+            log.error("PDF 다운로드 URL 조회 중 오류 발생: printJobId={}, error={}", printJobId, e.getMessage(), e);
+            return new ApiResponse<>(ResultStatus.ERROR, "다운로드 URL 생성에 실패했습니다: " + e.getMessage(), null);
+        }
     }
 }

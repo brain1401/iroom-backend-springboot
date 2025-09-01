@@ -5,7 +5,6 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 import org.jsoup.Jsoup;
@@ -43,8 +42,7 @@ public class PrintService {
     private final PdfGenerator pdfGenerator;
     private final QrCodeGenerator qrCodeGenerator;
 
-    // PDF 파일 저장소 (실제로는 Redis나 파일 시스템 사용 권장)
-    private final ConcurrentHashMap<String, byte[]> pdfStorage = new ConcurrentHashMap<>();
+    private final S3FileStorageService s3FileStorageService;
 
     /**
      * 인쇄 가능한 문서 목록 조회
@@ -156,24 +154,32 @@ public class PrintService {
      * @param pdfContent PDF 바이트 배열
      */
     public void savePdfFile(String printJobId, byte[] pdfContent) {
-        pdfStorage.put(printJobId, pdfContent);
-        log.info("PDF 파일 저장 완료: printJobId={}, fileSize={}", printJobId, pdfContent.length);
+        boolean uploadSuccess = s3FileStorageService.uploadPdfFile(printJobId, pdfContent);
+        if (!uploadSuccess) {
+            throw new RuntimeException("S3에 PDF 파일 저장에 실패했습니다: " + printJobId);
+        }
+        log.info("PDF 파일 S3 저장 완료: printJobId={}, fileSize={}", 
+                printJobId, pdfContent.length);
     }
 
     /**
-     * PDF 파일 조회
+     * PDF 파일 존재 여부 확인
      * 
      * @param printJobId 인쇄 작업 ID
-     * @return PDF 바이트 배열 (없으면 null)
+     * @return PDF 파일이 S3에 존재하는지 여부
      */
-    public byte[] getPdfFile(String printJobId) {
-        byte[] pdfContent = pdfStorage.get(printJobId);
-        if (pdfContent != null) {
-            log.info("PDF 파일 조회 성공: printJobId={}, fileSize={}", printJobId, pdfContent.length);
-        } else {
-            log.warn("PDF 파일을 찾을 수 없습니다: printJobId={}", printJobId);
+    public boolean getPdfFile(String printJobId) {
+        if (printJobId == null || printJobId.trim().isEmpty()) {
+            throw new IllegalArgumentException("printJobId가 비어있습니다");
         }
-        return pdfContent;
+        
+        boolean exists = s3FileStorageService.isPdfFileExists(printJobId);
+        if (exists) {
+            log.info("PDF 파일이 S3에 존재합니다: printJobId={}", printJobId);
+        } else {
+            log.warn("PDF 파일을 S3에서 찾을 수 없습니다: printJobId={}", printJobId);
+        }
+        return exists;
     }
 
     /**
@@ -182,12 +188,12 @@ public class PrintService {
      * @param printJobId 인쇄 작업 ID
      */
     public void deletePdfFile(String printJobId) {
-        byte[] removed = pdfStorage.remove(printJobId);
-        if (removed != null) {
-            log.info("PDF 파일 삭제 완료: printJobId={}", printJobId);
-        } else {
-            log.warn("삭제할 PDF 파일을 찾을 수 없습니다: printJobId={}", printJobId);
+        if (printJobId == null || printJobId.trim().isEmpty()) {
+            throw new IllegalArgumentException("printJobId가 비어있습니다");
         }
+        
+        s3FileStorageService.deletePdfFile(printJobId);
+        log.info("PDF 파일 S3 삭제 요청 완료: printJobId={}", printJobId);
     }
 
     /**
@@ -249,8 +255,28 @@ public class PrintService {
     /**
      * 다운로드 URL 생성
      */
+    /**
+     * S3 프리사인드 다운로드 URL 생성
+     * 
+     * @param printJobId 인쇄 작업 ID
+     * @return 프리사인드 다운로드 URL
+     */
+    public String generatePresignedDownloadUrl(String printJobId) {
+        if (printJobId == null || printJobId.trim().isEmpty()) {
+            throw new IllegalArgumentException("printJobId가 비어있습니다");
+        }
+        
+        String presignedUrl = s3FileStorageService.generatePresignedDownloadUrl(printJobId);
+        log.info("프리사인드 다운로드 URL 생성 완료: printJobId={}", printJobId);
+        return presignedUrl;
+    }
+
+    /**
+     * 다운로드 URL 생성 (하위 호환성을 위한 메서드)
+     * 이제 프리사인드 URL을 반환합니다.
+     */
     private String generateDownloadUrl(String printJobId) {
-        return "/api/admin/print/download/" + printJobId;
+        return generatePresignedDownloadUrl(printJobId);
     }
 
     /**

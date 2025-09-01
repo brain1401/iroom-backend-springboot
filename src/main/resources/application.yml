@@ -66,6 +66,14 @@ ai:
     response-timeout: 60
     max-in-memory-size: 50
 
+# AWS S3 설정
+aws:
+  s3:
+    region: ${AWS_S3_REGION:ap-northeast-2}
+    bucket-name: ${AWS_S3_BUCKET_NAME:}
+    presigned-url-duration: ${AWS_S3_PRESIGNED_URL_DURATION:60}
+    multipart-min-part-size: ${AWS_S3_MULTIPART_MIN_PART_SIZE:8}
+
 # Swagger/OpenAPI 설정
 springdoc:
   api-docs:
