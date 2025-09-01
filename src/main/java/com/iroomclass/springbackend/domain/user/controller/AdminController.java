@@ -9,7 +9,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import jakarta.validation.Valid;
 
-import com.iroomclass.springbackend.domain.user.dto.ErrorResponse;
 import com.iroomclass.springbackend.domain.user.dto.LoginRequest;
 import com.iroomclass.springbackend.domain.user.entity.Admin;
 import com.iroomclass.springbackend.domain.user.service.TeacherService;
@@ -18,6 +17,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import lombok.RequiredArgsConstructor;
@@ -49,8 +49,78 @@ public class AdminController {
     @PostMapping("/verify-credentials")
     @Operation(summary = "관리자 인증 정보 검증", description = "관리자 아이디와 비밀번호가 올바른지 검증합니다.")
     @io.swagger.v3.oas.annotations.responses.ApiResponses({
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "인증 성공", content = @Content(schema = @Schema(implementation = String.class))),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "인증 실패 (잘못된 아이디/비밀번호)", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                responseCode = "200", 
+                description = "인증 성공",
+                content = @Content(
+                    schema = @Schema(implementation = ApiResponse.SuccessResponse.class),
+                    examples = @ExampleObject(
+                        name = "인증 성공",
+                        summary = "관리자 인증 성공",
+                        value = """
+                        {
+                          "result": "SUCCESS",
+                          "message": "관리자 인증 정보 검증 성공",
+                          "data": "인증 성공"
+                        }
+                        """
+                    )
+                )
+            ),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "401", 
+                    description = "인증 실패 (잘못된 아이디/비밀번호)", 
+                    content = @Content(
+                            schema = @Schema(implementation = ApiResponse.ErrorResponse.class),
+                            examples = @ExampleObject(
+                                    name = "인증 실패",
+                                    summary = "잘못된 아이디 또는 비밀번호",
+                                    value = """
+                                    {
+                                      "result": "ERROR",
+                                      "message": "인증에 실패했습니다",
+                                      "data": null
+                                    }
+                                    """
+                            )
+                    )
+            ),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "400", 
+                    description = "잘못된 요청", 
+                    content = @Content(
+                            schema = @Schema(implementation = ApiResponse.ErrorResponse.class),
+                            examples = @ExampleObject(
+                                    name = "입력 검증 실패",
+                                    summary = "입력 데이터 검증 실패",
+                                    value = """
+                                    {
+                                      "result": "ERROR",
+                                      "message": "입력 데이터 검증에 실패했습니다",
+                                      "data": null
+                                    }
+                                    """
+                            )
+                    )
+            ),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                responseCode = "500", 
+                description = "서버 내부 오류",
+                content = @Content(
+                    schema = @Schema(implementation = ApiResponse.ErrorResponse.class),
+                    examples = @ExampleObject(
+                        name = "서버 오류",
+                        summary = "예상치 못한 서버 오류",
+                        value = """
+                        {
+                          "result": "ERROR",
+                          "message": "서버 내부 오류가 발생했습니다",
+                          "data": null
+                        }
+                        """
+                    )
+                )
+            )
     })
     public ApiResponse<String> verifyCredentials(@Valid @RequestBody LoginRequest request) {
         log.info("관리자 인증 정보 검증 요청: {}", request.username());

@@ -32,6 +32,7 @@ import com.iroomclass.springbackend.domain.exam.service.ExamResultService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -65,8 +66,42 @@ public class ExamResultController {
     @ResponseStatus(HttpStatus.CREATED)
     @Operation(summary = "AI 자동 채점 시작", description = "시험 제출에 대한 AI 자동 채점을 시작합니다.", responses = {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "201", description = "AI 자동 채점 시작 성공", content = @Content(schema = @Schema(implementation = ExamResultDto.class))),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "잘못된 요청 데이터"),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "시험 제출물을 찾을 수 없음")
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                responseCode = "400", 
+                description = "잘못된 요청",
+                content = @Content(
+                    schema = @Schema(implementation = ApiResponse.class),
+                    examples = @ExampleObject(
+                        name = "입력 검증 실패",
+                        summary = "입력 데이터 검증 실패",
+                        value = """
+                        {
+                          "result": "ERROR",
+                          "message": "입력 데이터 검증에 실패했습니다",
+                          "data": null
+                        }
+                        """
+                    )
+                )
+            ),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                responseCode = "404", 
+                description = "리소스 없음",
+                content = @Content(
+                    schema = @Schema(implementation = ApiResponse.class),
+                    examples = @ExampleObject(
+                        name = "시험 제출 없음",
+                        summary = "시험 제출물을 찾을 수 없음",
+                        value = """
+                        {
+                          "result": "ERROR",
+                          "message": "시험 제출물을 찾을 수 없습니다",
+                          "data": null
+                        }
+                        """
+                    )
+                )
+            )
     })
     public ApiResponse<ExamResultDto> startGrading(@Valid @RequestBody StartGradingRequest request) {
         // AI 자동 채점만 지원
@@ -86,8 +121,42 @@ public class ExamResultController {
     @ResponseStatus(HttpStatus.CREATED)
     @Operation(summary = "AI 재채점 시작", description = "기존 채점 결과에 대한 AI 재채점을 시작합니다.", responses = {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "201", description = "AI 재채점 시작 성공"),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "잘못된 요청 데이터"),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "기존 채점 결과를 찾을 수 없음")
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                responseCode = "400", 
+                description = "잘못된 요청",
+                content = @Content(
+                    schema = @Schema(implementation = ApiResponse.class),
+                    examples = @ExampleObject(
+                        name = "입력 검증 실패",
+                        summary = "입력 데이터 검증 실패",
+                        value = """
+                        {
+                          "result": "ERROR",
+                          "message": "입력 데이터 검증에 실패했습니다",
+                          "data": null
+                        }
+                        """
+                    )
+                )
+            ),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                responseCode = "404", 
+                description = "리소스 없음",
+                content = @Content(
+                    schema = @Schema(implementation = ApiResponse.class),
+                    examples = @ExampleObject(
+                        name = "채점 결과 없음",
+                        summary = "기존 채점 결과를 찾을 수 없음",
+                        value = """
+                        {
+                          "result": "ERROR",
+                          "message": "기존 채점 결과를 찾을 수 없습니다",
+                          "data": null
+                        }
+                        """
+                    )
+                )
+            )
     })
     public ApiResponse<ExamResultDto> startRegrading(@Valid @RequestBody StartRegradingRequest request) {
         // AI 재채점은 기존 결과 ID만 필요
@@ -106,8 +175,55 @@ public class ExamResultController {
     @PutMapping("/complete")
     @Operation(summary = "채점 완료", description = "진행 중인 채점을 완료합니다.", responses = {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "채점 완료 성공"),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "잘못된 요청 데이터 또는 채점이 완료되지 않음"),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "시험 결과를 찾을 수 없음")
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                responseCode = "400", 
+                description = "잘못된 요청",
+                content = @Content(
+                    schema = @Schema(implementation = ApiResponse.class),
+                    examples = {
+                        @ExampleObject(
+                            name = "입력 검증 실패",
+                            summary = "입력 데이터 검증 실패",
+                            value = """
+                            {
+                              "result": "ERROR",
+                              "message": "입력 데이터 검증에 실패했습니다",
+                              "data": null
+                            }
+                            """
+                        ),
+                        @ExampleObject(
+                            name = "채점 미완료",
+                            summary = "채점이 완료되지 않음",
+                            value = """
+                            {
+                              "result": "ERROR",
+                              "message": "채점이 아직 완료되지 않았습니다",
+                              "data": null
+                            }
+                            """
+                        )
+                    }
+                )
+            ),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                responseCode = "404", 
+                description = "리소스 없음",
+                content = @Content(
+                    schema = @Schema(implementation = ApiResponse.class),
+                    examples = @ExampleObject(
+                        name = "시험 결과 없음",
+                        summary = "시험 결과를 찾을 수 없음",
+                        value = """
+                        {
+                          "result": "ERROR",
+                          "message": "시험 결과를 찾을 수 없습니다",
+                          "data": null
+                        }
+                        """
+                    )
+                )
+            )
     })
     public ApiResponse<Void> completeGrading(@Valid @RequestBody CompleteGradingRequest request) {
         examResultService.completeGrading(request.resultId(), request.comment());
@@ -123,7 +239,24 @@ public class ExamResultController {
     @GetMapping("/{resultId}")
     @Operation(summary = "시험 결과 조회", description = "시험 결과 ID로 특정 채점 결과를 조회합니다.", responses = {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "조회 성공"),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "시험 결과를 찾을 수 없음")
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                responseCode = "404", 
+                description = "리소스 없음",
+                content = @Content(
+                    schema = @Schema(implementation = ApiResponse.class),
+                    examples = @ExampleObject(
+                        name = "시험 결과 없음",
+                        summary = "시험 결과를 찾을 수 없음",
+                        value = """
+                        {
+                          "result": "ERROR",
+                          "message": "시험 결과를 찾을 수 없습니다",
+                          "data": null
+                        }
+                        """
+                    )
+                )
+            )
     })
     public ApiResponse<ExamResultDto> getExamResult(
             @Parameter(description = "시험 결과 ID", example = "123e4567-e89b-12d3-a456-426614174000") @PathVariable UUID resultId) {
@@ -142,7 +275,24 @@ public class ExamResultController {
     @GetMapping("/submission/{submissionId}/latest")
     @Operation(summary = "제출 ID로 최신 채점 결과 조회", description = "시험 제출 ID로 가장 최신의 채점 결과를 조회합니다.", responses = {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "조회 성공"),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "채점 결과를 찾을 수 없음")
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                responseCode = "404", 
+                description = "리소스 없음",
+                content = @Content(
+                    schema = @Schema(implementation = ApiResponse.class),
+                    examples = @ExampleObject(
+                        name = "채점 결과 없음",
+                        summary = "채점 결과를 찾을 수 없음",
+                        value = """
+                        {
+                          "result": "ERROR",
+                          "message": "채점 결과를 찾을 수 없습니다",
+                          "data": null
+                        }
+                        """
+                    )
+                )
+            )
     })
     public ApiResponse<ExamResultDto> getLatestResultBySubmissionId(
             @Parameter(description = "시험 제출 ID", example = "123e4567-e89b-12d3-a456-426614174001") @PathVariable UUID submissionId) {
@@ -263,7 +413,42 @@ public class ExamResultController {
     @DeleteMapping("/{resultId}")
     @Operation(summary = "시험 결과 삭제", description = "시험 결과를 삭제합니다.", responses = {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "삭제 성공"),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "시험 결과를 찾을 수 없음")
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                responseCode = "404", 
+                description = "리소스 없음",
+                content = @Content(
+                    schema = @Schema(implementation = ApiResponse.class),
+                    examples = @ExampleObject(
+                        name = "시험 결과 없음",
+                        summary = "시험 결과를 찾을 수 없음",
+                        value = """
+                        {
+                          "result": "ERROR",
+                          "message": "시험 결과를 찾을 수 없습니다",
+                          "data": null
+                        }
+                        """
+                    )
+                )
+            ),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                responseCode = "409", 
+                description = "충돌",
+                content = @Content(
+                    schema = @Schema(implementation = ApiResponse.class),
+                    examples = @ExampleObject(
+                        name = "참조 무결성 제약",
+                        summary = "참조 무결성 제약 조건 위배",
+                        value = """
+                        {
+                          "result": "ERROR",
+                          "message": "참조 무결성 제약 조건에 위배됩니다",
+                          "data": null
+                        }
+                        """
+                    )
+                )
+            )
     })
     public ApiResponse<Void> deleteExamResult(
             @Parameter(description = "시험 결과 ID", example = "123e4567-e89b-12d3-a456-426614174000") @PathVariable UUID resultId) {

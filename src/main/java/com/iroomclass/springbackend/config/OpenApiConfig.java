@@ -9,6 +9,10 @@ import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.oas.models.security.SecurityScheme;
 import io.swagger.v3.oas.models.servers.Server;
 import io.swagger.v3.oas.models.responses.ApiResponse;
+import io.swagger.v3.oas.models.media.Content;
+import io.swagger.v3.oas.models.media.MediaType;
+import io.swagger.v3.oas.models.media.Schema;
+import io.swagger.v3.oas.models.examples.Example;
 import org.springdoc.core.customizers.OpenApiCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -50,11 +54,42 @@ public class OpenApiConfig {
     @Bean
     public OpenApiCustomizer globalResponsesCustomizer() {
         return openApi -> {
-            openApi.getPaths().values().forEach(pathItem -> pathItem.readOperations().forEach(operation -> {
-                if (operation.getResponses() != null && !operation.getResponses().containsKey("500")) {
-                    operation.getResponses().addApiResponse("500", new ApiResponse().description("서버 오류"));
-                }
-            }));
+            // 공통 응답 스키마 정의
+            Schema<?> errorResponseSchema = new Schema<>()
+                    .$ref("#/components/schemas/ErrorResponse");
+            
+            Schema<?> successResponseSchema = new Schema<>()
+                    .$ref("#/components/schemas/SuccessResponse");
+                    
+            // 공통 에러 응답 Content 정의
+            Content errorContent = new Content()
+                    .addMediaType("application/json", new MediaType()
+                            .schema(errorResponseSchema)
+                            .addExamples("serverError", new Example()
+                                    .summary("서버 내부 오류")
+                                    .value("""
+                                            {
+                                              "result": "ERROR",
+                                              "message": "서버 내부 오류가 발생했습니다",
+                                              "data": null
+                                            }
+                                            """)
+                            ));
+            
+            openApi.getPaths().values().forEach(pathItem -> 
+                pathItem.readOperations().forEach(operation -> {
+                    if (operation.getResponses() != null) {
+                        // 500 에러 응답 추가 (기존에 없는 경우만)
+                        if (!operation.getResponses().containsKey("500")) {
+                            operation.getResponses().addApiResponse("500", 
+                                new ApiResponse()
+                                    .description("서버 내부 오류")
+                                    .content(errorContent)
+                            );
+                        }
+                    }
+                })
+            );
         };
     }
 

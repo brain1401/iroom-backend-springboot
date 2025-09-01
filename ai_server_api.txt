@@ -1,0 +1,1391 @@
+글자인식
+
+
+POST
+/text-recognition/answer-sheet
+한국어 답안지 글자인식 처리 (번호 기반 혼합 문제 유형)
+
+고도화된 글자인식 처리 엔드포인트 - 번호 기반 혼합 문제 유형 지원
+
+    주요 기능:
+    - 번호 기반 문제 인식 (1, 2, 3... 형식)
+    - 혼합 답안 유형 지원 (객관식: A,B,C,D + 주관식: 수식,텍스트)
+    - 이미지 해시 기반 중복 처리 방지 (캐싱)
+    - 서킷 브레이커 패턴으로 장애 복구
+    - 실시간 성능 모니터링
+    - 향상된 오류 처리 및 폴백
+    
+    지원 문제 형식:
+    - 번호 패턴: 1., 2), (1), 1번, ①, 문제1 등
+    - 객관식 답안: A, B, C, D, E (또는 가, 나, 다, 라, 마)
+    - 주관식 답안: 수학 수식, 텍스트, 숫자
+Parameters
+Try it out
+Name	Description
+use_cache
+boolean
+(query)
+Default value : true
+
+
+true
+use_content_hash
+boolean
+(query)
+Default value : false
+
+
+false
+Request body
+
+multipart/form-data
+file *
+string($binary)
+답안지 이미지 파일 (JPEG, PNG, WEBP, GIF 지원, 최대 20MB)
+
+Responses
+Code	Description	Links
+200	
+Successful Response
+
+Media type
+
+application/json
+Controls Accept header.
+Example Value
+Schema
+{
+  "sheet_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+  "processing_timestamp": "2025-09-01T01:09:27.039Z",
+  "answers": [
+    {
+      "question_number": 1,
+      "question_label": "6",
+      "extracted_text": "string",
+      "latex_formula": "string",
+      "confidence": 1
+    }
+  ],
+  "metadata": {
+    "image_quality": "string",
+    "processing_time_ms": 0,
+    "total_questions_detected": 0,
+    "model_version": "gemini-2.5-pro"
+  }
+}
+No links
+422	
+Validation Error
+
+Media type
+
+application/json
+Example Value
+Schema
+{
+  "detail": [
+    {
+      "loc": [
+        "string",
+        0
+      ],
+      "msg": "string",
+      "type": "string"
+    }
+  ]
+}
+No links
+429	
+Too Many Requests - Rate limit 초과
+
+Media type
+
+application/json
+Example Value
+Schema
+{
+  "error": {
+    "message": "string",
+    "status_code": 0,
+    "timestamp": "string",
+    "code": null,
+    "details": null,
+    "submission_id": null,
+    "file_name": null,
+    "model_version": null
+  }
+}
+Headers:
+Name	Description	Type
+Retry-After	
+재시도까지 대기 시간 (초)
+
+integer
+X-RateLimit-Limit	
+최대 요청 수
+
+integer
+X-RateLimit-Remaining	
+남은 요청 수
+
+integer
+X-RateLimit-Reset	
+Rate limit 재설정 시간 (Unix timestamp)
+
+integer
+No links
+500	
+Internal Server Error - 내부 서버 오류
+
+Media type
+
+application/json
+Example Value
+Schema
+{
+  "error": {
+    "message": "string",
+    "status_code": 0,
+    "timestamp": "string",
+    "code": null,
+    "details": null,
+    "submission_id": null,
+    "file_name": null,
+    "model_version": null
+  }
+}
+No links
+503	
+Service Unavailable - Gemini API 비활성화
+
+Media type
+
+application/json
+Example Value
+Schema
+{
+  "error": {
+    "message": "string",
+    "status_code": 0,
+    "timestamp": "string",
+    "code": null,
+    "details": null,
+    "submission_id": null,
+    "file_name": null,
+    "model_version": null
+  }
+}
+No links
+
+POST
+/text-recognition/batch
+배치 글자인식 처리
+
+여러 답안지를 동시에 처리하는 배치 글자인식 엔드포인트
+
+    주요 기능:
+    - 실제 Gemini API 호출로 텍스트 인식 처리
+    - answer-sheet와 동일한 품질의 처리 보장
+    - 캐싱 및 서킷 브레이커 적용
+    - 실시간 진행률 추적
+Parameters
+Try it out
+Name	Description
+priority
+integer
+(query)
+Default value : 1
+
+1
+use_cache
+boolean
+(query)
+Default value : true
+
+
+true
+use_content_hash
+boolean
+(query)
+Default value : false
+
+
+false
+Request body
+
+multipart/form-data
+files *
+array<string>
+Responses
+Code	Description	Links
+200	
+Successful Response
+
+Media type
+
+application/json
+Controls Accept header.
+Example Value
+Schema
+{
+  "additionalProp1": "string",
+  "additionalProp2": "string",
+  "additionalProp3": "string"
+}
+No links
+422	
+Validation Error
+
+Media type
+
+application/json
+Example Value
+Schema
+{
+  "detail": [
+    {
+      "loc": [
+        "string",
+        0
+      ],
+      "msg": "string",
+      "type": "string"
+    }
+  ]
+}
+No links
+429	
+Too Many Requests - Rate limit 초과
+
+Media type
+
+application/json
+Example Value
+Schema
+{
+  "error": {
+    "message": "string",
+    "status_code": 0,
+    "timestamp": "string",
+    "code": null,
+    "details": null,
+    "submission_id": null,
+    "file_name": null,
+    "model_version": null
+  }
+}
+Headers:
+Name	Description	Type
+Retry-After	
+재시도까지 대기 시간 (초)
+
+integer
+X-RateLimit-Limit	
+최대 요청 수
+
+integer
+X-RateLimit-Remaining	
+남은 요청 수
+
+integer
+X-RateLimit-Reset	
+Rate limit 재설정 시간 (Unix timestamp)
+
+integer
+No links
+500	
+Internal Server Error - 내부 서버 오류
+
+Media type
+
+application/json
+Example Value
+Schema
+{
+  "error": {
+    "message": "string",
+    "status_code": 0,
+    "timestamp": "string",
+    "code": null,
+    "details": null,
+    "submission_id": null,
+    "file_name": null,
+    "model_version": null
+  }
+}
+No links
+503	
+Service Unavailable - Gemini API 비활성화
+
+Media type
+
+application/json
+Example Value
+Schema
+{
+  "error": {
+    "message": "string",
+    "status_code": 0,
+    "timestamp": "string",
+    "code": null,
+    "details": null,
+    "submission_id": null,
+    "file_name": null,
+    "model_version": null
+  }
+}
+No links
+
+GET
+/text-recognition/metrics
+글자인식 성능 메트릭
+
+글자인식 처리 성능 통계 및 시스템 상태 정보
+
+Parameters
+Try it out
+Name	Description
+time_range_minutes
+integer
+(query)
+Default value : 60
+
+60
+Responses
+Code	Description	Links
+200	
+Successful Response
+
+Media type
+
+application/json
+Controls Accept header.
+Example Value
+Schema
+{
+  "additionalProp1": {}
+}
+No links
+422	
+Validation Error
+
+Media type
+
+application/json
+Example Value
+Schema
+{
+  "detail": [
+    {
+      "loc": [
+        "string",
+        0
+      ],
+      "msg": "string",
+      "type": "string"
+    }
+  ]
+}
+No links
+429	
+Too Many Requests - Rate limit 초과
+
+Media type
+
+application/json
+Example Value
+Schema
+{
+  "error": {
+    "message": "string",
+    "status_code": 0,
+    "timestamp": "string",
+    "code": null,
+    "details": null,
+    "submission_id": null,
+    "file_name": null,
+    "model_version": null
+  }
+}
+Headers:
+Name	Description	Type
+Retry-After	
+재시도까지 대기 시간 (초)
+
+integer
+X-RateLimit-Limit	
+최대 요청 수
+
+integer
+X-RateLimit-Remaining	
+남은 요청 수
+
+integer
+X-RateLimit-Reset	
+Rate limit 재설정 시간 (Unix timestamp)
+
+integer
+No links
+500	
+Internal Server Error - 내부 서버 오류
+
+Media type
+
+application/json
+Example Value
+Schema
+{
+  "error": {
+    "message": "string",
+    "status_code": 0,
+    "timestamp": "string",
+    "code": null,
+    "details": null,
+    "submission_id": null,
+    "file_name": null,
+    "model_version": null
+  }
+}
+No links
+503	
+Service Unavailable - Gemini API 비활성화
+
+Media type
+
+application/json
+Example Value
+Schema
+{
+  "error": {
+    "message": "string",
+    "status_code": 0,
+    "timestamp": "string",
+    "code": null,
+    "details": null,
+    "submission_id": null,
+    "file_name": null,
+    "model_version": null
+  }
+}
+No links
+
+GET
+/text-recognition/dashboard
+글자인식 대시보드 데이터
+
+모니터링 대시보드용 종합 데이터
+
+Parameters
+Try it out
+No parameters
+
+Responses
+Code	Description	Links
+200	
+Successful Response
+
+Media type
+
+application/json
+Controls Accept header.
+Example Value
+Schema
+{
+  "additionalProp1": {}
+}
+No links
+429	
+Too Many Requests - Rate limit 초과
+
+Media type
+
+application/json
+Example Value
+Schema
+{
+  "error": {
+    "message": "string",
+    "status_code": 0,
+    "timestamp": "string",
+    "code": null,
+    "details": null,
+    "submission_id": null,
+    "file_name": null,
+    "model_version": null
+  }
+}
+Headers:
+Name	Description	Type
+Retry-After	
+재시도까지 대기 시간 (초)
+
+integer
+X-RateLimit-Limit	
+최대 요청 수
+
+integer
+X-RateLimit-Remaining	
+남은 요청 수
+
+integer
+X-RateLimit-Reset	
+Rate limit 재설정 시간 (Unix timestamp)
+
+integer
+No links
+500	
+Internal Server Error - 내부 서버 오류
+
+Media type
+
+application/json
+Example Value
+Schema
+{
+  "error": {
+    "message": "string",
+    "status_code": 0,
+    "timestamp": "string",
+    "code": null,
+    "details": null,
+    "submission_id": null,
+    "file_name": null,
+    "model_version": null
+  }
+}
+No links
+503	
+Service Unavailable - Gemini API 비활성화
+
+Media type
+
+application/json
+Example Value
+Schema
+{
+  "error": {
+    "message": "string",
+    "status_code": 0,
+    "timestamp": "string",
+    "code": null,
+    "details": null,
+    "submission_id": null,
+    "file_name": null,
+    "model_version": null
+  }
+}
+No links
+
+POST
+/text-recognition/cache/invalidate
+캐시 무효화
+
+특정 이미지 또는 전체 글자인식 캐시 무효화
+
+Parameters
+Try it out
+Name	Description
+image_hash
+string | (string | null)
+(query)
+image_hash
+invalidate_all
+boolean
+(query)
+Default value : false
+
+
+false
+Responses
+Code	Description	Links
+200	
+Successful Response
+
+Media type
+
+application/json
+Controls Accept header.
+Example Value
+Schema
+{
+  "additionalProp1": "string",
+  "additionalProp2": "string",
+  "additionalProp3": "string"
+}
+No links
+422	
+Validation Error
+
+Media type
+
+application/json
+Example Value
+Schema
+{
+  "detail": [
+    {
+      "loc": [
+        "string",
+        0
+      ],
+      "msg": "string",
+      "type": "string"
+    }
+  ]
+}
+No links
+429	
+Too Many Requests - Rate limit 초과
+
+Media type
+
+application/json
+Example Value
+Schema
+{
+  "error": {
+    "message": "string",
+    "status_code": 0,
+    "timestamp": "string",
+    "code": null,
+    "details": null,
+    "submission_id": null,
+    "file_name": null,
+    "model_version": null
+  }
+}
+Headers:
+Name	Description	Type
+Retry-After	
+재시도까지 대기 시간 (초)
+
+integer
+X-RateLimit-Limit	
+최대 요청 수
+
+integer
+X-RateLimit-Remaining	
+남은 요청 수
+
+integer
+X-RateLimit-Reset	
+Rate limit 재설정 시간 (Unix timestamp)
+
+integer
+No links
+500	
+Internal Server Error - 내부 서버 오류
+
+Media type
+
+application/json
+Example Value
+Schema
+{
+  "error": {
+    "message": "string",
+    "status_code": 0,
+    "timestamp": "string",
+    "code": null,
+    "details": null,
+    "submission_id": null,
+    "file_name": null,
+    "model_version": null
+  }
+}
+No links
+503	
+Service Unavailable - Gemini API 비활성화
+
+Media type
+
+application/json
+Example Value
+Schema
+{
+  "error": {
+    "message": "string",
+    "status_code": 0,
+    "timestamp": "string",
+    "code": null,
+    "details": null,
+    "submission_id": null,
+    "file_name": null,
+    "model_version": null
+  }
+}
+No links
+
+GET
+/text-recognition/health
+글자인식 서비스 상태 확인
+
+향상된 헬스체크 (서킷 브레이커, 캐시, 메트릭 포함)
+
+Parameters
+Try it out
+No parameters
+
+Responses
+Code	Description	Links
+200	
+Successful Response
+
+Media type
+
+application/json
+Controls Accept header.
+Example Value
+Schema
+"string"
+No links
+429	
+Too Many Requests - Rate limit 초과
+
+Media type
+
+application/json
+Example Value
+Schema
+{
+  "error": {
+    "message": "string",
+    "status_code": 0,
+    "timestamp": "string",
+    "code": null,
+    "details": null,
+    "submission_id": null,
+    "file_name": null,
+    "model_version": null
+  }
+}
+Headers:
+Name	Description	Type
+Retry-After	
+재시도까지 대기 시간 (초)
+
+integer
+X-RateLimit-Limit	
+최대 요청 수
+
+integer
+X-RateLimit-Remaining	
+남은 요청 수
+
+integer
+X-RateLimit-Reset	
+Rate limit 재설정 시간 (Unix timestamp)
+
+integer
+No links
+500	
+Internal Server Error - 내부 서버 오류
+
+Media type
+
+application/json
+Example Value
+Schema
+{
+  "error": {
+    "message": "string",
+    "status_code": 0,
+    "timestamp": "string",
+    "code": null,
+    "details": null,
+    "submission_id": null,
+    "file_name": null,
+    "model_version": null
+  }
+}
+No links
+503	
+Service Unavailable - Gemini API 비활성화
+
+Media type
+
+application/json
+Example Value
+Schema
+{
+  "error": {
+    "message": "string",
+    "status_code": 0,
+    "timestamp": "string",
+    "code": null,
+    "details": null,
+    "submission_id": null,
+    "file_name": null,
+    "model_version": null
+  }
+}
+No links
+채점
+
+
+POST
+/grading/{submission_id}
+Grade Submission
+
+단일 시험 제출 채점
+
+제출 ID를 받아서 해당 제출의 모든 답안을 채점합니다.
+
+객관식: 자동 채점 (100% 정확도)
+주관식: AI 보조 채점 (gemini-2.5-pro)
+Args: submission_id: 채점할 제출 고유 ID request: 채점 옵션 (선택사항) background_tasks: 백그라운드 작업 관리 settings: 애플리케이션 설정
+
+Returns: ExamGradingResult: 채점 완료된 결과
+
+Raises: HTTPException: 제출 정보 없음, 채점 실패 등
+
+Parameters
+Try it out
+Name	Description
+submission_id *
+string($uuid)
+(path)
+submission_id
+Request body
+
+application/json
+Example Value
+Schema
+{
+  "submission_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+  "force_regrade": false,
+  "grading_options": {
+    "additionalProp1": {}
+  }
+}
+Responses
+Code	Description	Links
+200	
+Successful Response
+
+Media type
+
+application/json
+Controls Accept header.
+Example Value
+Schema
+{
+  "result_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+  "submission_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+  "exam_sheet_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+  "status": "PENDING",
+  "total_score": 0,
+  "max_total_score": 0,
+  "question_results": [
+    {
+      "question_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+      "answer_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+      "is_correct": true,
+      "score": 0,
+      "max_score": 1,
+      "grading_method": "AUTO",
+      "confidence_score": "string",
+      "grading_comment": "string",
+      "created_at": "2025-09-01T01:09:27.067Z"
+    }
+  ],
+  "metadata": {
+    "total_questions": 0,
+    "multiple_choice_count": 0,
+    "subjective_count": 0,
+    "processing_time_ms": 0,
+    "ai_model_version": "gemini-2.5-pro"
+  },
+  "grading_comment": "string",
+  "graded_at": "2025-09-01T01:09:27.067Z",
+  "version": 1
+}
+No links
+422	
+Validation Error
+
+Media type
+
+application/json
+Example Value
+Schema
+{
+  "detail": [
+    {
+      "loc": [
+        "string",
+        0
+      ],
+      "msg": "string",
+      "type": "string"
+    }
+  ]
+}
+No links
+429	
+Too Many Requests - Rate limit 초과
+
+Media type
+
+application/json
+Example Value
+Schema
+{
+  "error": {
+    "message": "string",
+    "status_code": 0,
+    "timestamp": "string",
+    "code": null,
+    "details": null,
+    "submission_id": null,
+    "file_name": null,
+    "model_version": null
+  }
+}
+Headers:
+Name	Description	Type
+Retry-After	
+재시도까지 대기 시간 (초)
+
+integer
+X-RateLimit-Limit	
+최대 요청 수
+
+integer
+X-RateLimit-Remaining	
+남은 요청 수
+
+integer
+X-RateLimit-Reset	
+Rate limit 재설정 시간 (Unix timestamp)
+
+integer
+No links
+500	
+Internal Server Error - 내부 서버 오류
+
+Media type
+
+application/json
+Example Value
+Schema
+{
+  "error": {
+    "message": "string",
+    "status_code": 0,
+    "timestamp": "string",
+    "code": null,
+    "details": null,
+    "submission_id": null,
+    "file_name": null,
+    "model_version": null
+  }
+}
+No links
+
+GET
+/grading/{submission_id}
+Get Grading Result
+
+채점 결과 조회
+
+제출 ID로 해당 제출의 채점 결과를 조회합니다.
+
+Args: submission_id: 조회할 제출 고유 ID settings: 애플리케이션 설정
+
+Returns: ExamGradingResult: 채점 결과
+
+Raises: HTTPException: 채점 결과 없음
+
+Parameters
+Try it out
+Name	Description
+submission_id *
+string($uuid)
+(path)
+submission_id
+Responses
+Code	Description	Links
+200	
+Successful Response
+
+Media type
+
+application/json
+Controls Accept header.
+Example Value
+Schema
+{
+  "result_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+  "submission_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+  "exam_sheet_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+  "status": "PENDING",
+  "total_score": 0,
+  "max_total_score": 0,
+  "question_results": [
+    {
+      "question_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+      "answer_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+      "is_correct": true,
+      "score": 0,
+      "max_score": 1,
+      "grading_method": "AUTO",
+      "confidence_score": "string",
+      "grading_comment": "string",
+      "created_at": "2025-09-01T01:09:27.072Z"
+    }
+  ],
+  "metadata": {
+    "total_questions": 0,
+    "multiple_choice_count": 0,
+    "subjective_count": 0,
+    "processing_time_ms": 0,
+    "ai_model_version": "gemini-2.5-pro"
+  },
+  "grading_comment": "string",
+  "graded_at": "2025-09-01T01:09:27.072Z",
+  "version": 1
+}
+No links
+422	
+Validation Error
+
+Media type
+
+application/json
+Example Value
+Schema
+{
+  "detail": [
+    {
+      "loc": [
+        "string",
+        0
+      ],
+      "msg": "string",
+      "type": "string"
+    }
+  ]
+}
+No links
+429	
+Too Many Requests - Rate limit 초과
+
+Media type
+
+application/json
+Example Value
+Schema
+{
+  "error": {
+    "message": "string",
+    "status_code": 0,
+    "timestamp": "string",
+    "code": null,
+    "details": null,
+    "submission_id": null,
+    "file_name": null,
+    "model_version": null
+  }
+}
+Headers:
+Name	Description	Type
+Retry-After	
+재시도까지 대기 시간 (초)
+
+integer
+X-RateLimit-Limit	
+최대 요청 수
+
+integer
+X-RateLimit-Remaining	
+남은 요청 수
+
+integer
+X-RateLimit-Reset	
+Rate limit 재설정 시간 (Unix timestamp)
+
+integer
+No links
+500	
+Internal Server Error - 내부 서버 오류
+
+Media type
+
+application/json
+Example Value
+Schema
+{
+  "error": {
+    "message": "string",
+    "status_code": 0,
+    "timestamp": "string",
+    "code": null,
+    "details": null,
+    "submission_id": null,
+    "file_name": null,
+    "model_version": null
+  }
+}
+No links
+
+POST
+/grading/batch
+Grade Batch Submissions
+
+배치 채점 처리
+
+여러 제출을 동시에 채점합니다. 최대 50개까지 동시 처리 가능합니다.
+
+Args: request: 배치 채점 요청 (제출 ID 목록) background_tasks: 백그라운드 작업 관리 settings: 애플리케이션 설정
+
+Returns: BatchGradingResult: 배치 채점 결과
+
+Raises: HTTPException: 잘못된 요청, 처리 실패 등
+
+Parameters
+Try it out
+No parameters
+
+Request body
+
+application/json
+Example Value
+Schema
+{
+  "submission_ids": [
+    "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+  ],
+  "force_regrade": false,
+  "grading_options": {
+    "additionalProp1": {}
+  },
+  "priority": 3
+}
+Responses
+Code	Description	Links
+200	
+Successful Response
+
+Media type
+
+application/json
+Controls Accept header.
+Example Value
+Schema
+{
+  "batch_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+  "total_submissions": 0,
+  "successful_gradings": 0,
+  "failed_gradings": 0,
+  "results": [
+    {
+      "result_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+      "submission_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+      "exam_sheet_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+      "status": "PENDING",
+      "total_score": 0,
+      "max_total_score": 0,
+      "question_results": [
+        {
+          "question_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+          "answer_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+          "is_correct": true,
+          "score": 0,
+          "max_score": 1,
+          "grading_method": "AUTO",
+          "confidence_score": "string",
+          "grading_comment": "string",
+          "created_at": "2025-09-01T01:09:27.077Z"
+        }
+      ],
+      "metadata": {
+        "total_questions": 0,
+        "multiple_choice_count": 0,
+        "subjective_count": 0,
+        "processing_time_ms": 0,
+        "ai_model_version": "gemini-2.5-pro"
+      },
+      "grading_comment": "string",
+      "graded_at": "2025-09-01T01:09:27.077Z",
+      "version": 1
+    }
+  ],
+  "total_processing_time_ms": 0,
+  "average_processing_time_ms": 0,
+  "completed_at": "2025-09-01T01:09:27.077Z"
+}
+No links
+422	
+Validation Error
+
+Media type
+
+application/json
+Example Value
+Schema
+{
+  "detail": [
+    {
+      "loc": [
+        "string",
+        0
+      ],
+      "msg": "string",
+      "type": "string"
+    }
+  ]
+}
+No links
+429	
+Too Many Requests - Rate limit 초과
+
+Media type
+
+application/json
+Example Value
+Schema
+{
+  "error": {
+    "message": "string",
+    "status_code": 0,
+    "timestamp": "string",
+    "code": null,
+    "details": null,
+    "submission_id": null,
+    "file_name": null,
+    "model_version": null
+  }
+}
+Headers:
+Name	Description	Type
+Retry-After	
+재시도까지 대기 시간 (초)
+
+integer
+X-RateLimit-Limit	
+최대 요청 수
+
+integer
+X-RateLimit-Remaining	
+남은 요청 수
+
+integer
+X-RateLimit-Reset	
+Rate limit 재설정 시간 (Unix timestamp)
+
+integer
+No links
+500	
+Internal Server Error - 내부 서버 오류
+
+Media type
+
+application/json
+Example Value
+Schema
+{
+  "error": {
+    "message": "string",
+    "status_code": 0,
+    "timestamp": "string",
+    "code": null,
+    "details": null,
+    "submission_id": null,
+    "file_name": null,
+    "model_version": null
+  }
+}
+No links
+
+GET
+/grading/stats
+Get Grading Stats
+
+채점 시스템 통계 조회
+
+채점 서비스의 현재 상태 및 통계를 반환합니다.
+
+Args: settings: 애플리케이션 설정
+
+Returns: dict: 통계 정보
+
+Parameters
+Try it out
+No parameters
+
+Responses
+Code	Description	Links
+200	
+Successful Response
+
+Media type
+
+application/json
+Controls Accept header.
+Example Value
+Schema
+{
+  "additionalProp1": {}
+}
+No links
+429	
+Too Many Requests - Rate limit 초과
+
+Media type
+
+application/json
+Example Value
+Schema
+{
+  "error": {
+    "message": "string",
+    "status_code": 0,
+    "timestamp": "string",
+    "code": null,
+    "details": null,
+    "submission_id": null,
+    "file_name": null,
+    "model_version": null
+  }
+}
+Headers:
+Name	Description	Type
+Retry-After	
+재시도까지 대기 시간 (초)
+
+integer
+X-RateLimit-Limit	
+최대 요청 수
+
+integer
+X-RateLimit-Remaining	
+남은 요청 수
+
+integer
+X-RateLimit-Reset	
+Rate limit 재설정 시간 (Unix timestamp)
+
+integer
+No links
+500	
+Internal Server Error - 내부 서버 오류
+
+Media type
+
+application/json
+Example Value
+Schema
+{
+  "error": {
+    "message": "string",
+    "status_code": 0,
+    "timestamp": "string",
+    "code": null,
+    "details": null,
+    "submission_id": null,
+    "file_name": null,
+    "model_version": null
+  }
+}
+No links

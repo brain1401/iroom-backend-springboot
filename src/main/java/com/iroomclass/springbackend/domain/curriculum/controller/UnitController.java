@@ -20,6 +20,9 @@ import com.iroomclass.springbackend.domain.curriculum.service.UnitService.UnitQu
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -57,8 +60,42 @@ public class UnitController {
     )
     @io.swagger.v3.oas.annotations.responses.ApiResponses({
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "조회 성공"),
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "잘못된 학년"),
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "해당 학년의 단원을 찾을 수 없음")
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(
+            responseCode = "400", 
+            description = "잘못된 요청",
+            content = @Content(
+                schema = @Schema(implementation = ApiResponse.class),
+                examples = @ExampleObject(
+                    name = "잘못된 학년",
+                    summary = "학년 값이 올바르지 않음",
+                    value = """
+                    {
+                      "result": "ERROR",
+                      "message": "파라미터 'grade'의 값이 올바르지 않습니다",
+                      "data": null
+                    }
+                    """
+                )
+            )
+        ),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(
+            responseCode = "404", 
+            description = "리소스 없음",
+            content = @Content(
+                schema = @Schema(implementation = ApiResponse.class),
+                examples = @ExampleObject(
+                    name = "단원 없음",
+                    summary = "해당 학년의 단원을 찾을 수 없음",
+                    value = """
+                    {
+                      "result": "ERROR",
+                      "message": "해당 학년의 단원을 찾을 수 없습니다",
+                      "data": null
+                    }
+                    """
+                )
+            )
+        )
     })
     public ApiResponse<UnitListResponse> getUnitsByGrade(
             @Parameter(description = "학년 (1/2/3)", example = "2") 
@@ -85,8 +122,42 @@ public class UnitController {
     )
     @io.swagger.v3.oas.annotations.responses.ApiResponses({
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "조회 성공"),
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "잘못된 학년"),
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "해당 학년의 단원을 찾을 수 없음")
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(
+            responseCode = "400", 
+            description = "잘못된 요청",
+            content = @Content(
+                schema = @Schema(implementation = ApiResponse.class),
+                examples = @ExampleObject(
+                    name = "잘못된 학년",
+                    summary = "학년 값이 올바르지 않음",
+                    value = """
+                    {
+                      "result": "ERROR",
+                      "message": "파라미터 'grade'의 값이 올바르지 않습니다",
+                      "data": null
+                    }
+                    """
+                )
+            )
+        ),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(
+            responseCode = "404", 
+            description = "리소스 없음",
+            content = @Content(
+                schema = @Schema(implementation = ApiResponse.class),
+                examples = @ExampleObject(
+                    name = "단원 없음",
+                    summary = "해당 학년의 단원을 찾을 수 없음",
+                    value = """
+                    {
+                      "result": "ERROR",
+                      "message": "해당 학년의 단원을 찾을 수 없습니다",
+                      "data": null
+                    }
+                    """
+                )
+            )
+        )
     })
     public ApiResponse<UnitStatisticsResponse> getUnitStatisticsByGrade(
             @Parameter(description = "학년 (1/2/3)", example = "2") 
@@ -115,7 +186,24 @@ public class UnitController {
     )
     @io.swagger.v3.oas.annotations.responses.ApiResponses({
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "조회 성공"),
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "서버 오류")
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(
+            responseCode = "500", 
+            description = "서버 내부 오류",
+            content = @Content(
+                schema = @Schema(implementation = ApiResponse.class),
+                examples = @ExampleObject(
+                    name = "서버 오류",
+                    summary = "서버 내부 오류 발생",
+                    value = """
+                    {
+                      "result": "ERROR",
+                      "message": "서버 내부 오류가 발생했습니다",
+                      "data": null
+                    }
+                    """
+                )
+            )
+        )
     })
     public ApiResponse<List<UnitTreeResponse>> getUnitTree() {
         log.info("단원 트리 구조 조회 요청");
@@ -151,8 +239,42 @@ public class UnitController {
     )
     @io.swagger.v3.oas.annotations.responses.ApiResponses({
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "조회 성공"),
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "잘못된 단원 ID"),
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "단원을 찾을 수 없음")
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(
+            responseCode = "400", 
+            description = "잘못된 요청",
+            content = @Content(
+                schema = @Schema(implementation = ApiResponse.class),
+                examples = @ExampleObject(
+                    name = "잘못된 단원 ID",
+                    summary = "단원 ID 형식이 잘못됨",
+                    value = """
+                    {
+                      "result": "ERROR",
+                      "message": "파라미터 'unitId'의 값이 올바르지 않습니다",
+                      "data": null
+                    }
+                    """
+                )
+            )
+        ),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(
+            responseCode = "404", 
+            description = "리소스 없음",
+            content = @Content(
+                schema = @Schema(implementation = ApiResponse.class),
+                examples = @ExampleObject(
+                    name = "단원 없음",
+                    summary = "단원을 찾을 수 없음",
+                    value = """
+                    {
+                      "result": "ERROR",
+                      "message": "단원을 찾을 수 없습니다",
+                      "data": null
+                    }
+                    """
+                )
+            )
+        )
     })
     public ApiResponse<Page<UnitQuestionInfo>> getUnitQuestions(
             @Parameter(description = "단원 ID", example = "1", required = true)

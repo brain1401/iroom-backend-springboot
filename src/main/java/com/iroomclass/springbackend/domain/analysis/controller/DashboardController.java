@@ -8,6 +8,9 @@ import com.iroomclass.springbackend.domain.analysis.service.DashboardService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -38,7 +41,31 @@ public class DashboardController {
      */
     @Operation(
         summary = "전체 학년 통합 통계 조회",
-        description = "모든 학년의 통합 통계 정보를 조회합니다"
+        description = "모든 학년의 통합 통계 정보를 조회합니다",
+        responses = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                responseCode = "200", 
+                description = "조회 성공"
+            ),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                responseCode = "500", 
+                description = "서버 내부 오류", 
+                content = @Content(
+                    schema = @Schema(implementation = ApiResponse.class),
+                    examples = @ExampleObject(
+                        name = "서버 오류",
+                        summary = "서버 내부 오류 발생",
+                        value = """
+                        {
+                          "result": "ERROR",
+                          "message": "서버 내부 오류가 발생했습니다",
+                          "data": null
+                        }
+                        """
+                    )
+                )
+            )
+        }
     )
     @GetMapping("/overall-statistics")
     public ApiResponse<OverallStatisticsResponse> getOverallStatistics() {
@@ -60,7 +87,49 @@ public class DashboardController {
      */
     @Operation(
         summary = "학년별 시험 제출 현황 조회",
-        description = "특정 학년의 시험별 제출 현황을 조회합니다"
+        description = "특정 학년의 시험별 제출 현황을 조회합니다",
+        responses = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                responseCode = "200", 
+                description = "조회 성공"
+            ),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                responseCode = "400", 
+                description = "잘못된 요청", 
+                content = @Content(
+                    schema = @Schema(implementation = ApiResponse.class),
+                    examples = @ExampleObject(
+                        name = "잘못된 학년",
+                        summary = "학년 값이 올바르지 않음",
+                        value = """
+                        {
+                          "result": "ERROR",
+                          "message": "파라미터 'grade'의 값이 올바르지 않습니다",
+                          "data": null
+                        }
+                        """
+                    )
+                )
+            ),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                responseCode = "500", 
+                description = "서버 내부 오류", 
+                content = @Content(
+                    schema = @Schema(implementation = ApiResponse.class),
+                    examples = @ExampleObject(
+                        name = "서버 오류",
+                        summary = "서버 내부 오류 발생",
+                        value = """
+                        {
+                          "result": "ERROR",
+                          "message": "서버 내부 오류가 발생했습니다",
+                          "data": null
+                        }
+                        """
+                    )
+                )
+            )
+        }
     )
     @GetMapping("/grade/{grade}/submission-status")
     public ApiResponse<GradeSubmissionStatusResponse> getGradeSubmissionStatus(
@@ -83,7 +152,49 @@ public class DashboardController {
      */
     @Operation(
         summary = "학년별 성적 분포도 조회",
-        description = "특정 학년의 성적 분포도를 조회합니다"
+        description = "특정 학년의 성적 분포도를 조회합니다",
+        responses = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                responseCode = "200", 
+                description = "조회 성공"
+            ),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                responseCode = "400", 
+                description = "잘못된 요청", 
+                content = @Content(
+                    schema = @Schema(implementation = ApiResponse.class),
+                    examples = @ExampleObject(
+                        name = "잘못된 학년",
+                        summary = "학년 값이 올바르지 않음",
+                        value = """
+                        {
+                          "result": "ERROR",
+                          "message": "파라미터 'grade'의 값이 올바르지 않습니다",
+                          "data": null
+                        }
+                        """
+                    )
+                )
+            ),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                responseCode = "500", 
+                description = "서버 내부 오류", 
+                content = @Content(
+                    schema = @Schema(implementation = ApiResponse.class),
+                    examples = @ExampleObject(
+                        name = "서버 오류",
+                        summary = "서버 내부 오류 발생",
+                        value = """
+                        {
+                          "result": "ERROR",
+                          "message": "서버 내부 오류가 발생했습니다",
+                          "data": null
+                        }
+                        """
+                    )
+                )
+            )
+        }
     )
     @GetMapping("/grade/{grade}/score-distribution")
     public ApiResponse<GradeScoreDistributionResponse> getGradeScoreDistribution(

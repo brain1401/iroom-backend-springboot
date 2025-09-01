@@ -6,6 +6,9 @@ import com.iroomclass.springbackend.domain.system.dto.EchoRequestDto;
 import com.iroomclass.springbackend.domain.system.service.SystemService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -29,7 +32,52 @@ public class EchoController {
     /**
      * 에코 메시지 엔드포인트
      */
-    @Operation(summary = "에코 메시지", description = "받은 메시지를 그대로 반환함")
+    @Operation(
+            summary = "에코 메시지", 
+            description = "받은 메시지를 그대로 반환함",
+            responses = {
+                @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "200", 
+                    description = "에코 메시지 처리 성공"
+                ),
+                @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "400", 
+                    description = "잘못된 요청", 
+                    content = @Content(
+                        schema = @Schema(implementation = ApiResponse.class),
+                        examples = @ExampleObject(
+                            name = "입력 검증 실패",
+                            summary = "입력 데이터 검증 실패",
+                            value = """
+                            {
+                              "result": "ERROR",
+                              "message": "입력 데이터 검증에 실패했습니다",
+                              "data": null
+                            }
+                            """
+                        )
+                    )
+                ),
+                @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "500", 
+                    description = "서버 내부 오류", 
+                    content = @Content(
+                        schema = @Schema(implementation = ApiResponse.class),
+                        examples = @ExampleObject(
+                            name = "서버 오류",
+                            summary = "서버 내부 오류 발생",
+                            value = """
+                            {
+                              "result": "ERROR",
+                              "message": "서버 내부 오류가 발생했습니다",
+                              "data": null
+                            }
+                            """
+                        )
+                    )
+                )
+            }
+    )
     @PostMapping(value = "/echo", consumes = MediaType.APPLICATION_JSON_VALUE)
     public ApiResponse<EchoDto> echo(
             @Parameter(description = "에코할 메시지") @Valid @RequestBody EchoRequestDto request) {
