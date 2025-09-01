@@ -36,7 +36,7 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class AiImageRecognitionService {
+public class AiImageRecognitionServiceNew {
 
     @Qualifier("aiServerWebClient")
     private final WebClient aiServerWebClient;
