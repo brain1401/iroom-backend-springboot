@@ -5,7 +5,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.iroomclass.springbackend.domain.user.dto.StudentLoginRequest;
 import com.iroomclass.springbackend.domain.user.dto.StudentLoginResponse;
-import com.iroomclass.springbackend.domain.user.entity.User;
+import com.iroomclass.springbackend.domain.user.entity.Student;
 import com.iroomclass.springbackend.domain.user.repository.StudentRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -39,7 +39,7 @@ public class LoginService {
                 request.name(), request.phone(), request.birthDate());
 
         // 3-factor 인증: 이름 + 전화번호 + 생년월일
-        User user = userRepository.findByNameAndPhoneAndBirthDate(
+        Student user = userRepository.findByNameAndPhoneAndBirthDate(
                 request.name(), request.phone(), request.birthDate()).orElseThrow(
                         () -> new IllegalArgumentException(
                                 "이름, 전화번호, 생년월일이 일치하지 않습니다."));

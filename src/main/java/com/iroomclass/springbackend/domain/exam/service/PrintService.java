@@ -16,9 +16,10 @@ import org.jsoup.select.NodeVisitor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.iroomclass.springbackend.domain.exam.dto.print.PrintRequest;
-import com.iroomclass.springbackend.domain.exam.dto.print.PrintResponse;
-import com.iroomclass.springbackend.domain.exam.dto.print.PrintableDocumentResponse;
+import com.iroomclass.springbackend.domain.exam.dto.exam.PrintRequest;
+import com.iroomclass.springbackend.domain.exam.dto.exam.PrintResponse;
+import com.iroomclass.springbackend.domain.exam.dto.exam.PrintableDocumentResponse;
+import com.iroomclass.springbackend.domain.exam.dto.exam.PrintRequest;
 import com.iroomclass.springbackend.domain.exam.entity.ExamDocument;
 import com.iroomclass.springbackend.domain.exam.entity.ExamSheet;
 import com.iroomclass.springbackend.domain.exam.repository.ExamDocumentRepository;

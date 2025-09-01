@@ -46,7 +46,7 @@ public class StatisticsController {
                 )
             ),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(
-                responseCode = "$1",
+                responseCode = "404",
                     description = "오류",
                     content = @Content(
                         mediaType = "application/json",

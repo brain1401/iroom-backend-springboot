@@ -54,8 +54,7 @@ public class GlobalExceptionHandler {
         
         log.warn("Validation 실패: {}", errorMessage);
         
-        ApiResponse<Map<String, String>> errorResponse = new ApiResponse<>(
-            ResultStatus.ERROR,
+        ApiResponse<Map<String, String>> errorResponse = ApiResponse.error(
             "입력 데이터 검증에 실패했습니다",
             errorDetails
         );

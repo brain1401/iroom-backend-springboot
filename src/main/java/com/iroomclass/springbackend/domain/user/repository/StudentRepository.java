@@ -2,7 +2,7 @@ package com.iroomclass.springbackend.domain.user.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import com.iroomclass.springbackend.domain.user.entity.User;
+import com.iroomclass.springbackend.domain.user.entity.Student;
 
 import java.util.List;
 import java.util.Optional;
@@ -17,7 +17,7 @@ import java.time.LocalDate;
  * @author 이룸클래스
  * @since 2025
  */
-public interface StudentRepository extends JpaRepository<User, UUID> {
+public interface StudentRepository extends JpaRepository<Student, UUID> {
 
     /**
      * 이름과 전화번호로 사용자 조회
@@ -29,7 +29,7 @@ public interface StudentRepository extends JpaRepository<User, UUID> {
      * @param phone 사용자 전화번호
      * @return 해당 사용자 정보 (Optional)
      */
-    Optional<User> findByNameAndPhone(String name, String phone);
+    Optional<Student> findByNameAndPhone(String name, String phone);
 
     /**
      * 전화번호로 사용자 조회
@@ -40,7 +40,7 @@ public interface StudentRepository extends JpaRepository<User, UUID> {
      * @param phone 사용자 전화번호
      * @return 해당 전화번호의 사용자 정보 (Optional)
      */
-    Optional<User> findByPhone(String phone);
+    Optional<Student> findByPhone(String phone);
 
     /**
      * 이름으로 사용자 목록 조회
@@ -51,7 +51,7 @@ public interface StudentRepository extends JpaRepository<User, UUID> {
      * @param name 사용자 이름
      * @return 해당 이름의 사용자 목록
      */
-    List<User> findByName(String name);
+    List<Student> findByName(String name);
 
     /**
      * 전화번호 존재 여부 확인
@@ -75,5 +75,5 @@ public interface StudentRepository extends JpaRepository<User, UUID> {
      * @param birthDate 사용자 생년월일
      * @return 해당 사용자 정보 (Optional)
      */
-    Optional<User> findByNameAndPhoneAndBirthDate(String name, String phone, LocalDate birthDate);
+    Optional<Student> findByNameAndPhoneAndBirthDate(String name, String phone, LocalDate birthDate);
 }

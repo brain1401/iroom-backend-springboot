@@ -52,7 +52,7 @@ public class AdminExamSubmissionService {
         
         List<ExamSubmissionListResponse.SubmissionInfo> submissionInfos = new ArrayList<>();
         for (ExamSubmission submission : submissions) {
-            ExamSubmissionListResponse.SubmissionInfo submissionInfo = new ExamSubmissionListResponse.SubmissionInfo(submission.getId(), submission.getUser().getName(), submission.getUser().getPhone(), submission.getSubmittedAt(), submission.getTotalScore());
+            ExamSubmissionListResponse.SubmissionInfo submissionInfo = new ExamSubmissionListResponse.SubmissionInfo(submission.getId(), submission.getStudent().getName(), submission.getStudent().getPhone(), submission.getSubmittedAt(), submission.getTotalScore());
             submissionInfos.add(submissionInfo);
         }
         
@@ -75,9 +75,9 @@ public class AdminExamSubmissionService {
         
         Exam exam = submission.getExam();
         
-        log.info("관리자 - 시험 제출 상세 조회 완료: 학생={}, 시험={}", submission.getUser().getName(), exam.getExamName());
+        log.info("관리자 - 시험 제출 상세 조회 완료: 학생={}, 시험={}", submission.getStudent().getName(), exam.getExamName());
         
-        return new ExamSubmissionDetailResponse(submission.getId(), exam.getId(), exam.getExamName(), exam.getGrade() + "학년", submission.getUser().getName(), submission.getUser().getPhone(), submission.getSubmittedAt(), submission.getTotalScore(), exam.getQrCodeUrl());
+        return new ExamSubmissionDetailResponse(submission.getId(), exam.getId(), exam.getExamName(), exam.getGrade() + "학년", submission.getStudent().getName(), submission.getStudent().getPhone(), submission.getSubmittedAt(), submission.getTotalScore(), exam.getQrCodeUrl());
     }
     
     /**
@@ -90,12 +90,12 @@ public class AdminExamSubmissionService {
     public List<ExamSubmissionDetailResponse> getStudentSubmissions(String studentName, String studentPhone) {
         log.info("관리자 - 학생별 제출 목록 조회 요청: 학생={}, 전화번호={}", studentName, studentPhone);
         
-        List<ExamSubmission> submissions = examSubmissionRepository.findByUserNameAndUserPhone(studentName, studentPhone);
+        List<ExamSubmission> submissions = examSubmissionRepository.findByStudentNameAndStudentPhone(studentName, studentPhone);
         
         List<ExamSubmissionDetailResponse> submissionDetails = new ArrayList<>();
         for (ExamSubmission submission : submissions) {
             Exam exam = submission.getExam();
-            ExamSubmissionDetailResponse detail = new ExamSubmissionDetailResponse(submission.getId(), exam.getId(), exam.getExamName(), exam.getGrade() + "학년", submission.getUser().getName(), submission.getUser().getPhone(), submission.getSubmittedAt(), submission.getTotalScore(), exam.getQrCodeUrl());
+            ExamSubmissionDetailResponse detail = new ExamSubmissionDetailResponse(submission.getId(), exam.getId(), exam.getExamName(), exam.getGrade() + "학년", submission.getStudent().getName(), submission.getStudent().getPhone(), submission.getSubmittedAt(), submission.getTotalScore(), exam.getQrCodeUrl());
             submissionDetails.add(detail);
         }
         

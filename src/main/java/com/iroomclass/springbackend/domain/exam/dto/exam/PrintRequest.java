@@ -1,4 +1,4 @@
-package com.iroomclass.springbackend.domain.exam.dto.print;
+package com.iroomclass.springbackend.domain.exam.dto.exam;
 
 import java.util.List;
 import java.util.Objects;

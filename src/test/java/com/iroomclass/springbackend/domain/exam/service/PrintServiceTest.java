@@ -1,7 +1,7 @@
 package com.iroomclass.springbackend.domain.exam.service;
 
-import com.iroomclass.springbackend.domain.exam.dto.print.PrintRequest;
-import com.iroomclass.springbackend.domain.exam.dto.print.PrintResponse;
+import com.iroomclass.springbackend.domain.exam.dto.exam.PrintRequest;
+import com.iroomclass.springbackend.domain.exam.dto.exam.PrintResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

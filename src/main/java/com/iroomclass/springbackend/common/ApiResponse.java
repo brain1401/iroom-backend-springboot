@@ -72,6 +72,13 @@ public record ApiResponse<T>(
     public static ApiResponse<Void> error(String message) {
         return new ApiResponse<>(ResultStatus.ERROR, message, null);
     }
+
+    /**
+     * 오류 응답 생성 (데이터 포함)
+     */
+    public static <T> ApiResponse<T> error(String message, T data) {
+        return new ApiResponse<>(ResultStatus.ERROR, message, data);
+    }
     
     /**
      * 성공 응답용 스키마 클래스 (Swagger 문서화용)

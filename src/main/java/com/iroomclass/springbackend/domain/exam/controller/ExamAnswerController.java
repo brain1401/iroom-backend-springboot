@@ -66,7 +66,7 @@ public class ExamAnswerController {
 
         log.info("답안 생성 성공: 답안 ID={}", response.answerId());
 
-        return ApiResponse.success("성공", response);
+        return ApiResponse.success("시험 답안 조회 성공", response);
     }
 
     /**
@@ -92,7 +92,7 @@ public class ExamAnswerController {
 
         log.info("답안 재촬영 성공: 답안 ID={}", response.answerId());
 
-        return ApiResponse.success("성공", response);
+        return ApiResponse.success("시험 답안 조회 성공", response);
     }
 
     /**
@@ -115,7 +115,7 @@ public class ExamAnswerController {
 
         log.info("답안 수정 성공: 답안 ID={}", response.answerId());
 
-        return ApiResponse.success("성공", response);
+        return ApiResponse.success("시험 답안 조회 성공", response);
     }
 
     /**
@@ -138,7 +138,7 @@ public class ExamAnswerController {
 
         log.info("답안 목록 조회 성공: 시험 제출 ID={}, 답안 수={}", examSubmissionId, response.totalCount());
 
-        return ApiResponse.success("성공", response);
+        return ApiResponse.success("시험 답안 조회 성공", response);
     }
 
     /**
@@ -164,7 +164,7 @@ public class ExamAnswerController {
 
         log.info("특정 문제 답안 조회 성공: 답안 ID={}, 문제 ID={}", response.answerId(), questionId);
 
-        return ApiResponse.success("성공", response);
+        return ApiResponse.success("시험 답안 조회 성공", response);
     }
 
     /**
@@ -189,7 +189,7 @@ public class ExamAnswerController {
         log.info("답안 상태 확인 완료: 총 {}개, 정답 {}개",
                 response.getTotalCount(), response.getCorrectCount());
 
-        return ApiResponse.success("성공", response);
+        return ApiResponse.success("시험 답안 조회 성공", response);
     }
 
     /**
@@ -211,6 +211,6 @@ public class ExamAnswerController {
 
         ExamAnswerSheetProcessResponse response = studentAnswerSheetService.processAnswerSheet(request);
 
-        return ApiResponse.success("성공", response);
+        return ApiResponse.success("시험 답안 조회 성공", response);
     }
 }

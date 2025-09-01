@@ -72,7 +72,7 @@ public class ExamSheetController {
 
         log.info("시험지 생성 성공: ID={}, 이름={}", response.examSheetId(), response.examName());
 
-        return ApiResponse.success("성공", response);
+        return ApiResponse.success("시험지 관리 성공", response);
     }
 
     /**
@@ -159,7 +159,7 @@ public class ExamSheetController {
 
         log.info("전체 시험지 목록 조회 성공: {}개", response.totalCount());
 
-        return ApiResponse.success("성공", response);
+        return ApiResponse.success("시험지 관리 성공", response);
     }
 
     /**
@@ -182,7 +182,7 @@ public class ExamSheetController {
 
         log.info("학년 {} 시험지 목록 조회 성공: {}개", grade, response.totalCount());
 
-        return ApiResponse.success("성공", response);
+        return ApiResponse.success("시험지 관리 성공", response);
     }
 
     /**
@@ -207,7 +207,7 @@ public class ExamSheetController {
         log.info("시험지 {} 상세 조회 성공: 단원={}개, 문제={}개",
                 examSheetId, response.units().size(), response.questions().size());
 
-        return ApiResponse.success("성공", response);
+        return ApiResponse.success("시험지 관리 성공", response);
     }
 
     /**
@@ -233,7 +233,7 @@ public class ExamSheetController {
 
         log.info("시험지 {} 수정 성공: 문제={}번 교체 완료", examSheetId, request.seqNo());
 
-        return ApiResponse.success("성공", response);
+        return ApiResponse.success("시험지 관리 성공", response);
     }
 
     /**

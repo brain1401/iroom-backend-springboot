@@ -1,4 +1,4 @@
-package com.iroomclass.springbackend.domain.user.controller;
+package com.iroomclass.springbackend.domain.exam.controller;
 
 import java.math.BigDecimal;
 import java.util.List;

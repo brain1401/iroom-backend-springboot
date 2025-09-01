@@ -21,7 +21,7 @@ import com.iroomclass.springbackend.common.UUIDv7Generator;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Builder
-public class User {
+public class Student {
     
     /**
      * 학생 고유 ID

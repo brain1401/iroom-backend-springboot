@@ -64,7 +64,7 @@ public class ExamDocumentController {
         log.info("시험지 문서 생성 성공: 시험지 ID={}, 문서={}개",
                 response.examSheetId(), response.documentCount());
 
-        return ApiResponse.success("성공", response);
+        return ApiResponse.success("시험 문서 관리 성공", response);
     }
 
     /**
@@ -88,7 +88,7 @@ public class ExamDocumentController {
 
         log.info("시험지 {} 문서 목록 조회 성공: {}개", examSheetId, response.totalCount());
 
-        return ApiResponse.success("성공", response);
+        return ApiResponse.success("시험 문서 관리 성공", response);
     }
 
     /**
@@ -112,7 +112,7 @@ public class ExamDocumentController {
 
         log.info("시험지 문서 {} 상세 조회 성공: 타입={}", documentId, response.documentTypeName());
 
-        return ApiResponse.success("성공", response);
+        return ApiResponse.success("시험 문서 관리 성공", response);
     }
 
     /**

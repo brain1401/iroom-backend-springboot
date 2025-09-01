@@ -12,7 +12,7 @@ import com.iroomclass.springbackend.domain.exam.repository.ExamRepository;
 import com.iroomclass.springbackend.domain.exam.repository.StudentAnswerSheetRepository;
 import com.iroomclass.springbackend.domain.exam.entity.ExamSubmission;
 import com.iroomclass.springbackend.domain.exam.repository.ExamSubmissionRepository;
-import com.iroomclass.springbackend.domain.user.entity.User;
+import com.iroomclass.springbackend.domain.user.entity.Student;
 import com.iroomclass.springbackend.domain.user.repository.StudentRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -53,16 +53,16 @@ public class ExamSubmissionService {
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 시험입니다: " + request.examId()));
 
         // 2단계: 중복 제출 방지
-        if (examSubmissionRepository.existsByExamIdAndUserNameAndUserPhone(
+        if (examSubmissionRepository.existsByExamIdAndStudentNameAndStudentPhone(
                 request.examId(), request.studentName(), request.studentPhone())) {
             throw new IllegalArgumentException("이미 제출한 시험입니다.");
         }
 
         // 3단계: 학생 정보 확인 및 등록
-        User user = userRepository.findByNameAndPhone(request.studentName(), request.studentPhone())
+        Student user = userRepository.findByNameAndPhone(request.studentName(), request.studentPhone())
                 .orElseGet(() -> {
                     log.info("새로운 학생 등록: 이름={}, 전화번호={}", request.studentName(), request.studentPhone());
-                    User newUser = User.builder()
+                    Student newUser = Student.builder()
                             .name(request.studentName())
                             .phone(request.studentPhone())
                             .build();
@@ -72,7 +72,7 @@ public class ExamSubmissionService {
         // 4단계: 시험 제출 생성
         ExamSubmission submission = ExamSubmission.builder()
                 .exam(exam)
-                .user(user)
+                .student(user)
                 .build();
 
         submission = examSubmissionRepository.save(submission);
@@ -84,8 +84,8 @@ public class ExamSubmissionService {
                 submission.getId(),
                 exam.getId(),
                 exam.getExamName(),
-                submission.getUser().getName(),
-                submission.getUser().getPhone(),
+                submission.getStudent().getName(),
+                submission.getStudent().getPhone(),
                 submission.getSubmittedAt(),
                 exam.getQrCodeUrl());
     }
@@ -115,14 +115,14 @@ public class ExamSubmissionService {
         submission = examSubmissionRepository.save(submission);
 
         log.info("시험 최종 제출 완료: 제출 ID={}, 학생={}, 답안 수={}",
-                submission.getId(), submission.getUser().getName(), answerCount);
+                submission.getId(), submission.getStudent().getName(), answerCount);
 
         return new ExamSubmissionCreateResponse(
                 submission.getId(),
                 submission.getExam().getId(),
                 submission.getExam().getExamName(),
-                submission.getUser().getName(),
-                submission.getUser().getPhone(),
+                submission.getStudent().getName(),
+                submission.getStudent().getPhone(),
                 submission.getSubmittedAt(),
                 submission.getExam().getQrCodeUrl());
     }

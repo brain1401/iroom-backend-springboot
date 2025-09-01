@@ -9,7 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.iroomclass.springbackend.domain.user.dto.StudentProfileResponse;
-import com.iroomclass.springbackend.domain.user.entity.User;
+import com.iroomclass.springbackend.domain.user.entity.Student;
 import com.iroomclass.springbackend.domain.user.repository.StudentRepository;
 import com.iroomclass.springbackend.domain.exam.entity.ExamSubmission;
 import com.iroomclass.springbackend.domain.exam.repository.ExamSubmissionRepository;
@@ -60,7 +60,7 @@ public class StudentService {
         log.info("학생 프로필 조회 요청: 이름={}, 전화번호={}, 생년월일={}", name, phone, birthDate);
 
         // 3-factor 인증: 이름 + 전화번호 + 생년월일
-        User user = userRepository.findByNameAndPhoneAndBirthDate(name, phone, birthDate)
+        Student user = userRepository.findByNameAndPhoneAndBirthDate(name, phone, birthDate)
                 .orElseThrow(() -> new IllegalArgumentException(
                         "이름, 전화번호, 생년월일이 일치하지 않습니다."));
 
@@ -84,14 +84,14 @@ public class StudentService {
         log.info("학생 최근 시험 3건 조회: 이름={}, 전화번호={}", studentName, studentPhone);
 
         // 1단계: 학생 존재 확인
-        long submissionCount = examSubmissionRepository.countByUserNameAndUserPhone(studentName, studentPhone);
+        long submissionCount = examSubmissionRepository.countByStudentNameAndStudentPhone(studentName, studentPhone);
         if (submissionCount == 0) {
             throw new IllegalArgumentException("존재하지 않는 학생입니다. 시험 제출 이력이 없습니다.");
         }
 
         // 2단계: 최근 3건 제출 이력 조회
         List<ExamSubmission> recentSubmissions = examSubmissionRepository
-                .findTop3ByUserNameAndUserPhoneOrderBySubmittedAtDesc(studentName, studentPhone);
+                .findTop3ByStudentNameAndStudentPhoneOrderBySubmittedAtDesc(studentName, studentPhone);
 
         // 3단계: 응답 데이터 구성
         List<RecentExamSubmissionsResponse.RecentExamInfo> recentExamInfos = recentSubmissions.stream()
@@ -117,13 +117,13 @@ public class StudentService {
         log.info("학생 시험 제출 이력 조회: 이름={}, 전화번호={}", studentName, studentPhone);
 
         // 1단계: 학생 존재 확인
-        long submissionCount = examSubmissionRepository.countByUserNameAndUserPhone(studentName, studentPhone);
+        long submissionCount = examSubmissionRepository.countByStudentNameAndStudentPhone(studentName, studentPhone);
         if (submissionCount == 0) {
             throw new IllegalArgumentException("존재하지 않는 학생입니다. 시험 제출 이력이 없습니다.");
         }
 
         // 2단계: 시험 제출 이력 조회
-        List<ExamSubmission> submissions = examSubmissionRepository.findByUserNameAndUserPhoneOrderBySubmittedAtDesc(
+        List<ExamSubmission> submissions = examSubmissionRepository.findByStudentNameAndStudentPhoneOrderBySubmittedAtDesc(
                 studentName, studentPhone);
 
         // 3단계: 응답 데이터 구성
@@ -155,8 +155,8 @@ public class StudentService {
         ExamSubmission submission = examSubmissionRepository.findById(submissionId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 시험 제출입니다: " + submissionId));
 
-        if (!submission.getUser().getName().equals(studentName) ||
-                !submission.getUser().getPhone().equals(studentPhone)) {
+        if (!submission.getStudent().getName().equals(studentName) ||
+                !submission.getStudent().getPhone().equals(studentPhone)) {
             throw new IllegalArgumentException("본인의 시험 결과만 조회할 수 있습니다.");
         }
 
@@ -192,8 +192,8 @@ public class StudentService {
                 submission.getExam().getId(),
                 submission.getExam().getExamName(),
                 submission.getExam().getGrade() + "학년",
-                submission.getUser().getName(),
-                submission.getUser().getPhone(),
+                submission.getStudent().getName(),
+                submission.getStudent().getPhone(),
                 submission.getSubmittedAt(),
                 submission.getTotalScore(),
                 answers.size(),
@@ -231,8 +231,8 @@ public class StudentService {
         ExamSubmission submission = examSubmissionRepository.findById(submissionId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 시험 제출입니다: " + submissionId));
 
-        if (!submission.getUser().getName().equals(studentName) ||
-                !submission.getUser().getPhone().equals(studentPhone)) {
+        if (!submission.getStudent().getName().equals(studentName) ||
+                !submission.getStudent().getPhone().equals(studentPhone)) {
             throw new IllegalArgumentException("본인의 시험 결과만 조회할 수 있습니다.");
         }
 

@@ -1,4 +1,4 @@
-package com.iroomclass.springbackend.domain.exam.dto.print;
+package com.iroomclass.springbackend.domain.exam.dto.exam;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 

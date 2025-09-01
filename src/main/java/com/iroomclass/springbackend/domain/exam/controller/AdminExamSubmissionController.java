@@ -69,7 +69,7 @@ public class AdminExamSubmissionController {
                     )
             ),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(
-                    responseCode = "$1",
+                    responseCode = "404",
                             description = "오류",
                             content = @Content(
                                 mediaType = "application/json",
@@ -96,7 +96,7 @@ public class AdminExamSubmissionController {
 
         log.info("관리자 - 시험별 제출 목록 조회 성공: 시험={}, 제출={}개", response.examName(), response.totalCount());
 
-        return ApiResponse.success("성공", response);
+        return ApiResponse.success("시험 제출 관리 성공", response);
     }
 
     /**
@@ -127,7 +127,7 @@ public class AdminExamSubmissionController {
                     )
             ),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(
-                    responseCode = "$1",
+                    responseCode = "404",
                             description = "오류",
                             content = @Content(
                                 mediaType = "application/json",
@@ -154,7 +154,7 @@ public class AdminExamSubmissionController {
 
         log.info("관리자 - 시험 제출 상세 조회 성공: 학생={}, 시험={}", response.studentName(), response.examName());
 
-        return ApiResponse.success("성공", response);
+        return ApiResponse.success("시험 제출 관리 성공", response);
     }
 
     /**
@@ -196,7 +196,7 @@ public class AdminExamSubmissionController {
 
         log.info("관리자 - 학생별 제출 목록 조회 성공: 학생={}, 제출={}개", studentName, response.size());
 
-        return ApiResponse.success("성공", response);
+        return ApiResponse.success("시험 제출 관리 성공", response);
     }
 
     /**
@@ -227,7 +227,7 @@ public class AdminExamSubmissionController {
                     )
             ),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(
-                    responseCode = "$1",
+                    responseCode = "404",
                             description = "오류",
                             content = @Content(
                                 mediaType = "application/json",

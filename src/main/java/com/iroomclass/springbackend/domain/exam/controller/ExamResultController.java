@@ -67,7 +67,7 @@ public class ExamResultController {
     @Operation(summary = "AI 자동 채점 시작", description = "시험 제출에 대한 AI 자동 채점을 시작합니다.", responses = {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "201", description = "AI 자동 채점 시작 성공", content = @Content(schema = @Schema(implementation = ExamResultDto.class))),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(
-                responseCode = "$1",
+                responseCode = "404",
                     description = "오류",
                     content = @Content(
                         mediaType = "application/json",
@@ -86,7 +86,7 @@ public class ExamResultController {
                 )
             ),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(
-                responseCode = "$1",
+                responseCode = "404",
                     description = "오류",
                     content = @Content(
                         mediaType = "application/json",
@@ -124,7 +124,7 @@ public class ExamResultController {
     @Operation(summary = "AI 재채점 시작", description = "기존 채점 결과에 대한 AI 재채점을 시작합니다.", responses = {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "201", description = "AI 재채점 시작 성공"),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(
-                responseCode = "$1",
+                responseCode = "404",
                     description = "오류",
                     content = @Content(
                         mediaType = "application/json",
@@ -143,7 +143,7 @@ public class ExamResultController {
                 )
             ),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(
-                responseCode = "$1",
+                responseCode = "404",
                     description = "오류",
                     content = @Content(
                         mediaType = "application/json",
@@ -210,7 +210,7 @@ public class ExamResultController {
                 )
             ),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(
-                responseCode = "$1",
+                responseCode = "404",
                     description = "오류",
                     content = @Content(
                         mediaType = "application/json",
