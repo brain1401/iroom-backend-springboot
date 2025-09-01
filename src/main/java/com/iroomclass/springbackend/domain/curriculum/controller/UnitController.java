@@ -59,12 +59,11 @@ public class UnitController {
         description = "특정 학년의 모든 단원 목록을 조회합니다. 각 단원별 문제 수와 함께 제공됩니다."
     )
     @io.swagger.v3.oas.annotations.responses.ApiResponses({
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "조회 성공"),
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(
-            responseCode = "400", 
-            description = "잘못된 요청",
-            content = @Content(
-                schema = @Schema(implementation = ApiResponse.class),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200",
+                description = "성공",
+                content = @Content(
+                    mediaType = "application/json",
+                    schema = @Schema(implementation = ApiResponse.SuccessResponse.class),
                 examples = @ExampleObject(
                     name = "잘못된 학년",
                     summary = "학년 값이 올바르지 않음",
@@ -79,10 +78,11 @@ public class UnitController {
             )
         ),
         @io.swagger.v3.oas.annotations.responses.ApiResponse(
-            responseCode = "404", 
-            description = "리소스 없음",
-            content = @Content(
-                schema = @Schema(implementation = ApiResponse.class),
+            responseCode = "$1",
+                description = "오류",
+                content = @Content(
+                    mediaType = "application/json",
+                    schema = @Schema(implementation = ApiResponse.ErrorResponse.class),
                 examples = @ExampleObject(
                     name = "단원 없음",
                     summary = "해당 학년의 단원을 찾을 수 없음",
@@ -121,12 +121,11 @@ public class UnitController {
         description = "특정 학년의 단원별 문제 수와 난이도별 분포 통계를 조회합니다."
     )
     @io.swagger.v3.oas.annotations.responses.ApiResponses({
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "조회 성공"),
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(
-            responseCode = "400", 
-            description = "잘못된 요청",
-            content = @Content(
-                schema = @Schema(implementation = ApiResponse.class),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200",
+                description = "성공",
+                content = @Content(
+                    mediaType = "application/json",
+                    schema = @Schema(implementation = ApiResponse.SuccessResponse.class),
                 examples = @ExampleObject(
                     name = "잘못된 학년",
                     summary = "학년 값이 올바르지 않음",
@@ -141,10 +140,11 @@ public class UnitController {
             )
         ),
         @io.swagger.v3.oas.annotations.responses.ApiResponse(
-            responseCode = "404", 
-            description = "리소스 없음",
-            content = @Content(
-                schema = @Schema(implementation = ApiResponse.class),
+            responseCode = "$1",
+                description = "오류",
+                content = @Content(
+                    mediaType = "application/json",
+                    schema = @Schema(implementation = ApiResponse.ErrorResponse.class),
                 examples = @ExampleObject(
                     name = "단원 없음",
                     summary = "해당 학년의 단원을 찾을 수 없음",
@@ -185,12 +185,11 @@ public class UnitController {
         description = "대분류 → 중분류 → 세부단원의 계층 구조를 조회합니다. 문제 직접 선택 시스템에서 사용됩니다."
     )
     @io.swagger.v3.oas.annotations.responses.ApiResponses({
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "조회 성공"),
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(
-            responseCode = "500", 
-            description = "서버 내부 오류",
-            content = @Content(
-                schema = @Schema(implementation = ApiResponse.class),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200",
+                description = "성공",
+                content = @Content(
+                    mediaType = "application/json",
+                    schema = @Schema(implementation = ApiResponse.SuccessResponse.class),
                 examples = @ExampleObject(
                     name = "서버 오류",
                     summary = "서버 내부 오류 발생",
@@ -238,12 +237,11 @@ public class UnitController {
             """
     )
     @io.swagger.v3.oas.annotations.responses.ApiResponses({
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "조회 성공"),
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(
-            responseCode = "400", 
-            description = "잘못된 요청",
-            content = @Content(
-                schema = @Schema(implementation = ApiResponse.class),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200",
+                description = "성공",
+                content = @Content(
+                    mediaType = "application/json",
+                    schema = @Schema(implementation = ApiResponse.SuccessResponse.class),
                 examples = @ExampleObject(
                     name = "잘못된 단원 ID",
                     summary = "단원 ID 형식이 잘못됨",
@@ -258,10 +256,11 @@ public class UnitController {
             )
         ),
         @io.swagger.v3.oas.annotations.responses.ApiResponse(
-            responseCode = "404", 
-            description = "리소스 없음",
-            content = @Content(
-                schema = @Schema(implementation = ApiResponse.class),
+            responseCode = "$1",
+                description = "오류",
+                content = @Content(
+                    mediaType = "application/json",
+                    schema = @Schema(implementation = ApiResponse.ErrorResponse.class),
                 examples = @ExampleObject(
                     name = "단원 없음",
                     summary = "단원을 찾을 수 없음",

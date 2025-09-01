@@ -58,7 +58,7 @@ public class HealthController {
                     responseCode = "500", 
                     description = "서버 내부 오류", 
                     content = @Content(
-                        schema = @Schema(implementation = ApiResponse.class),
+                        schema = @Schema(implementation = ApiResponse.ErrorResponse.class),
                         examples = @ExampleObject(
                             name = "서버 오류",
                             summary = "서버 내부 오류 발생",

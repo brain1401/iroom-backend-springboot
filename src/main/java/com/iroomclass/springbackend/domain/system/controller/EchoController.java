@@ -44,7 +44,7 @@ public class EchoController {
                     responseCode = "400", 
                     description = "잘못된 요청", 
                     content = @Content(
-                        schema = @Schema(implementation = ApiResponse.class),
+                        schema = @Schema(implementation = ApiResponse.SuccessResponse.class),
                         examples = @ExampleObject(
                             name = "입력 검증 실패",
                             summary = "입력 데이터 검증 실패",
@@ -62,7 +62,7 @@ public class EchoController {
                     responseCode = "500", 
                     description = "서버 내부 오류", 
                     content = @Content(
-                        schema = @Schema(implementation = ApiResponse.class),
+                        schema = @Schema(implementation = ApiResponse.SuccessResponse.class),
                         examples = @ExampleObject(
                             name = "서버 오류",
                             summary = "서버 내부 오류 발생",

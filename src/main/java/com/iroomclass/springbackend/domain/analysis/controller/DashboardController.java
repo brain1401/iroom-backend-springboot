@@ -44,14 +44,11 @@ public class DashboardController {
         description = "모든 학년의 통합 통계 정보를 조회합니다",
         responses = {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(
-                responseCode = "200", 
-                description = "조회 성공"
-            ),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(
-                responseCode = "500", 
-                description = "서버 내부 오류", 
-                content = @Content(
-                    schema = @Schema(implementation = ApiResponse.class),
+                responseCode = "200",
+                    description = "성공",
+                    content = @Content(
+                        mediaType = "application/json",
+                        schema = @Schema(implementation = ApiResponse.SuccessResponse.class),
                     examples = @ExampleObject(
                         name = "서버 오류",
                         summary = "서버 내부 오류 발생",
@@ -90,14 +87,11 @@ public class DashboardController {
         description = "특정 학년의 시험별 제출 현황을 조회합니다",
         responses = {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(
-                responseCode = "200", 
-                description = "조회 성공"
-            ),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(
-                responseCode = "400", 
-                description = "잘못된 요청", 
-                content = @Content(
-                    schema = @Schema(implementation = ApiResponse.class),
+                responseCode = "200",
+                    description = "성공",
+                    content = @Content(
+                        mediaType = "application/json",
+                        schema = @Schema(implementation = ApiResponse.SuccessResponse.class),
                     examples = @ExampleObject(
                         name = "잘못된 학년",
                         summary = "학년 값이 올바르지 않음",
@@ -112,10 +106,11 @@ public class DashboardController {
                 )
             ),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(
-                responseCode = "500", 
-                description = "서버 내부 오류", 
-                content = @Content(
-                    schema = @Schema(implementation = ApiResponse.class),
+                responseCode = "$1",
+                    description = "오류",
+                    content = @Content(
+                        mediaType = "application/json",
+                        schema = @Schema(implementation = ApiResponse.ErrorResponse.class),
                     examples = @ExampleObject(
                         name = "서버 오류",
                         summary = "서버 내부 오류 발생",
@@ -155,14 +150,11 @@ public class DashboardController {
         description = "특정 학년의 성적 분포도를 조회합니다",
         responses = {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(
-                responseCode = "200", 
-                description = "조회 성공"
-            ),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(
-                responseCode = "400", 
-                description = "잘못된 요청", 
-                content = @Content(
-                    schema = @Schema(implementation = ApiResponse.class),
+                responseCode = "200",
+                    description = "성공",
+                    content = @Content(
+                        mediaType = "application/json",
+                        schema = @Schema(implementation = ApiResponse.SuccessResponse.class),
                     examples = @ExampleObject(
                         name = "잘못된 학년",
                         summary = "학년 값이 올바르지 않음",
@@ -177,10 +169,11 @@ public class DashboardController {
                 )
             ),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(
-                responseCode = "500", 
-                description = "서버 내부 오류", 
-                content = @Content(
-                    schema = @Schema(implementation = ApiResponse.class),
+                responseCode = "$1",
+                    description = "오류",
+                    content = @Content(
+                        mediaType = "application/json",
+                        schema = @Schema(implementation = ApiResponse.ErrorResponse.class),
                     examples = @ExampleObject(
                         name = "서버 오류",
                         summary = "서버 내부 오류 발생",

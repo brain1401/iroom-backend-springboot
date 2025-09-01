@@ -52,12 +52,11 @@ public class ExamSubmissionController {
     @PostMapping
     @Operation(summary = "시험 제출 생성", description = "학생이 시험을 제출할 때 사용됩니다. 중복 제출은 방지됩니다.")
     @io.swagger.v3.oas.annotations.responses.ApiResponses({
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "제출 성공"),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(
-                responseCode = "400", 
-                description = "잘못된 요청", 
-                content = @Content(
-                    schema = @Schema(implementation = ApiResponse.class),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200",
+                    description = "성공",
+                    content = @Content(
+                        mediaType = "application/json",
+                        schema = @Schema(implementation = ApiResponse.SuccessResponse.class),
                     examples = {
                         @ExampleObject(
                             name = "입력 검증 실패",
@@ -85,10 +84,11 @@ public class ExamSubmissionController {
                 )
             ),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(
-                responseCode = "404", 
-                description = "리소스 없음", 
-                content = @Content(
-                    schema = @Schema(implementation = ApiResponse.class),
+                responseCode = "$1",
+                    description = "오류",
+                    content = @Content(
+                        mediaType = "application/json",
+                        schema = @Schema(implementation = ApiResponse.ErrorResponse.class),
                     examples = @ExampleObject(
                         name = "시험 없음",
                         summary = "시험을 찾을 수 없음",
@@ -125,12 +125,11 @@ public class ExamSubmissionController {
     @PostMapping("/{submissionId}/final-submit")
     @Operation(summary = "시험 최종 제출", description = "모든 답안이 완료된 후 시험을 최종 제출합니다.")
     @io.swagger.v3.oas.annotations.responses.ApiResponses({
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "최종 제출 성공"),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(
-                responseCode = "400", 
-                description = "잘못된 요청", 
-                content = @Content(
-                    schema = @Schema(implementation = ApiResponse.class),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200",
+                    description = "성공",
+                    content = @Content(
+                        mediaType = "application/json",
+                        schema = @Schema(implementation = ApiResponse.SuccessResponse.class),
                     examples = @ExampleObject(
                         name = "답안 미완료",
                         summary = "답안이 완료되지 않음",
@@ -145,10 +144,11 @@ public class ExamSubmissionController {
                 )
             ),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(
-                responseCode = "404", 
-                description = "리소스 없음", 
-                content = @Content(
-                    schema = @Schema(implementation = ApiResponse.class),
+                responseCode = "$1",
+                    description = "오류",
+                    content = @Content(
+                        mediaType = "application/json",
+                        schema = @Schema(implementation = ApiResponse.ErrorResponse.class),
                     examples = @ExampleObject(
                         name = "시험 제출 없음",
                         summary = "시험 제출을 찾을 수 없음",

@@ -35,8 +35,9 @@ public class OpenApiConfig {
         return new OpenAPI()
                 .info(apiInfo())
                 .servers(List.of(
-                        new Server().url("http://localhost:3055/api").description("개발 서버"),
-                        new Server().url("https://api.example.com/api").description("운영 서버")))
+                        new Server().url("http://localhost:3055/api").description("로컬 개발 서버"),
+                        new Server().url("https://dev-api.iroomclass.com/api").description("개발 서버"),
+                        new Server().url("https://api.iroomclass.com/api").description("운영 서버")))
                 .components(new Components()
                         .addSecuritySchemes("bearerAuth",
                                 new SecurityScheme()
@@ -100,8 +101,19 @@ public class OpenApiConfig {
      */
     private Info apiInfo() {
         return new Info()
-                .title("Spring Backend API")
-                .description("Spring Boot 3.x 기반 백엔드 API 문서")
+                .title("이룸클래스 관리 시스템 API")
+                .description("""
+                    이룸클래스 학원 관리 시스템의 백엔드 API입니다.
+                    
+                    주요 기능:
+                    - 학생/교사 사용자 관리
+                    - 시험지 생성 및 관리  
+                    - AI 기반 답안지 인식 및 자동 채점
+                    - 성적 분석 및 통계
+                    - 학습 단원 관리
+                    
+                    기술 스택: Spring Boot 3.5.4, Java 21, MySQL, Redis, AWS S3
+                    """)
                 .version("v1.0.0")
                 .contact(new Contact()
                         .name("개발팀")

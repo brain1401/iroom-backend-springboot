@@ -27,12 +27,11 @@ public class StatisticsController {
     @GetMapping("/grade/{grade}")
     @Operation(summary = "학년별 통계 조회", description = "해당 학년의 최근 시험 평균 점수와 오답률 높은 세부 단원 통계를 조회합니다.")
     @io.swagger.v3.oas.annotations.responses.ApiResponses({
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "통계 조회 성공", content = @Content(schema = @Schema(implementation = GradeStatisticsResponse.class))),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(
-                responseCode = "400", 
-                description = "잘못된 요청",
-                content = @Content(
-                    schema = @Schema(implementation = ApiResponse.class),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200",
+                    description = "성공",
+                    content = @Content(
+                        mediaType = "application/json",
+                        schema = @Schema(implementation = ApiResponse.SuccessResponse.class),
                     examples = @ExampleObject(
                         name = "잘못된 학년 값",
                         summary = "학년 값이 올바르지 않음",
@@ -47,10 +46,11 @@ public class StatisticsController {
                 )
             ),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(
-                responseCode = "404", 
-                description = "리소스 없음",
-                content = @Content(
-                    schema = @Schema(implementation = ApiResponse.class),
+                responseCode = "$1",
+                    description = "오류",
+                    content = @Content(
+                        mediaType = "application/json",
+                        schema = @Schema(implementation = ApiResponse.ErrorResponse.class),
                     examples = @ExampleObject(
                         name = "데이터 없음",
                         summary = "해당 학년의 데이터가 없음",

@@ -50,12 +50,11 @@ public class AdminExamSubmissionController {
     @GetMapping("/exam/{examId}")
     @Operation(summary = "시험별 제출 목록 조회", description = "특정 시험의 모든 학생 제출 현황을 조회합니다.")
     @io.swagger.v3.oas.annotations.responses.ApiResponses({
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "조회 성공"),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(
-                    responseCode = "400", 
-                    description = "잘못된 시험 ID", 
-                    content = @Content(
-                            schema = @Schema(implementation = ApiResponse.class),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200",
+                            description = "성공",
+                            content = @Content(
+                                mediaType = "application/json",
+                                schema = @Schema(implementation = ApiResponse.SuccessResponse.class),
                             examples = @ExampleObject(
                                     name = "입력 검증 실패",
                                     summary = "잘못된 UUID 형식",
@@ -70,10 +69,11 @@ public class AdminExamSubmissionController {
                     )
             ),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(
-                    responseCode = "404", 
-                    description = "존재하지 않는 시험", 
-                    content = @Content(
-                            schema = @Schema(implementation = ApiResponse.class),
+                    responseCode = "$1",
+                            description = "오류",
+                            content = @Content(
+                                mediaType = "application/json",
+                                schema = @Schema(implementation = ApiResponse.ErrorResponse.class),
                             examples = @ExampleObject(
                                     name = "시험 없음",
                                     summary = "해당 ID의 시험이 존재하지 않음",
@@ -108,12 +108,11 @@ public class AdminExamSubmissionController {
     @GetMapping("/{submissionId}")
     @Operation(summary = "시험 제출 상세 조회", description = "특정 시험 제출의 상세 정보를 조회합니다.")
     @io.swagger.v3.oas.annotations.responses.ApiResponses({
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "조회 성공"),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(
-                    responseCode = "400", 
-                    description = "잘못된 제출 ID", 
-                    content = @Content(
-                            schema = @Schema(implementation = ApiResponse.class),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200",
+                            description = "성공",
+                            content = @Content(
+                                mediaType = "application/json",
+                                schema = @Schema(implementation = ApiResponse.SuccessResponse.class),
                             examples = @ExampleObject(
                                     name = "입력 검증 실패",
                                     summary = "잘못된 UUID 형식",
@@ -128,10 +127,11 @@ public class AdminExamSubmissionController {
                     )
             ),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(
-                    responseCode = "404", 
-                    description = "존재하지 않는 시험 제출", 
-                    content = @Content(
-                            schema = @Schema(implementation = ApiResponse.class),
+                    responseCode = "$1",
+                            description = "오류",
+                            content = @Content(
+                                mediaType = "application/json",
+                                schema = @Schema(implementation = ApiResponse.ErrorResponse.class),
                             examples = @ExampleObject(
                                     name = "시험 제출 없음",
                                     summary = "해당 ID의 시험 제출이 존재하지 않음",
@@ -167,12 +167,11 @@ public class AdminExamSubmissionController {
     @GetMapping("/student")
     @Operation(summary = "학생별 제출 목록 조회", description = "특정 학생의 모든 시험 제출 이력을 조회합니다.")
     @io.swagger.v3.oas.annotations.responses.ApiResponses({
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "조회 성공"),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(
-                    responseCode = "400", 
-                    description = "잘못된 입력값", 
-                    content = @Content(
-                            schema = @Schema(implementation = ApiResponse.class),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200",
+                            description = "성공",
+                            content = @Content(
+                                mediaType = "application/json",
+                                schema = @Schema(implementation = ApiResponse.SuccessResponse.class),
                             examples = @ExampleObject(
                                     name = "입력 검증 실패",
                                     summary = "학생 이름 또는 전화번호가 누락되거나 형식이 잘못됨",
@@ -209,12 +208,11 @@ public class AdminExamSubmissionController {
     @GetMapping("/exam/{examId}/count")
     @Operation(summary = "시험별 제출 학생 수 조회", description = "특정 시험에 제출한 학생 수를 조회합니다.")
     @io.swagger.v3.oas.annotations.responses.ApiResponses({
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "조회 성공"),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(
-                    responseCode = "400", 
-                    description = "잘못된 시험 ID", 
-                    content = @Content(
-                            schema = @Schema(implementation = ApiResponse.class),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200",
+                            description = "성공",
+                            content = @Content(
+                                mediaType = "application/json",
+                                schema = @Schema(implementation = ApiResponse.SuccessResponse.class),
                             examples = @ExampleObject(
                                     name = "입력 검증 실패",
                                     summary = "잘못된 UUID 형식",
@@ -229,10 +227,11 @@ public class AdminExamSubmissionController {
                     )
             ),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(
-                    responseCode = "404", 
-                    description = "존재하지 않는 시험", 
-                    content = @Content(
-                            schema = @Schema(implementation = ApiResponse.class),
+                    responseCode = "$1",
+                            description = "오류",
+                            content = @Content(
+                                mediaType = "application/json",
+                                schema = @Schema(implementation = ApiResponse.ErrorResponse.class),
                             examples = @ExampleObject(
                                     name = "시험 없음",
                                     summary = "해당 ID의 시험이 존재하지 않음",

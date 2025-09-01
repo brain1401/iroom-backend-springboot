@@ -57,120 +57,11 @@ public class StudentController {
     @Operation(summary = "학생 마이페이지 조회", description = "학생의 기본 정보를 조회합니다. 3-factor 인증 사용.")
     @io.swagger.v3.oas.annotations.responses.ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(
-                responseCode = "200", 
-                description = "조회 성공",
-                content = @Content(
-                    schema = @Schema(implementation = ApiResponse.SuccessResponse.class),
-                    examples = @ExampleObject(
-                        name = "학생 정보 조회 성공",
-                        summary = "학생 기본 정보 조회 성공",
-                        value = """
-                        {
-                          "result": "SUCCESS",
-                          "message": "프로필 조회 성공",
-                          "data": {
-                            "name": "김철수",
-                            "grade": "3학년",
-                            "phone": "010-1234-5678",
-                            "birthDate": "2008-03-15"
-                          }
-                        }
-                        """
-                    )
-                )
-            ),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(
-                responseCode = "400", 
-                description = "잘못된 요청",
-                content = @Content(
-                    schema = @Schema(implementation = ApiResponse.ErrorResponse.class),
-                    examples = @ExampleObject(
-                        name = "입력 검증 실패",
-                        summary = "입력 데이터 검증 실패",
-                        value = """
-                        {
-                          "result": "ERROR",
-                          "message": "입력 데이터 검증에 실패했습니다",
-                          "data": null
-                        }
-                        """
-                    )
-                )
-            ),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(
-                responseCode = "404", 
-                description = "리소스 없음",
-                content = @Content(
-                    schema = @Schema(implementation = ApiResponse.ErrorResponse.class),
-                    examples = @ExampleObject(
-                        name = "학생 없음",
-                        summary = "학생을 찾을 수 없음",
-                        value = """
-                        {
-                          "result": "ERROR",
-                          "message": "학생을 찾을 수 없습니다",
-                          "data": null
-                        }
-                        """
-                    )
-                )
-            )
-    })
-    public ApiResponse<StudentProfileResponse> getProfile(
-            @Parameter(description = "학생 이름", example = "김철수") @RequestParam String name,
-            @Parameter(description = "학생 전화번호", example = "010-1234-5678") @RequestParam String phone,
-            @Parameter(description = "학생 생년월일", example = "2008-03-15") @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate birthDate) {
-        log.info("학생 마이페이지 조회 요청: 이름={}, 전화번호={}, 생년월일={}", name, phone, birthDate);
-
-        StudentProfileResponse response = studentService.getProfile(name, phone, birthDate);
-
-        log.info("학생 마이페이지 조회 성공: 이름={}, 학년={}", response.name(), response.grade());
-
-        return ApiResponse.success("프로필 조회 성공", response);
-    }
-
-    /**
-     * 학생 메인화면 - 최근 시험 3건 조회
-     * 
-     * @param studentName  학생 이름
-     * @param studentPhone 학생 전화번호
-     * @return 최근 시험 3건 목록
-     */
-    @GetMapping("/recent-submissions")
-    @Operation(summary = "학생 메인화면 - 최근 시험 3건 조회", description = "학생 메인화면에서 최근 제출한 시험 3건을 조회합니다.")
-    @io.swagger.v3.oas.annotations.responses.ApiResponses({
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(
-                responseCode = "200", 
-                description = "조회 성공",
-                content = @Content(
-                    schema = @Schema(implementation = ApiResponse.SuccessResponse.class),
-                    examples = @ExampleObject(
-                        name = "최근 시험 조회 성공",
-                        summary = "최근 3건 시험 조회 성공",
-                        value = """
-                        {
-                          "result": "SUCCESS",
-                          "message": "최근 시험 이력 조회 성공",
-                          "data": {
-                            "studentName": "김철수",
-                            "recentExams": [
-                              {
-                                "examTitle": "수학 중간고사",
-                                "submittedAt": "2024-08-30T10:00:00",
-                                "score": 85
-                              }
-                            ]
-                          }
-                        }
-                        """
-                    )
-                )
-            ),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(
-                    responseCode = "400", 
-                    description = "잘못된 입력값", 
-                    content = @Content(
-                            schema = @Schema(implementation = ApiResponse.class),
+                responseCode = "200",
+                            description = "성공",
+                            content = @Content(
+                                mediaType = "application/json",
+                                schema = @Schema(implementation = ApiResponse.SuccessResponse.class),
                             examples = @ExampleObject(
                                     name = "필수 파라미터 누락",
                                     summary = "필수 파라미터 누락",
@@ -185,10 +76,11 @@ public class StudentController {
                     )
             ),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(
-                    responseCode = "404", 
-                    description = "존재하지 않는 학생", 
-                    content = @Content(
-                            schema = @Schema(implementation = ApiResponse.class),
+                    responseCode = "$1",
+                            description = "오류",
+                            content = @Content(
+                                mediaType = "application/json",
+                                schema = @Schema(implementation = ApiResponse.ErrorResponse.class),
                             examples = @ExampleObject(
                                     name = "학생 없음",
                                     summary = "존재하지 않는 학생",
@@ -227,38 +119,11 @@ public class StudentController {
     @Operation(summary = "학생별 시험 제출 이력 조회", description = "학생의 모든 시험 제출 이력을 조회합니다.")
     @io.swagger.v3.oas.annotations.responses.ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(
-                responseCode = "200", 
-                description = "조회 성공",
-                content = @Content(
-                    schema = @Schema(implementation = ApiResponse.SuccessResponse.class),
-                    examples = @ExampleObject(
-                        name = "제출 이력 조회 성공",
-                        summary = "학생 시험 제출 이력 조회 성공",
-                        value = """
-                        {
-                          "result": "SUCCESS",
-                          "message": "성공",
-                          "data": {
-                            "studentName": "김철수",
-                            "submissions": [
-                              {
-                                "submissionId": "123e4567-e89b-12d3-a456-426614174000",
-                                "examTitle": "수학 중간고사",
-                                "submittedAt": "2024-08-30T10:00:00",
-                                "totalScore": 85
-                              }
-                            ]
-                          }
-                        }
-                        """
-                    )
-                )
-            ),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(
-                    responseCode = "400", 
-                    description = "잘못된 입력값", 
-                    content = @Content(
-                            schema = @Schema(implementation = ApiResponse.class),
+                responseCode = "200",
+                            description = "성공",
+                            content = @Content(
+                                mediaType = "application/json",
+                                schema = @Schema(implementation = ApiResponse.SuccessResponse.class),
                             examples = @ExampleObject(
                                     name = "필수 파라미터 누락",
                                     summary = "필수 파라미터 누락",
@@ -273,10 +138,11 @@ public class StudentController {
                     )
             ),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(
-                    responseCode = "404", 
-                    description = "존재하지 않는 학생", 
-                    content = @Content(
-                            schema = @Schema(implementation = ApiResponse.class),
+                    responseCode = "$1",
+                            description = "오류",
+                            content = @Content(
+                                mediaType = "application/json",
+                                schema = @Schema(implementation = ApiResponse.ErrorResponse.class),
                             examples = @ExampleObject(
                                     name = "학생 없음",
                                     summary = "존재하지 않는 학생",
@@ -316,40 +182,11 @@ public class StudentController {
     @Operation(summary = "시험별 상세 결과 조회", description = "특정 시험의 상세 결과를 조회합니다.")
     @io.swagger.v3.oas.annotations.responses.ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(
-                responseCode = "200", 
-                description = "조회 성공",
-                content = @Content(
-                    schema = @Schema(implementation = ApiResponse.SuccessResponse.class),
-                    examples = @ExampleObject(
-                        name = "시험 결과 조회 성공",
-                        summary = "시험 상세 결과 조회 성공",
-                        value = """
-                        {
-                          "result": "SUCCESS",
-                          "message": "성공",
-                          "data": {
-                            "studentName": "김철수",
-                            "examTitle": "수학 중간고사",
-                            "totalScore": 85,
-                            "submittedAt": "2024-08-30T10:00:00",
-                            "questionResults": [
-                              {
-                                "questionId": "123e4567-e89b-12d3-a456-426614174001",
-                                "isCorrect": true,
-                                "score": 5
-                              }
-                            ]
-                          }
-                        }
-                        """
-                    )
-                )
-            ),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(
-                    responseCode = "400", 
-                    description = "잘못된 입력값", 
-                    content = @Content(
-                            schema = @Schema(implementation = ApiResponse.class),
+                responseCode = "200",
+                            description = "성공",
+                            content = @Content(
+                                mediaType = "application/json",
+                                schema = @Schema(implementation = ApiResponse.SuccessResponse.class),
                             examples = @ExampleObject(
                                     name = "파라미터 타입 오류",
                                     summary = "잘못된 UUID 형식",
@@ -364,10 +201,11 @@ public class StudentController {
                     )
             ),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(
-                    responseCode = "404", 
-                    description = "존재하지 않는 제출 또는 학생", 
-                    content = @Content(
-                            schema = @Schema(implementation = ApiResponse.class),
+                    responseCode = "$1",
+                            description = "오류",
+                            content = @Content(
+                                mediaType = "application/json",
+                                schema = @Schema(implementation = ApiResponse.ErrorResponse.class),
                             examples = @ExampleObject(
                                     name = "제출 결과 없음",
                                     summary = "시험 제출 결과를 찾을 수 없음",
@@ -410,36 +248,11 @@ public class StudentController {
     @Operation(summary = "문제별 정답/오답, 점수, 단원, 난이도 조회", description = "특정 문제의 정답/오답, 점수, 단원, 난이도 정보를 조회합니다.")
     @io.swagger.v3.oas.annotations.responses.ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(
-                responseCode = "200", 
-                description = "조회 성공",
-                content = @Content(
-                    schema = @Schema(implementation = ApiResponse.SuccessResponse.class),
-                    examples = @ExampleObject(
-                        name = "문제 결과 조회 성공",
-                        summary = "문제별 상세 결과 조회 성공",
-                        value = """
-                        {
-                          "result": "SUCCESS",
-                          "message": "성공",
-                          "data": {
-                            "questionId": "123e4567-e89b-12d3-a456-426614174001",
-                            "isCorrect": true,
-                            "score": 5,
-                            "unit": "미적분",
-                            "difficulty": "MEDIUM",
-                            "studentAnswer": "A",
-                            "correctAnswer": "A"
-                          }
-                        }
-                        """
-                    )
-                )
-            ),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(
-                    responseCode = "400", 
-                    description = "잘못된 입력값", 
-                    content = @Content(
-                            schema = @Schema(implementation = ApiResponse.class),
+                responseCode = "200",
+                            description = "성공",
+                            content = @Content(
+                                mediaType = "application/json",
+                                schema = @Schema(implementation = ApiResponse.SuccessResponse.class),
                             examples = @ExampleObject(
                                     name = "파라미터 타입 오류",
                                     summary = "잘못된 UUID 형식",
@@ -454,10 +267,11 @@ public class StudentController {
                     )
             ),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(
-                    responseCode = "404", 
-                    description = "존재하지 않는 제출, 문제 또는 학생", 
-                    content = @Content(
-                            schema = @Schema(implementation = ApiResponse.class),
+                    responseCode = "$1",
+                            description = "오류",
+                            content = @Content(
+                                mediaType = "application/json",
+                                schema = @Schema(implementation = ApiResponse.ErrorResponse.class),
                             examples = @ExampleObject(
                                     name = "문제 결과 없음",
                                     summary = "문제 결과를 찾을 수 없음",

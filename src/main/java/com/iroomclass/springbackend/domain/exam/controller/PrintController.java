@@ -16,10 +16,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import com.iroomclass.springbackend.common.ApiResponse;
 import com.iroomclass.springbackend.common.ResultStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import jakarta.validation.Valid;
 
 @Slf4j
 @RestController
@@ -33,84 +30,7 @@ public class PrintController {
     @GetMapping("/exam/{examSheetId}/documents")
     @Operation(summary = "인쇄 가능한 문서 목록 조회", description = "해당 시험지의 인쇄 가능한 문서 목록을 조회합니다.")
     @io.swagger.v3.oas.annotations.responses.ApiResponses({
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "✅ 문서 목록 조회 성공", content = @Content(schema = @Schema(implementation = PrintableDocumentResponse.class))),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "❌ 리소스 없음 - 존재하지 않는 시험지")
-    })
-    public ApiResponse<PrintableDocumentResponse> getPrintableDocuments(
-            @Parameter(description = "시험지 ID", example = "123e4567-e89b-12d3-a456-426614174000") @PathVariable UUID examSheetId) {
-
-        log.info("인쇄 가능한 문서 목록 조회 요청: examSheetId={}", examSheetId);
-
-        PrintableDocumentResponse response = printService.getPrintableDocuments(examSheetId);
-        log.info("인쇄 가능한 문서 목록 조회 성공: examSheetId={}, documentCount={}",
-                examSheetId, response.documents().size());
-
-        return ApiResponse.success("인쇄 가능한 문서 목록 조회 성공", response);
-    }
-
-    @PostMapping("/exam/print")
-    @Operation(summary = "문서 인쇄 요청", description = "선택된 문서들을 PDF로 생성하여 인쇄합니다.")
-    @io.swagger.v3.oas.annotations.responses.ApiResponses({
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "✅ 인쇄 요청 성공 - PDF 생성 완료", content = @Content(schema = @Schema(implementation = PrintResponse.class))),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "❌ 잘못된 요청 - 문서 타입이 올바르지 않거나 필수 파라미터 누락"),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "❌ 리소스 없음 - 존재하지 않는 시험이거나 시험에 포함된 문제가 없음")
-    })
-    public ApiResponse<PrintResponse> printDocuments(
-            @Valid @RequestBody PrintRequest request) {
-
-        log.info("문서 인쇄 요청: examSheetId={}, documentTypes={}",
-                request.examSheetId(), request.documentTypes());
-
-        PrintResponse response = printService.processPrintRequest(request);
-        log.info("문서 인쇄 요청 성공: examSheetId={}, printJobId={}, fileName={}",
-                request.examSheetId(), response.printJobId(), response.fileName());
-
-        return ApiResponse.success("문서 인쇄 요청 성공", response);
-    }
-
-    @GetMapping("/download/{printJobId}")
-    @Operation(summary = "PDF 다운로드", description = "S3 프리사인드 URL을 통해 생성된 PDF 파일을 다운로드합니다.")
-    @io.swagger.v3.oas.annotations.responses.ApiResponses({
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "302", description = "✅ PDF 다운로드 리디렉션 성공 - S3 프리사인드 URL로 리디렉션"),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "❌ 리소스 없음 - 존재하지 않는 인쇄 작업 또는 PDF 파일"),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "❌ 서버 오류 - S3 프리사인드 URL 생성 실패")
-    })
-    public ResponseEntity<Void> downloadPdf(
-            @Parameter(description = "인쇄 작업 ID", example = "print_123456") @PathVariable String printJobId) {
-
-        log.info("PDF 다운로드 요청 (S3 프리사인드 URL): printJobId={}", printJobId);
-
-        try {
-            // PDF 파일 존재 여부 먼저 확인
-            boolean pdfExists = printService.getPdfFile(printJobId);
-            if (!pdfExists) {
-                log.warn("PDF 파일을 S3에서 찾을 수 없습니다: printJobId={}", printJobId);
-                return ResponseEntity.notFound().build();
-            }
-
-            // S3 프리사인드 다운로드 URL 생성
-            String presignedUrl = printService.generatePresignedDownloadUrl(printJobId);
-            
-            log.info("PDF 다운로드 리디렉션 성공: printJobId={}, presignedUrl={}", printJobId, presignedUrl);
-
-            // S3 프리사인드 URL로 리디렉션 (302 Found)
-            return ResponseEntity.status(302)
-                    .header("Location", presignedUrl)
-                    .header("Cache-Control", "no-cache, no-store, must-revalidate")
-                    .header("Pragma", "no-cache")
-                    .header("Expires", "0")
-                    .build();
-
-        } catch (RuntimeException e) {
-            log.error("PDF 다운로드 중 오류 발생: printJobId={}, error={}", printJobId, e.getMessage(), e);
-            return ResponseEntity.internalServerError().build();
-        }
-    }
-
-    @GetMapping("/download-url/{printJobId}")
-    @Operation(summary = "PDF 다운로드 URL 조회", description = "S3 프리사인드 다운로드 URL을 JSON 형태로 반환합니다.")
-    @io.swagger.v3.oas.annotations.responses.ApiResponses({
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "✅ 다운로드 URL 조회 성공", content = @Content(schema = @Schema(implementation = ApiResponse.class))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "✅ 다운로드 URL 조회 성공", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiResponse.SuccessResponse.class))),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "❌ 리소스 없음 - 존재하지 않는 인쇄 작업 또는 PDF 파일"),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "❌ 서버 오류 - S3 프리사인드 URL 생성 실패")
     })
@@ -129,7 +49,7 @@ public class PrintController {
 
             // S3 프리사인드 다운로드 URL 생성
             String presignedUrl = printService.generatePresignedDownloadUrl(printJobId);
-            
+
             log.info("PDF 다운로드 URL 조회 성공: printJobId={}", printJobId);
 
             return ApiResponse.success("다운로드 URL 조회 성공", presignedUrl);
