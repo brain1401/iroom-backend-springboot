@@ -105,4 +105,24 @@ public interface UserRepository extends JpaRepository<User, UUID> {
      * @return 사용자 Optional
      */
     Optional<User> findByNameAndPhoneAndBirthDate(String name, String phone, LocalDate birthDate);
+    
+    /**
+     * 이름, 전화번호, 생년월일, 역할로 사용자 조회
+     * 학생 3-factor 인증 시 역할까지 확인하여 정확한 매칭
+     * 
+     * @param name 사용자 이름
+     * @param phone 전화번호
+     * @param birthDate 생년월일
+     * @param role 사용자 역할
+     * @return 사용자 Optional
+     */
+    Optional<User> findByNameAndPhoneAndBirthDateAndRole(String name, String phone, LocalDate birthDate, UserRole role);
+    
+    /**
+     * 역할별 사용자 수 조회
+     * 
+     * @param role 사용자 역할
+     * @return 해당 역할의 사용자 수
+     */
+    long countByRole(UserRole role);
 }

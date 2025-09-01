@@ -20,8 +20,16 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 /**
  * Spring Security 설정
  * 
- * <p>JWT 기반 인증을 사용하는 API 서버의 보안 설정입니다.
- * 관리자 전용 엔드포인트는 ADMIN 권한을 요구하고, 나머지는 인증만 확인합니다.</p>
+ * <p>JWT 기반 인증을 사용하는 멀티 도메인 API 서버의 보안 설정입니다.
+ * 통합 인증 시스템을 통해 학생과 관리자를 모두 지원합니다:</p>
+ * 
+ * <ul>
+ *   <li><strong>student.iroomclass.com</strong>: 학생 3-factor 인증 지원</li>
+ *   <li><strong>teacher.iroomclass.com</strong>: 관리자 기본 인증 지원</li>
+ * </ul>
+ * 
+ * <p>도메인별 라우팅은 애플리케이션 레벨에서 처리하며, 
+ * Spring Security는 JWT 토큰 기반 인증/인가만 담당합니다.</p>
  * 
  * @author 이룸클래스
  * @since 2025
@@ -79,7 +87,7 @@ public class SecurityConfig {
                         // 시스템 헬스체크는 공개 허용 (모니터링용)
                         .requestMatchers("/api/system/health", "/system/health").permitAll()
                         
-                        // 인증 API는 공개 허용
+                        // 통합 인증 API는 공개 허용 (학생/관리자 모든 도메인)
                         .requestMatchers("/api/auth/**", "/auth/**").permitAll()
                         
                         // 단원 및 문제 조회는 공개 허용 (학습용)
