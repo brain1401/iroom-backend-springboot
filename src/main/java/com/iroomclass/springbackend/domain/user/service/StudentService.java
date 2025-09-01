@@ -9,8 +9,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.iroomclass.springbackend.domain.user.dto.StudentProfileResponse;
-import com.iroomclass.springbackend.domain.user.entity.Student;
-import com.iroomclass.springbackend.domain.user.repository.StudentRepository;
+import com.iroomclass.springbackend.domain.user.entity.User;
+import com.iroomclass.springbackend.domain.user.repository.UserRepository;
 import com.iroomclass.springbackend.domain.exam.entity.ExamSubmission;
 import com.iroomclass.springbackend.domain.exam.repository.ExamSubmissionRepository;
 import com.iroomclass.springbackend.domain.exam.entity.StudentAnswerSheet;
@@ -45,7 +45,7 @@ public class StudentService {
     private final StudentAnswerSheetRepository studentAnswerSheetRepository;
     private final QuestionRepository questionRepository;
     private final ExamSheetQuestionRepository examSheetQuestionRepository;
-    private final StudentRepository userRepository;
+    private final UserRepository userRepository;
 
     /**
      * 학생 프로필 조회 (3-factor 인증)
@@ -60,7 +60,7 @@ public class StudentService {
         log.info("학생 프로필 조회 요청: 이름={}, 전화번호={}, 생년월일={}", name, phone, birthDate);
 
         // 3-factor 인증: 이름 + 전화번호 + 생년월일
-        Student user = userRepository.findByNameAndPhoneAndBirthDate(name, phone, birthDate)
+        User user = userRepository.findByNameAndPhoneAndBirthDate(name, phone, birthDate)
                 .orElseThrow(() -> new IllegalArgumentException(
                         "이름, 전화번호, 생년월일이 일치하지 않습니다."));
 
@@ -84,14 +84,14 @@ public class StudentService {
         log.info("학생 최근 시험 3건 조회: 이름={}, 전화번호={}", studentName, studentPhone);
 
         // 1단계: 학생 존재 확인
-        long submissionCount = examSubmissionRepository.countByStudentNameAndStudentPhone(studentName, studentPhone);
+        long submissionCount = examSubmissionRepository.countByUserNameAndUserPhone(studentName, studentPhone);
         if (submissionCount == 0) {
             throw new IllegalArgumentException("존재하지 않는 학생입니다. 시험 제출 이력이 없습니다.");
         }
 
         // 2단계: 최근 3건 제출 이력 조회
         List<ExamSubmission> recentSubmissions = examSubmissionRepository
-                .findTop3ByStudentNameAndStudentPhoneOrderBySubmittedAtDesc(studentName, studentPhone);
+                .findTop3ByUserNameAndUserPhoneOrderBySubmittedAtDesc(studentName, studentPhone);
 
         // 3단계: 응답 데이터 구성
         List<RecentExamSubmissionsResponse.RecentExamInfo> recentExamInfos = recentSubmissions.stream()
@@ -117,13 +117,13 @@ public class StudentService {
         log.info("학생 시험 제출 이력 조회: 이름={}, 전화번호={}", studentName, studentPhone);
 
         // 1단계: 학생 존재 확인
-        long submissionCount = examSubmissionRepository.countByStudentNameAndStudentPhone(studentName, studentPhone);
+        long submissionCount = examSubmissionRepository.countByUserNameAndUserPhone(studentName, studentPhone);
         if (submissionCount == 0) {
             throw new IllegalArgumentException("존재하지 않는 학생입니다. 시험 제출 이력이 없습니다.");
         }
 
         // 2단계: 시험 제출 이력 조회
-        List<ExamSubmission> submissions = examSubmissionRepository.findByStudentNameAndStudentPhoneOrderBySubmittedAtDesc(
+        List<ExamSubmission> submissions = examSubmissionRepository.findByUserNameAndUserPhoneOrderBySubmittedAtDesc(
                 studentName, studentPhone);
 
         // 3단계: 응답 데이터 구성

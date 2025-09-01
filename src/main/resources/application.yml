@@ -25,14 +25,14 @@ spring:
   # JPA 설정
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: validate # validate로 고정. 다른걸로 바꾸지 말 것.
     properties:
       hibernate:
         dialect: org.hibernate.dialect.MySQLDialect
         "[format_sql]": true
         "[use_sql_comments]": true
+
     open-in-view: false
-    generate-ddl: false
 
   # Redis 설정 (캐싱용)
   data:

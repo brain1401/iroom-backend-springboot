@@ -1,5 +1,6 @@
 package com.iroomclass.springbackend.config;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -11,6 +12,7 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -18,12 +20,18 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 /**
  * Spring Security 설정
  * 
- * URL 레벨 보안만 사용하여 단순하고 명확한 보안 정책 적용.
- * @PreAuthorize 등 메서드 레벨 보안은 제거하여 코드 복잡성 감소.
+ * <p>JWT 기반 인증을 사용하는 API 서버의 보안 설정입니다.
+ * 관리자 전용 엔드포인트는 ADMIN 권한을 요구하고, 나머지는 인증만 확인합니다.</p>
+ * 
+ * @author 이룸클래스
+ * @since 2025
  */
 @Configuration
 @EnableWebSecurity
+@RequiredArgsConstructor
 public class SecurityConfig {
+    
+    private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
     /**
      * HTTP 보안 설정
@@ -35,18 +43,18 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-                // CSRF 비활성화 (API 서버용)
+                // CSRF 비활성화 (JWT 사용 시 불필요)
                 .csrf(AbstractHttpConfigurer::disable)
 
                 // CORS 활성화
                 .cors(Customizer.withDefaults())
 
-                // 세션 정책: STATELESS (JWT 사용 시)
+                // 세션 정책: STATELESS (JWT 토큰 사용)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
                 // URL별 접근 권한 설정
                 .authorizeHttpRequests(auth -> auth
-                        // CORS preflight 사전요청 허용
+                        // CORS preflight 요청 허용
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         
                         // Swagger UI 관련 경로 허용 (개발/테스트용)
@@ -56,13 +64,11 @@ public class SecurityConfig {
                                 "/v3/api-docs/**",
                                 "/swagger-resources/**",
                                 "/webjars/**",
-                                // context-path 적용 경로 추가 허용
                                 "/api/swagger-ui/**",
                                 "/api/swagger-ui.html",
                                 "/api/v3/api-docs/**",
                                 "/api/swagger-resources/**",
                                 "/api/webjars/**",
-                                // Swagger 문서 다운로드 엔드포인트 허용
                                 "/api/swagger/download/**",
                                 "/swagger/download/**")
                         .permitAll()
@@ -73,27 +79,27 @@ public class SecurityConfig {
                         // 시스템 헬스체크는 공개 허용 (모니터링용)
                         .requestMatchers("/api/system/health", "/system/health").permitAll()
                         
+                        // 인증 API는 공개 허용
+                        .requestMatchers("/api/auth/**", "/auth/**").permitAll()
+                        
                         // 단원 및 문제 조회는 공개 허용 (학습용)
                         .requestMatchers(HttpMethod.GET, "/api/unit/**", "/unit/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/question/**", "/question/**").permitAll()
                         
-                        // 학생 로그인은 공개 허용
+                        // 사용자 로그인은 공개 허용 (기존 엔드포인트 유지)
                         .requestMatchers("/api/user/login", "/user/login").permitAll()
                         
-                        // 관리자 인증은 공개 허용
+                        // 관리자 자격 증명 확인은 공개 허용 (기존 엔드포인트 유지)
                         .requestMatchers("/api/admin/verify-credentials", "/admin/verify-credentials").permitAll()
                         
-                        // 사용자 영역 - 현재는 로그인 로직과 분리되어 있음 (추후 통합 필요)
-                        .requestMatchers("/api/user/**", "/user/**").permitAll()
+                        // 관리자 영역은 ADMIN 권한 필요
+                        .requestMatchers("/api/admin/**", "/admin/**").hasRole("ADMIN")
                         
-                        // 관리자 영역 - 현재는 로그인 로직과 분리되어 있음 (추후 통합 필요)
-                        .requestMatchers("/api/admin/**", "/admin/**").permitAll()
-
-                        // 나머지 모든 요청은 허용 (개발 단계에서 단순화)
-                        .anyRequest().permitAll())
+                        // 나머지 모든 요청은 인증 필요
+                        .anyRequest().authenticated())
                 
-                // HTTP Basic 인증 활성화 (임시, JWT 구현 전까지)
-                .httpBasic(Customizer.withDefaults());
+                // JWT 인증 필터 추가 (UsernamePasswordAuthenticationFilter 전에 실행)
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }

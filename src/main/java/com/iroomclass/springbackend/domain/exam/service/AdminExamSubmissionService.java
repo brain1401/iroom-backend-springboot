@@ -90,7 +90,7 @@ public class AdminExamSubmissionService {
     public List<ExamSubmissionDetailResponse> getStudentSubmissions(String studentName, String studentPhone) {
         log.info("관리자 - 학생별 제출 목록 조회 요청: 학생={}, 전화번호={}", studentName, studentPhone);
         
-        List<ExamSubmission> submissions = examSubmissionRepository.findByStudentNameAndStudentPhone(studentName, studentPhone);
+        List<ExamSubmission> submissions = examSubmissionRepository.findByUserNameAndUserPhone(studentName, studentPhone);
         
         List<ExamSubmissionDetailResponse> submissionDetails = new ArrayList<>();
         for (ExamSubmission submission : submissions) {

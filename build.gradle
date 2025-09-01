@@ -59,6 +59,11 @@ dependencies {
 	implementation 'software.amazon.awssdk:s3-transfer-manager:2.32.14'
 	implementation 'software.amazon.awssdk.crt:aws-crt:0.33.11'
 	
+	// JWT 라이브러리
+	implementation 'io.jsonwebtoken:jjwt-api:0.12.6'
+	runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.6'
+	runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.6'
+	
 	compileOnly 'org.projectlombok:lombok'
 	developmentOnly 'org.springframework.boot:spring-boot-devtools'
 	runtimeOnly 'com.mysql:mysql-connector-j'
@@ -68,6 +73,7 @@ dependencies {
 	testImplementation 'org.springframework.boot:spring-boot-starter-webflux'
 	testImplementation 'com.squareup.okhttp3:mockwebserver:4.12.0'
 	testRuntimeOnly 'com.h2database:h2'
+	runtimeOnly 'com.h2database:h2'  // 로컬 테스트용
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 

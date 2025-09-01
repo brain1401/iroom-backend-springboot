@@ -2,7 +2,7 @@ package com.iroomclass.springbackend.domain.exam.repository;
 
 import com.iroomclass.springbackend.domain.exam.entity.Exam;
 import com.iroomclass.springbackend.domain.exam.entity.ExamSubmission;
-import com.iroomclass.springbackend.domain.user.entity.Student;
+import com.iroomclass.springbackend.domain.user.entity.User;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -68,7 +68,7 @@ public interface ExamSubmissionRepository extends JpaRepository<ExamSubmission, 
      * @param studentPhone 학생 전화번호
      * @return 해당 학생의 제출 목록
      */
-    List<ExamSubmission> findByStudentNameAndStudentPhone(String studentName, String studentPhone);
+    List<ExamSubmission> findByUserNameAndUserPhone(String userName, String userPhone);
     
     /**
      * 학생 이름과 전화번호로 제출 조회 (최신순)
@@ -80,7 +80,7 @@ public interface ExamSubmissionRepository extends JpaRepository<ExamSubmission, 
      * @param studentPhone 학생 전화번호
      * @return 해당 학생의 제출 목록 (최신순)
      */
-    List<ExamSubmission> findByStudentNameAndStudentPhoneOrderBySubmittedAtDesc(String studentName, String studentPhone);
+    List<ExamSubmission> findByUserNameAndUserPhoneOrderBySubmittedAtDesc(String userName, String userPhone);
     
     /**
      * 학생 이름과 전화번호로 최근 제출 조회 (최대 3건)
@@ -92,7 +92,7 @@ public interface ExamSubmissionRepository extends JpaRepository<ExamSubmission, 
      * @param studentPhone 학생 전화번호
      * @return 해당 학생의 최근 3건 제출 목록 (최신순)
      */
-    List<ExamSubmission> findTop3ByStudentNameAndStudentPhoneOrderBySubmittedAtDesc(String studentName, String studentPhone);
+    List<ExamSubmission> findTop3ByUserNameAndUserPhoneOrderBySubmittedAtDesc(String userName, String userPhone);
     
     /**
      * 학생 이름과 전화번호로 제출 수 조회
@@ -104,7 +104,7 @@ public interface ExamSubmissionRepository extends JpaRepository<ExamSubmission, 
      * @param studentPhone 학생 전화번호
      * @return 해당 학생의 제출 기록 수
      */
-    long countByStudentNameAndStudentPhone(String studentName, String studentPhone);
+    long countByUserNameAndUserPhone(String userName, String userPhone);
     
     /**
      * 특정 시험에서 학생 제출 여부 확인
@@ -117,7 +117,7 @@ public interface ExamSubmissionRepository extends JpaRepository<ExamSubmission, 
      * @param studentPhone 학생 전화번호
      * @return 제출 여부 (true: 제출됨, false: 제출 안됨)
      */
-    boolean existsByExamIdAndStudentNameAndStudentPhone(UUID examId, String studentName, String studentPhone);
+    boolean existsByExamIdAndUserNameAndUserPhone(UUID examId, String userName, String userPhone);
     
     /**
      * 학년별 시험 제출 조회

@@ -3,7 +3,7 @@ package com.iroomclass.springbackend.domain.exam.entity;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-import com.iroomclass.springbackend.domain.user.entity.Student;
+import com.iroomclass.springbackend.domain.user.entity.User;
 import com.iroomclass.springbackend.common.UUIDv7Generator;
 
 import jakarta.persistence.Column;
@@ -27,7 +27,7 @@ import lombok.NoArgsConstructor;
  * 시험 제출 Entity
  * 
  * 학생별 시험 제출 기록을 관리합니다. (순수 제출 정보만)
- * 시험당 1회 제출 제한이며, Student 엔티티와의 관계로 학생을 식별합니다.
+ * 시험당 1회 제출 제한이며, User 엔티티와의 관계로 학생을 식별합니다.
  * 채점 결과는 별도의 ExamGrading 엔티티에서 관리합니다.
  * 
  * @author 이룸클래스
@@ -59,13 +59,13 @@ public class ExamSubmission {
     private Exam exam;
     
     /**
-     * 학생 정보
-     * ManyToOne: 여러 시험 제출이 하나의 학생에 속함
-     * FetchType.LAZY: 필요할 때만 학생 정보를 조회
+     * 사용자 정보 (학생)
+     * ManyToOne: 여러 시험 제출이 하나의 사용자에 속함
+     * FetchType.LAZY: 필요할 때만 사용자 정보를 조회
      */
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "student_id", nullable = false)
-    private Student student;
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
     
     /**
      * 제출일시
@@ -119,5 +119,14 @@ public class ExamSubmission {
      */
     public void updateTotalScore(Integer totalScore) {
         this.totalScore = totalScore;
+    }
+    
+    /**
+     * 학생 정보 반환 (기존 코드 호환성을 위한 메서드)
+     * 
+     * @return 학생으로서의 User 정보
+     */
+    public User getStudent() {
+        return user;
     }
 }
