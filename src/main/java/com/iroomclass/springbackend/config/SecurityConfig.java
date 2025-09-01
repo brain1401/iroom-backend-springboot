@@ -61,7 +61,10 @@ public class SecurityConfig {
                                 "/api/swagger-ui.html",
                                 "/api/v3/api-docs/**",
                                 "/api/swagger-resources/**",
-                                "/api/webjars/**")
+                                "/api/webjars/**",
+                                // Swagger 문서 다운로드 엔드포인트 허용
+                                "/api/swagger/download/**",
+                                "/swagger/download/**")
                         .permitAll()
 
                         // 정적 리소스 허용
@@ -109,7 +112,8 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        // localhost 전용 허용
+        
+        // 로컬 개발 환경 허용
         configuration.addAllowedOriginPattern("http://localhost");
         configuration.addAllowedOriginPattern("https://localhost");
         configuration.addAllowedOriginPattern("http://localhost:*");
@@ -122,9 +126,19 @@ public class SecurityConfig {
         configuration.addAllowedOriginPattern("https://[::1]");
         configuration.addAllowedOriginPattern("http://[::1]:*");
         configuration.addAllowedOriginPattern("https://[::1]:*");
+        
+        // Tailscale 네트워크 허용 (CGNAT 대역: 100.64.0.0/10)
+        configuration.addAllowedOriginPattern("http://100.*");
+        configuration.addAllowedOriginPattern("https://100.*");
+        configuration.addAllowedOriginPattern("http://100.*:*");
+        configuration.addAllowedOriginPattern("https://100.*:*");
+        
+        // 모든 헤더 및 메서드 허용 (개발 환경용)
         configuration.addAllowedHeader("*");
         configuration.addAllowedMethod("*");
-        configuration.setAllowCredentials(false);
+        
+        // 자격 증명 허용 (쿠키, Authorization 헤더 등)
+        configuration.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);

@@ -1,0 +1,35 @@
+# Swagger 테스트용 최소 설정 (데이터베이스 없이)
+spring:
+  application:
+    name: spring-backend-swagger-test
+
+  # 자동 설정 제외 (데이터베이스 관련)
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
+      - org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.jpa.JpaRepositoriesAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
+
+# 로깅 설정 (간단하게)
+logging:
+  level:
+    com.iroomclass.springbackend: DEBUG
+
+# Swagger/OpenAPI 설정
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+    enabled: true
+  swagger-ui:
+    path: /swagger-ui.html
+    enabled: true
+    try-it-out-enabled: true
+    operations-sorter: alpha
+    tags-sorter: alpha
+  show-actuator: false
+
+server:
+  port: 3055
+  servlet:
+    context-path: /api

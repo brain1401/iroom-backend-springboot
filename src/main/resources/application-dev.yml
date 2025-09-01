@@ -1,0 +1,53 @@
+# 개발 환경 전용 설정
+spring:
+  # JPA 설정 (개발용)
+  jpa:
+    hibernate:
+      ddl-auto: update  # 개발 시 스키마 자동 업데이트
+    show-sql: true      # SQL 쿼리 출력
+    properties:
+      hibernate:
+        format_sql: true
+        use_sql_comments: true
+
+# 로깅 설정 (개발용 상세 로그)
+logging:
+  level:
+    "[org.hibernate.SQL]": DEBUG
+    "[org.hibernate.type.descriptor.sql.BasicBinder]": TRACE
+    "[com.iroomclass.springbackend]": DEBUG
+    "[org.springframework.security]": DEBUG
+    "[org.springframework.web.cors]": DEBUG
+    root: INFO
+
+# CORS 설정 (개발 환경용)
+cors:
+  # 개발 환경에서 허용할 Origin 패턴
+  allowed-origin-patterns:
+    - "http://localhost"
+    - "https://localhost" 
+    - "http://localhost:*"
+    - "https://localhost:*"
+    - "http://127.0.0.1"
+    - "https://127.0.0.1"
+    - "http://127.0.0.1:*"
+    - "https://127.0.0.1:*"
+    - "http://[::1]"
+    - "https://[::1]"
+    - "http://[::1]:*"
+    - "https://[::1]:*"
+    # Tailscale 네트워크 대역 허용
+    - "http://100.*"
+    - "https://100.*"
+    - "http://100.*:*"
+    - "https://100.*:*"
+  allow-credentials: true
+  max-age: 3600
+
+# 개발 도구 활성화
+spring:
+  devtools:
+    restart:
+      enabled: true
+    livereload:
+      enabled: true
