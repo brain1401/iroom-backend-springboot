@@ -11,6 +11,8 @@ import com.iroomclass.springbackend.domain.exam.entity.ExamResultQuestion;
 import com.iroomclass.springbackend.domain.exam.repository.QuestionResultRepository;
 import com.iroomclass.springbackend.domain.curriculum.entity.Unit;
 import com.iroomclass.springbackend.domain.analysis.dto.GradeStatisticsResponse;
+import com.iroomclass.springbackend.domain.exam.entity.ExamResult;
+import com.iroomclass.springbackend.domain.exam.repository.ExamResultRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -30,6 +32,7 @@ public class StatisticsService {
     private final ExamSubmissionRepository examSubmissionRepository;
     private final StudentAnswerSheetRepository studentAnswerSheetRepository;
     private final QuestionResultRepository questionResultRepository;
+    private final ExamResultRepository examResultRepository;
 
     /**
      * 학년별 통계 조회
@@ -83,12 +86,18 @@ public class StatisticsService {
                 continue;
             }
 
-            // 유효한 성적이 있는 제출만 필터링
-            List<ExamSubmission> validSubmissions = submissions.stream()
-                    .filter(submission -> submission.getTotalScore() != null)
-                    .collect(Collectors.toList());
+            // ExamResult로부터 totalScore 조회 및 유효한 성적 필터링
+            List<Integer> validScores = new ArrayList<>();
+            for (ExamSubmission submission : submissions) {
+                Integer totalScore = examResultRepository.findLatestBySubmissionId(submission.getId())
+                        .map(ExamResult::getTotalScore)
+                        .orElse(null);
+                if (totalScore != null) {
+                    validScores.add(totalScore);
+                }
+            }
 
-            if (validSubmissions.isEmpty()) {
+            if (validScores.isEmpty()) {
                 // 유효한 성적이 없는 경우 0점으로 처리
                 averages.add(new GradeStatisticsResponse.RecentExamAverage(
                         exam.getId(),
@@ -100,8 +109,8 @@ public class StatisticsService {
             }
 
             // 평균 점수 계산
-            double averageScore = validSubmissions.stream()
-                    .mapToInt(submission -> submission.getTotalScore())
+            double averageScore = validScores.stream()
+                    .mapToInt(Integer::intValue)
                     .average()
                     .orElse(0.0);
 
@@ -109,7 +118,7 @@ public class StatisticsService {
                     exam.getId(),
                     exam.getExamName(),
                     Math.round(averageScore * 10.0) / 10.0, // 소수점 첫째자리까지
-                    validSubmissions.size(),
+                    validScores.size(),
                     exam.getCreatedAt().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))));
         }
 

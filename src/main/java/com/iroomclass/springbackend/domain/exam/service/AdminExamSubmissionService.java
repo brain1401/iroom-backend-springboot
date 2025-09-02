@@ -13,6 +13,8 @@ import com.iroomclass.springbackend.domain.exam.entity.ExamSubmission;
 import com.iroomclass.springbackend.domain.exam.repository.ExamSubmissionRepository;
 import com.iroomclass.springbackend.domain.exam.entity.Exam;
 import com.iroomclass.springbackend.domain.exam.repository.ExamRepository;
+import com.iroomclass.springbackend.domain.exam.entity.ExamResult;
+import com.iroomclass.springbackend.domain.exam.repository.ExamResultRepository;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -33,6 +35,7 @@ public class AdminExamSubmissionService {
     
     private final ExamSubmissionRepository examSubmissionRepository;
     private final ExamRepository examRepository;
+    private final ExamResultRepository examResultRepository;
     
     /**
      * 시험별 제출 목록 조회
@@ -52,7 +55,12 @@ public class AdminExamSubmissionService {
         
         List<ExamSubmissionListResponse.SubmissionInfo> submissionInfos = new ArrayList<>();
         for (ExamSubmission submission : submissions) {
-            ExamSubmissionListResponse.SubmissionInfo submissionInfo = new ExamSubmissionListResponse.SubmissionInfo(submission.getId(), submission.getStudent().getName(), submission.getStudent().getPhone(), submission.getSubmittedAt(), submission.getTotalScore());
+            // ExamResult에서 totalScore 조회
+            Integer totalScore = examResultRepository.findLatestBySubmissionId(submission.getId())
+                    .map(ExamResult::getTotalScore)
+                    .orElse(null);
+            
+            ExamSubmissionListResponse.SubmissionInfo submissionInfo = new ExamSubmissionListResponse.SubmissionInfo(submission.getId(), submission.getStudent().getName(), submission.getStudent().getPhone(), submission.getSubmittedAt(), totalScore);
             submissionInfos.add(submissionInfo);
         }
         
@@ -77,7 +85,12 @@ public class AdminExamSubmissionService {
         
         log.info("관리자 - 시험 제출 상세 조회 완료: 학생={}, 시험={}", submission.getStudent().getName(), exam.getExamName());
         
-        return new ExamSubmissionDetailResponse(submission.getId(), exam.getId(), exam.getExamName(), exam.getGrade() + "학년", submission.getStudent().getName(), submission.getStudent().getPhone(), submission.getSubmittedAt(), submission.getTotalScore(), exam.getQrCodeUrl());
+        // ExamResult에서 totalScore 조회
+        Integer totalScore = examResultRepository.findLatestBySubmissionId(submissionId)
+                .map(ExamResult::getTotalScore)
+                .orElse(null);
+        
+        return new ExamSubmissionDetailResponse(submission.getId(), exam.getId(), exam.getExamName(), exam.getGrade() + "학년", submission.getStudent().getName(), submission.getStudent().getPhone(), submission.getSubmittedAt(), totalScore, exam.getQrCodeUrl());
     }
     
     /**
@@ -95,7 +108,12 @@ public class AdminExamSubmissionService {
         List<ExamSubmissionDetailResponse> submissionDetails = new ArrayList<>();
         for (ExamSubmission submission : submissions) {
             Exam exam = submission.getExam();
-            ExamSubmissionDetailResponse detail = new ExamSubmissionDetailResponse(submission.getId(), exam.getId(), exam.getExamName(), exam.getGrade() + "학년", submission.getStudent().getName(), submission.getStudent().getPhone(), submission.getSubmittedAt(), submission.getTotalScore(), exam.getQrCodeUrl());
+            // ExamResult에서 totalScore 조회
+            Integer totalScore = examResultRepository.findLatestBySubmissionId(submission.getId())
+                    .map(ExamResult::getTotalScore)
+                    .orElse(null);
+            
+            ExamSubmissionDetailResponse detail = new ExamSubmissionDetailResponse(submission.getId(), exam.getId(), exam.getExamName(), exam.getGrade() + "학년", submission.getStudent().getName(), submission.getStudent().getPhone(), submission.getSubmittedAt(), totalScore, exam.getQrCodeUrl());
             submissionDetails.add(detail);
         }
         

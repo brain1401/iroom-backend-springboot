@@ -72,12 +72,6 @@ public class ExamSubmission {
     @Column(nullable = false)
     private LocalDateTime submittedAt;
 
-    /**
-     * 총 점수
-     * 채점 완료 후 계산된 총점
-     */
-    @Column(name = "total_score")
-    private Integer totalScore;
 
     /**
      * Entity 저장 전 실행되는 메서드
@@ -101,23 +95,6 @@ public class ExamSubmission {
         this.submittedAt = LocalDateTime.now();
     }
 
-    /**
-     * 총 점수 반환
-     * 
-     * @return 총 점수
-     */
-    public Integer getTotalScore() {
-        return totalScore;
-    }
-
-    /**
-     * 총 점수 업데이트
-     * 
-     * @param totalScore 총 점수
-     */
-    public void updateTotalScore(Integer totalScore) {
-        this.totalScore = totalScore;
-    }
 
     /**
      * 학생 정보 반환

@@ -18,6 +18,8 @@ import com.iroomclass.springbackend.domain.exam.entity.Exam;
 import com.iroomclass.springbackend.domain.exam.repository.ExamRepository;
 import com.iroomclass.springbackend.domain.exam.entity.ExamSubmission;
 import com.iroomclass.springbackend.domain.exam.repository.ExamSubmissionRepository;
+import com.iroomclass.springbackend.domain.exam.entity.ExamResult;
+import com.iroomclass.springbackend.domain.exam.repository.ExamResultRepository;
 
 /**
  * 대시보드 서비스
@@ -32,6 +34,7 @@ public class DashboardService {
 
     private final ExamRepository examRepository;
     private final ExamSubmissionRepository examSubmissionRepository;
+    private final ExamResultRepository examResultRepository;
 
     /**
      * 전체 학년 통합 통계 조회
@@ -57,14 +60,25 @@ public class DashboardService {
         
         List<Double> allStudentAverageScores = new ArrayList<>();
         for (List<ExamSubmission> studentSubmissionList : allStudentSubmissions.values()) {
-            double averageScore = studentSubmissionList.stream()
-                .filter(submission -> submission.getTotalScore() != null)
-                .mapToInt(submission -> submission.getTotalScore())
-                .average()
-                .orElse(0.0);
+            // ExamResult로부터 totalScore 조회
+            List<Integer> validScores = new ArrayList<>();
+            for (ExamSubmission submission : studentSubmissionList) {
+                Integer totalScore = examResultRepository.findLatestBySubmissionId(submission.getId())
+                        .map(ExamResult::getTotalScore)
+                        .orElse(null);
+                if (totalScore != null) {
+                    validScores.add(totalScore);
+                }
+            }
             
-            if (averageScore > 0) {
-                allStudentAverageScores.add(averageScore);
+            if (!validScores.isEmpty()) {
+                double averageScore = validScores.stream()
+                        .mapToInt(Integer::intValue)
+                        .average()
+                        .orElse(0.0);
+                if (averageScore > 0) {
+                    allStudentAverageScores.add(averageScore);
+                }
             }
         }
         
@@ -176,14 +190,25 @@ public class DashboardService {
         
         List<Double> studentAverageScores = new ArrayList<>();
         for (List<ExamSubmission> studentSubmissionList : studentSubmissions.values()) {
-            double averageScore = studentSubmissionList.stream()
-                .filter(submission -> submission.getTotalScore() != null)
-                .mapToInt(submission -> submission.getTotalScore())
-                .average()
-                .orElse(0.0);
+            // ExamResult로부터 totalScore 조회
+            List<Integer> validScores = new ArrayList<>();
+            for (ExamSubmission submission : studentSubmissionList) {
+                Integer totalScore = examResultRepository.findLatestBySubmissionId(submission.getId())
+                        .map(ExamResult::getTotalScore)
+                        .orElse(null);
+                if (totalScore != null) {
+                    validScores.add(totalScore);
+                }
+            }
             
-            if (averageScore > 0) {
-                studentAverageScores.add(averageScore);
+            if (!validScores.isEmpty()) {
+                double averageScore = validScores.stream()
+                        .mapToInt(Integer::intValue)
+                        .average()
+                        .orElse(0.0);
+                if (averageScore > 0) {
+                    studentAverageScores.add(averageScore);
+                }
             }
         }
         
@@ -317,14 +342,25 @@ public class DashboardService {
             
             List<Double> gradeAverageScores = new ArrayList<>();
             for (List<ExamSubmission> studentSubmissionList : studentSubmissions.values()) {
-                double averageScore = studentSubmissionList.stream()
-                    .filter(submission -> submission.getTotalScore() != null)
-                    .mapToInt(submission -> submission.getTotalScore())
-                    .average()
-                    .orElse(0.0);
+                // ExamResult로부터 totalScore 조회
+                List<Integer> validScores = new ArrayList<>();
+                for (ExamSubmission submission : studentSubmissionList) {
+                    Integer totalScore = examResultRepository.findLatestBySubmissionId(submission.getId())
+                            .map(ExamResult::getTotalScore)
+                            .orElse(null);
+                    if (totalScore != null) {
+                        validScores.add(totalScore);
+                    }
+                }
                 
-                if (averageScore > 0) {
-                    gradeAverageScores.add(averageScore);
+                if (!validScores.isEmpty()) {
+                    double averageScore = validScores.stream()
+                            .mapToInt(Integer::intValue)
+                            .average()
+                            .orElse(0.0);
+                    if (averageScore > 0) {
+                        gradeAverageScores.add(averageScore);
+                    }
                 }
             }
             
