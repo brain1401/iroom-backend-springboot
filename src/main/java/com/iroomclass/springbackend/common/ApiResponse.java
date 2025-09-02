@@ -74,6 +74,13 @@ public record ApiResponse<T>(
     }
 
     /**
+     * 제네릭 오류 응답 생성 (타입 안전성 보장)
+     */
+    public static <T> ApiResponse<T> errorWithType(String message) {
+        return new ApiResponse<>(ResultStatus.ERROR, message, null);
+    }
+
+    /**
      * 오류 응답 생성 (데이터 포함)
      */
     public static <T> ApiResponse<T> error(String message, T data) {

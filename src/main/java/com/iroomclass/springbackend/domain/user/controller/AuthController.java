@@ -192,22 +192,21 @@ public class AuthController {
                     loginRequest.userType(), e.getMessage());
 
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body((ApiResponse<UnifiedLoginResponse>) (ApiResponse<?>) ApiResponse.error(e.getMessage()));
+                    .body(ApiResponse.<UnifiedLoginResponse>errorWithType(e.getMessage()));
 
         } catch (IllegalArgumentException e) {
             log.warn("통합 로그인 요청 오류: 사용자타입={}, 사유={}",
                     loginRequest.userType(), e.getMessage());
 
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body((ApiResponse<UnifiedLoginResponse>) (ApiResponse<?>) ApiResponse.error(e.getMessage()));
+                    .body(ApiResponse.<UnifiedLoginResponse>errorWithType(e.getMessage()));
 
         } catch (Exception e) {
             log.error("통합 로그인 서버 오류: 사용자타입={}, 오류={}",
                     loginRequest.userType(), e.getMessage(), e);
 
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body((ApiResponse<UnifiedLoginResponse>) (ApiResponse<?>) ApiResponse
-                            .error("로그인 처리 중 오류가 발생했습니다"));
+                    .body(ApiResponse.<UnifiedLoginResponse>errorWithType("로그인 처리 중 오류가 발생했습니다"));
         }
     }
 
@@ -263,8 +262,7 @@ public class AuthController {
             log.error("학생 전용 로그인 오류: 이름={}, 오류={}", studentRequest.name(), e.getMessage(), e);
 
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body((ApiResponse<StudentLoginResponse>) (ApiResponse<?>) ApiResponse
-                            .error("학생 로그인에 실패했습니다: " + e.getMessage()));
+                    .body(ApiResponse.<StudentLoginResponse>errorWithType("학생 로그인에 실패했습니다: " + e.getMessage()));
         }
     }
 
@@ -411,20 +409,19 @@ public class AuthController {
             log.warn("리프레시 토큰 갱신 실패: 사유={}", e.getMessage());
 
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body((ApiResponse<UnifiedLoginResponse>) (ApiResponse<?>) ApiResponse.error(e.getMessage()));
+                    .body(ApiResponse.<UnifiedLoginResponse>errorWithType(e.getMessage()));
 
         } catch (IllegalArgumentException e) {
             log.warn("리프레시 토큰 요청 오류: 사유={}", e.getMessage());
 
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body((ApiResponse<UnifiedLoginResponse>) (ApiResponse<?>) ApiResponse.error(e.getMessage()));
+                    .body(ApiResponse.<UnifiedLoginResponse>errorWithType(e.getMessage()));
 
         } catch (Exception e) {
             log.error("리프레시 토큰 갱신 서버 오류: 오류={}", e.getMessage(), e);
 
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body((ApiResponse<UnifiedLoginResponse>) (ApiResponse<?>) ApiResponse
-                            .error("토큰 갱신 처리 중 오류가 발생했습니다"));
+                    .body(ApiResponse.<UnifiedLoginResponse>errorWithType("토큰 갱신 처리 중 오류가 발생했습니다"));
         }
     }
 

@@ -42,7 +42,7 @@ import lombok.RequiredArgsConstructor;
  * @since 2025
  */
 @RestController
-@RequestMapping("/question-results")
+@RequestMapping("/question/results")
 @RequiredArgsConstructor
 @Tag(name = "문제별 채점 결과 API", description = "문제별 채점 결과 관리 API")
 public class QuestionResultController {

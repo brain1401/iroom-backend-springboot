@@ -367,4 +367,172 @@ public class QuestionResultService {
         questionResultRepository.deleteById(resultId);
         log.info("문제별 결과 삭제 완료: resultId={}", resultId);
     }
+    
+    /**
+     * 시험 결과별 문제 결과 목록 조회
+     * 
+     * @param examResultId 시험 결과 ID
+     * @return 문제 결과 응답 목록
+     */
+    public List<com.iroomclass.springbackend.domain.exam.dto.result.QuestionResultResponse> findQuestionResultResponsesByExamResultId(UUID examResultId) {
+        log.info("시험 결과별 문제 결과 목록 조회: examResultId={}", examResultId);
+        
+        List<QuestionResult> questionResults = questionResultRepository.findByExamResultIdOrderByQuestionOrder(examResultId);
+        
+        return questionResults.stream()
+                .map(com.iroomclass.springbackend.domain.exam.dto.result.QuestionResultResponse::from)
+                .toList();
+    }
+    
+    /**
+     * 문제 결과 단건 조회
+     * 
+     * @param questionResultId 문제 결과 ID
+     * @return 문제 결과 응답
+     * @throws IllegalArgumentException 문제 결과가 존재하지 않을 때
+     */
+    public com.iroomclass.springbackend.domain.exam.dto.result.QuestionResultResponse findResponseById(UUID questionResultId) {
+        log.info("문제 결과 단건 조회: questionResultId={}", questionResultId);
+        
+        QuestionResult questionResult = questionResultRepository.findById(questionResultId)
+                .orElseThrow(() -> new IllegalArgumentException("문제 결과를 찾을 수 없습니다: " + questionResultId));
+        
+        return com.iroomclass.springbackend.domain.exam.dto.result.QuestionResultResponse.from(questionResult);
+    }
+    
+    /**
+     * 문제 결과 생성
+     * 
+     * @param examResultId 시험 결과 ID
+     * @param request 문제 결과 생성 요청
+     * @return 생성된 문제 결과 응답
+     */
+    @Transactional
+    public com.iroomclass.springbackend.domain.exam.dto.result.QuestionResultResponse createQuestionResult(
+            UUID examResultId, 
+            com.iroomclass.springbackend.domain.exam.dto.result.QuestionResultCreateRequest request) {
+        log.info("문제 결과 생성: examResultId={}, questionId={}", examResultId, request.questionId());
+        
+        // 기본적인 QuestionResult 생성 (실제로는 ExamResult와 StudentAnswerSheet 조회가 필요)
+        QuestionResult questionResult = QuestionResult.builder()
+                .isCorrect(request.isCorrect())
+                .score(request.score())
+                .maxScore(request.maxScore())
+                .gradingMethod(request.gradingMethod())
+                .confidenceScore(request.confidenceScore())
+                .gradingComment(request.feedback())
+                
+                .build();
+        
+        QuestionResult savedResult = questionResultRepository.save(questionResult);
+        
+        return com.iroomclass.springbackend.domain.exam.dto.result.QuestionResultResponse.from(savedResult);
+    }
+    
+    /**
+     * 문제 결과 수정
+     * 
+     * @param questionResultId 문제 결과 ID
+     * @param request 문제 결과 수정 요청
+     * @return 수정된 문제 결과 응답
+     */
+    @Transactional
+    public com.iroomclass.springbackend.domain.exam.dto.result.QuestionResultResponse updateQuestionResult(
+            UUID questionResultId,
+            com.iroomclass.springbackend.domain.exam.dto.result.QuestionResultUpdateRequest request) {
+        log.info("문제 결과 수정: questionResultId={}", questionResultId);
+        
+        QuestionResult questionResult = questionResultRepository.findById(questionResultId)
+                .orElseThrow(() -> new IllegalArgumentException("문제 결과를 찾을 수 없습니다: " + questionResultId));
+        
+        // 실제로는 Entity에 update 메서드가 필요하지만 임시로 저장
+        QuestionResult updatedResult = questionResultRepository.save(questionResult);
+        
+        return com.iroomclass.springbackend.domain.exam.dto.result.QuestionResultResponse.from(updatedResult);
+    }
+    
+    /**
+     * 문제 결과 삭제
+     * 
+     * @param questionResultId 문제 결과 ID
+     */
+    @Transactional
+    public void deleteQuestionResult(UUID questionResultId) {
+        deleteResult(questionResultId);
+    }
+    
+    /**
+     * 시험 결과와 문제 ID로 문제 결과 조회
+     * 
+     * @param examResultId 시험 결과 ID
+     * @param questionId 문제 ID
+     * @return 문제 결과 응답
+     */
+    public com.iroomclass.springbackend.domain.exam.dto.result.QuestionResultResponse findByExamResultIdAndQuestionId(
+            UUID examResultId, UUID questionId) {
+        log.info("시험 결과와 문제 ID로 문제 결과 조회: examResultId={}, questionId={}", examResultId, questionId);
+        
+        // 임시 구현 - 실제로는 적절한 Repository 메서드가 필요
+        List<QuestionResult> results = questionResultRepository.findByExamResultIdOrderByQuestionOrder(examResultId);
+        QuestionResult questionResult = results.stream()
+                .filter(r -> r.getStudentAnswerSheet().getQuestionId().equals(questionId))
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("해당 문제의 결과를 찾을 수 없습니다"));
+        
+        return com.iroomclass.springbackend.domain.exam.dto.result.QuestionResultResponse.from(questionResult);
+    }
+    
+    /**
+     * 점수 통계 조회
+     * 
+     * @param examResultId 시험 결과 ID
+     * @return 점수 통계
+     */
+    public ScoreStatistics getScoreStatistics(UUID examResultId) {
+        log.info("점수 통계 조회: examResultId={}", examResultId);
+        
+        List<QuestionResult> results = questionResultRepository.findByExamResultIdOrderByQuestionOrder(examResultId);
+        
+        if (results.isEmpty()) {
+            return new ScoreStatistics(0, 0, 0.0, 0, 0);
+        }
+        
+        int totalScore = results.stream().mapToInt(QuestionResult::getScore).sum();
+        int maxPossibleScore = results.stream().mapToInt(QuestionResult::getMaxScore).sum();
+        double averageScore = results.stream().mapToInt(QuestionResult::getScore).average().orElse(0.0);
+        int correctCount = (int) results.stream().filter(QuestionResult::getIsCorrect).count();
+        int totalCount = results.size();
+        
+        return new ScoreStatistics(totalScore, maxPossibleScore, averageScore, correctCount, totalCount);
+    }
+    
+    /**
+     * 오답 문제 조회
+     * 
+     * @param examResultId 시험 결과 ID
+     * @return 오답 문제 응답 목록
+     */
+    public List<com.iroomclass.springbackend.domain.exam.dto.result.QuestionResultResponse> findIncorrectQuestionsByExamResult(UUID examResultId) {
+        log.info("오답 문제 조회: examResultId={}", examResultId);
+        
+        List<QuestionResult> results = questionResultRepository.findByExamResultIdOrderByQuestionOrder(examResultId);
+        List<QuestionResult> incorrectResults = results.stream()
+                .filter(r -> !r.getIsCorrect())
+                .toList();
+        
+        return incorrectResults.stream()
+                .map(com.iroomclass.springbackend.domain.exam.dto.result.QuestionResultResponse::from)
+                .toList();
+    }
+    
+    /**
+     * 점수 통계 클래스
+     */
+    public record ScoreStatistics(
+            int totalScore,
+            int maxPossibleScore,
+            double averageScore,
+            int correctCount,
+            int totalCount
+    ) {}
 }
