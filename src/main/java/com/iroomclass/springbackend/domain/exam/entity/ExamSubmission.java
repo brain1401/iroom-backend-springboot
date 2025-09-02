@@ -9,8 +9,6 @@ import com.iroomclass.springbackend.common.UUIDv7Generator;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
@@ -40,7 +38,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Builder
 public class ExamSubmission {
-    
+
     /**
      * 제출 고유 ID
      * UUIDv7 기본키
@@ -48,7 +46,7 @@ public class ExamSubmission {
     @Id
     @Column(columnDefinition = "BINARY(16)")
     private UUID id;
-    
+
     /**
      * 시험과의 관계
      * ManyToOne: 여러 제출이 하나의 시험에 속함
@@ -57,7 +55,7 @@ public class ExamSubmission {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "exam_id", nullable = false)
     private Exam exam;
-    
+
     /**
      * 학생 정보
      * ManyToOne: 여러 시험 제출이 하나의 학생에 속함
@@ -66,21 +64,21 @@ public class ExamSubmission {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "student_id", nullable = false)
     private Student student;
-    
+
     /**
      * 제출일시
      * 시험 답안이 제출된 날짜와 시간
      */
     @Column(nullable = false)
     private LocalDateTime submittedAt;
-    
+
     /**
      * 총 점수
      * 채점 완료 후 계산된 총점
      */
     @Column(name = "total_score")
     private Integer totalScore;
-    
+
     /**
      * Entity 저장 전 실행되는 메서드
      * UUID 및 제출일시를 자동으로 설정합니다.
@@ -94,7 +92,7 @@ public class ExamSubmission {
             submittedAt = LocalDateTime.now();
         }
     }
-    
+
     /**
      * 최종 제출일시 업데이트
      * 답안 작성 완료 후 최종 제출 시 호출됩니다.
@@ -102,7 +100,7 @@ public class ExamSubmission {
     public void updateSubmittedAt() {
         this.submittedAt = LocalDateTime.now();
     }
-    
+
     /**
      * 총 점수 반환
      * 
@@ -111,7 +109,7 @@ public class ExamSubmission {
     public Integer getTotalScore() {
         return totalScore;
     }
-    
+
     /**
      * 총 점수 업데이트
      * 
@@ -120,7 +118,7 @@ public class ExamSubmission {
     public void updateTotalScore(Integer totalScore) {
         this.totalScore = totalScore;
     }
-    
+
     /**
      * 학생 정보 반환
      * 

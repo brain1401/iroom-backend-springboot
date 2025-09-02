@@ -76,9 +76,7 @@ public class ExamSheetService {
         ExamSheet examSheet = ExamSheet.builder()
                 .examName(request.examName())
                 .grade(request.grade())
-                .totalQuestions(request.totalQuestions())
-                .multipleChoiceCount(request.multipleChoiceCount())
-                .subjectiveCount(request.subjectiveCount())
+
                 .build();
 
         examSheet = examSheetRepository.save(examSheet);
