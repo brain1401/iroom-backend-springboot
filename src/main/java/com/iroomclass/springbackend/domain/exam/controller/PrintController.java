@@ -1,10 +1,5 @@
 package com.iroomclass.springbackend.domain.exam.controller;
 
-import java.util.UUID;
-
-import com.iroomclass.springbackend.domain.exam.dto.exam.PrintRequest;
-import com.iroomclass.springbackend.domain.exam.dto.exam.PrintResponse;
-import com.iroomclass.springbackend.domain.exam.dto.exam.PrintableDocumentResponse;
 import com.iroomclass.springbackend.domain.exam.service.PrintService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;

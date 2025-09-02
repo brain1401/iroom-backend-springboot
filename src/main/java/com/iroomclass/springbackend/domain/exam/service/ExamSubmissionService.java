@@ -12,8 +12,8 @@ import com.iroomclass.springbackend.domain.exam.repository.ExamRepository;
 import com.iroomclass.springbackend.domain.exam.repository.StudentAnswerSheetRepository;
 import com.iroomclass.springbackend.domain.exam.entity.ExamSubmission;
 import com.iroomclass.springbackend.domain.exam.repository.ExamSubmissionRepository;
-import com.iroomclass.springbackend.domain.user.entity.User;
-import com.iroomclass.springbackend.domain.user.repository.UserRepository;
+import com.iroomclass.springbackend.domain.auth.entity.Student;
+import com.iroomclass.springbackend.domain.auth.repository.StudentRepository;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -35,7 +35,7 @@ public class ExamSubmissionService {
     private final ExamSubmissionRepository examSubmissionRepository;
     private final ExamRepository examRepository;
     private final StudentAnswerSheetRepository studentAnswerSheetRepository;
-    private final UserRepository userRepository;
+    private final StudentRepository studentRepository;
 
     /**
      * 시험 제출 생성
@@ -52,34 +52,25 @@ public class ExamSubmissionService {
         Exam exam = examRepository.findById(request.examId())
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 시험입니다: " + request.examId()));
 
-        // 2단계: 중복 제출 방지
-        if (examSubmissionRepository.existsByExamIdAndUserNameAndUserPhone(
-                request.examId(), request.studentName(), request.studentPhone())) {
+        // 2단계: 학생 정보 확인
+        Student student = studentRepository.findByNameAndPhone(request.studentName(), request.studentPhone())
+                .orElseThrow(() -> new IllegalArgumentException("등록되지 않은 학생입니다: " + request.studentName()));
+        
+        // 3단계: 중복 제출 방지
+        if (examSubmissionRepository.existsByExamIdAndStudentId(request.examId(), student.getId())) {
             throw new IllegalArgumentException("이미 제출한 시험입니다.");
         }
-
-        // 3단계: 학생 정보 확인 및 등록
-        User user = userRepository.findByNameAndPhone(request.studentName(), request.studentPhone())
-                .orElseGet(() -> {
-                    log.info("새로운 학생 등록: 이름={}, 전화번호={}", request.studentName(), request.studentPhone());
-                    User newUser = User.builder()
-                            .name(request.studentName())
-                            .phone(request.studentPhone())
-                            .role(com.iroomclass.springbackend.domain.user.entity.UserRole.STUDENT)
-                            .build();
-                    return userRepository.save(newUser);
-                });
 
         // 4단계: 시험 제출 생성
         ExamSubmission submission = ExamSubmission.builder()
                 .exam(exam)
-                .user(user)
+                .student(student)
                 .build();
 
         submission = examSubmissionRepository.save(submission);
 
-        log.info("시험 제출 생성 완료: ID={}, 학생={}, 시험={}, 사용자ID={}",
-                submission.getId(), request.studentName(), exam.getExamName(), user.getId());
+        log.info("시험 제출 생성 완료: ID={}, 학생={}, 시험={}, 학생ID={}",
+                submission.getId(), request.studentName(), exam.getExamName(), student.getId());
 
         return new ExamSubmissionCreateResponse(
                 submission.getId(),

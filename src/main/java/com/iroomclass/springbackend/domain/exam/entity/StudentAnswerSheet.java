@@ -1,6 +1,5 @@
 package com.iroomclass.springbackend.domain.exam.entity;
 
-import java.time.LocalDateTime;
 import java.util.UUID;
 
 import com.iroomclass.springbackend.common.UUIDv7Generator;
@@ -8,8 +7,6 @@ import com.iroomclass.springbackend.common.UUIDv7Generator;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
@@ -29,10 +26,12 @@ import lombok.NoArgsConstructor;
  * 주관식과 객관식 문제의 답안을 모두 지원하며, AI 이미지 인식 결과를 포함합니다.
  * 채점 결과는 별도의 QuestionGrading 엔티티에서 관리합니다.
  * 
- * <p>답안 유형별 특징:</p>
+ * <p>
+ * 답안 유형별 특징:
+ * </p>
  * <ul>
- *   <li>주관식: answerText 사용 (AI가 이미지에서 인식한 텍스트)</li>
- *   <li>객관식: selectedChoice 사용 (선택한 번호 1~5)</li>
+ * <li>주관식: answerText 사용 (AI가 이미지에서 인식한 텍스트)</li>
+ * <li>객관식: selectedChoice 사용 (선택한 번호 1~5)</li>
  * </ul>
  * 
  * @author 이룸클래스
@@ -45,7 +44,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Builder
 public class StudentAnswerSheet {
-    
+
     /**
      * 답안 고유 ID
      * UUIDv7 기본키
@@ -53,7 +52,7 @@ public class StudentAnswerSheet {
     @Id
     @Column(columnDefinition = "BINARY(16)")
     private UUID id;
-    
+
     /**
      * 시험 제출과의 관계
      * ManyToOne: 여러 답안이 하나의 시험 제출에 속함
@@ -62,7 +61,7 @@ public class StudentAnswerSheet {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "submission_id", nullable = false)
     private ExamSubmission examSubmission;
-    
+
     /**
      * 문제와의 관계
      * ManyToOne: 여러 답안이 하나의 문제를 참조할 수 있음
@@ -71,7 +70,7 @@ public class StudentAnswerSheet {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "question_id", nullable = false)
     private Question question;
-    
+
     /**
      * 답안 이미지 URL
      * 주관식 문제의 경우 학생이 촬영한 답안 이미지
@@ -79,7 +78,7 @@ public class StudentAnswerSheet {
      */
     @Column(length = 500)
     private String answerImageUrl;
-    
+
     /**
      * AI가 인식한 답안 텍스트
      * 주관식 문제의 경우 AI가 이미지에서 인식한 텍스트
@@ -87,35 +86,35 @@ public class StudentAnswerSheet {
      */
     @Column(length = 1000)
     private String answerText;
-    
+
     /**
      * 객관식 선택 답안
      * 객관식 문제의 경우 선택한 번호 (1~5)
      */
     @Column
     private Integer selectedChoice;
-    
+
     /**
      * AI 해답 처리 과정
      * AI가 문제를 분석하고 해결하는 과정을 설명
      */
     @Column(columnDefinition = "TEXT")
     private String aiSolutionProcess;
-    
+
     /**
      * 정답 여부
      * AI 채점 결과
      */
     @Column
     private Boolean isCorrect;
-    
+
     /**
      * 획득 점수
      * AI 채점을 통해 부여된 점수
      */
     @Column
     private Integer score;
-    
+
     /**
      * Entity 저장 전 실행되는 메서드
      * UUID를 자동으로 설정합니다.
@@ -126,7 +125,7 @@ public class StudentAnswerSheet {
             id = UUIDv7Generator.generate();
         }
     }
-    
+
     /**
      * 답안 텍스트 업데이트 (주관식용)
      * 
@@ -135,7 +134,7 @@ public class StudentAnswerSheet {
     public void updateAnswerText(String answerText) {
         this.answerText = answerText;
     }
-    
+
     /**
      * 선택 답안 업데이트 (객관식용)
      * 
@@ -144,7 +143,7 @@ public class StudentAnswerSheet {
     public void updateSelectedChoice(Integer selectedChoice) {
         this.selectedChoice = selectedChoice;
     }
-    
+
     /**
      * 이미지 URL 업데이트
      * 
@@ -153,18 +152,18 @@ public class StudentAnswerSheet {
     public void updateImageUrl(String imageUrl) {
         this.answerImageUrl = imageUrl;
     }
-    
+
     /**
      * 채점 결과 업데이트
      * 
      * @param isCorrect 정답 여부
-     * @param score 획득 점수
+     * @param score     획득 점수
      */
     public void updateGradingResult(Boolean isCorrect, Integer score) {
         this.isCorrect = isCorrect;
         this.score = score;
     }
-    
+
     /**
      * 답안 내용 반환 (문제 유형에 따라)
      * 
@@ -178,7 +177,7 @@ public class StudentAnswerSheet {
         }
         return null;
     }
-    
+
     /**
      * 객관식 문제 여부 확인
      * 
@@ -187,7 +186,7 @@ public class StudentAnswerSheet {
     public boolean isMultipleChoiceQuestion() {
         return question != null && question.isMultipleChoice();
     }
-    
+
     /**
      * 답안 제출 여부 확인
      * 
@@ -196,7 +195,7 @@ public class StudentAnswerSheet {
     public boolean hasAnswer() {
         return selectedChoice != null || answerText != null;
     }
-    
+
     /**
      * 문제 ID 반환
      * 
@@ -205,9 +204,7 @@ public class StudentAnswerSheet {
     public UUID getQuestionId() {
         return question != null ? question.getId() : null;
     }
-    
 
-    
     /**
      * 제출된 답안 반환
      * 
@@ -216,7 +213,7 @@ public class StudentAnswerSheet {
     public String getSubmittedAnswer() {
         return getAnswerContent();
     }
-    
+
     /**
      * 답안 유형 반환
      * 
@@ -229,7 +226,7 @@ public class StudentAnswerSheet {
             return AnswerType.SUBJECTIVE;
         }
     }
-    
+
     /**
      * 최대 점수 반환 (문제에서 가져옴)
      * 
@@ -247,7 +244,7 @@ public class StudentAnswerSheet {
          * 객관식 답안
          */
         MULTIPLE_CHOICE,
-        
+
         /**
          * 주관식 답안
          */
@@ -262,7 +259,7 @@ public class StudentAnswerSheet {
          * 답안 미제출
          */
         UNANSWERED,
-        
+
         /**
          * 답안 제출됨
          */

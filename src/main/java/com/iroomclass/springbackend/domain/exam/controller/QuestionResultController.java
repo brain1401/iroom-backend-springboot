@@ -20,8 +20,8 @@ import com.iroomclass.springbackend.common.ApiResponse;
 import com.iroomclass.springbackend.common.ApiResponseConstants;
 import com.iroomclass.springbackend.domain.exam.dto.result.ManualGradingRequest;
 import com.iroomclass.springbackend.domain.exam.dto.result.QuestionResultResponse;
-import com.iroomclass.springbackend.domain.exam.entity.QuestionResult;
-import com.iroomclass.springbackend.domain.exam.entity.QuestionResult.GradingMethod;
+import com.iroomclass.springbackend.domain.exam.entity.ExamResultQuestion;
+import com.iroomclass.springbackend.domain.exam.entity.ExamResultQuestion.GradingMethod;
 import com.iroomclass.springbackend.domain.exam.service.QuestionResultService;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -85,7 +85,7 @@ public class QuestionResultController {
     })
     public ApiResponse<QuestionResultResponse> getQuestionResult(
             @Parameter(description = "문제별 결과 ID", example = "123e4567-e89b-12d3-a456-426614174003") @PathVariable UUID resultId) {
-        QuestionResult result = questionResultService.findById(resultId);
+        ExamResultQuestion result = questionResultService.findById(resultId);
         QuestionResultResponse dto = QuestionResultResponse.from(result);
 
         return ApiResponse.success("문제별 결과 조회 성공", dto);
@@ -103,7 +103,7 @@ public class QuestionResultController {
     })
     public ApiResponse<List<QuestionResultResponse>> getQuestionResultsByExamResult(
             @Parameter(description = "시험 결과 ID", example = "123e4567-e89b-12d3-a456-426614174000") @PathVariable UUID examResultId) {
-        List<QuestionResult> results = questionResultService.findByExamResultId(examResultId);
+        List<ExamResultQuestion> results = questionResultService.findByExamResultId(examResultId);
         List<QuestionResultResponse> dtos = results.stream()
                 .map(QuestionResultResponse::from)
                 .toList();
@@ -130,7 +130,7 @@ public class QuestionResultController {
 
             @Parameter(description = "페이지 크기", example = "20") @RequestParam(defaultValue = "20") int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
-        Page<QuestionResult> results = questionResultService.findByQuestionId(questionId, pageable);
+        Page<ExamResultQuestion> results = questionResultService.findByQuestionId(questionId, pageable);
         Page<QuestionResultResponse> dtos = results.map(QuestionResultResponse::from);
 
         return ApiResponse.success("문제별 채점 결과 조회 성공", dtos);
@@ -155,7 +155,7 @@ public class QuestionResultController {
 
             @Parameter(description = "페이지 크기", example = "20") @RequestParam(defaultValue = "20") int size) {
         Pageable pageable = PageRequest.of(page, size);
-        Page<QuestionResult> results = questionResultService.findByGradingMethod(gradingMethod, pageable);
+        Page<ExamResultQuestion> results = questionResultService.findByGradingMethod(gradingMethod, pageable);
         Page<QuestionResultResponse> dtos = results.map(QuestionResultResponse::from);
 
         return ApiResponse.success("채점 방법별 결과 조회 성공", dtos);
@@ -177,7 +177,7 @@ public class QuestionResultController {
 
             @Parameter(description = "페이지 크기", example = "20") @RequestParam(defaultValue = "20") int size) {
         Pageable pageable = PageRequest.of(page, size);
-        Page<QuestionResult> results = questionResultService.findPendingManualGrading(pageable);
+        Page<ExamResultQuestion> results = questionResultService.findPendingManualGrading(pageable);
         Page<QuestionResultResponse> dtos = results.map(QuestionResultResponse::from);
 
         return ApiResponse.success("수동 채점 대기 목록 조회 성공", dtos);
@@ -202,7 +202,8 @@ public class QuestionResultController {
 
             @Parameter(description = "페이지 크기", example = "20") @RequestParam(defaultValue = "20") int size) {
         Pageable pageable = PageRequest.of(page, size);
-        Page<QuestionResult> results = questionResultService.findLowConfidenceAIResults(confidenceThreshold, pageable);
+        Page<ExamResultQuestion> results = questionResultService.findLowConfidenceAIResults(confidenceThreshold,
+                pageable);
         Page<QuestionResultResponse> dtos = results.map(QuestionResultResponse::from);
 
         return ApiResponse.success("낮은 신뢰도 AI 채점 결과 조회 성공", dtos);

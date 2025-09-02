@@ -25,7 +25,7 @@ spring:
   # JPA 설정
   jpa:
     hibernate:
-      ddl-auto: validate # validate로 고정. 다른걸로 바꾸지 말 것.
+      ddl-auto: update
     properties:
       hibernate:
         dialect: org.hibernate.dialect.MySQLDialect

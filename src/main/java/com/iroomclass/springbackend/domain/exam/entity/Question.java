@@ -11,8 +11,6 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
@@ -36,10 +34,12 @@ import java.util.UUID;
  * 각 단원별로 생성된 문제들을 관리합니다.
  * 주관식과 객관식 문제를 모두 지원하며, JSON 형태로 저장된 문제 내용을 HTML로 변환합니다.
  * 
- * <p>문제 유형별 특징:</p>
+ * <p>
+ * 문제 유형별 특징:
+ * </p>
  * <ul>
- *   <li>주관식: questionText와 answerText 사용</li>
- *   <li>객관식: questionText, choices, correctChoice 사용</li>
+ * <li>주관식: questionText와 answerText 사용</li>
+ * <li>객관식: questionText, choices, correctChoice 사용</li>
  * </ul>
  * 
  * @author 이룸클래스
@@ -54,9 +54,9 @@ import java.util.UUID;
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @Slf4j
 public class Question {
-    
+
     private static final ObjectMapper objectMapper = new ObjectMapper();
-    
+
     /**
      * 문제 고유 ID
      * UUIDv7로 생성되는 기본키
@@ -86,7 +86,8 @@ public class Question {
     /**
      * 문제 내용 (JSON 형태)
      * 주관식 문제 내용을 JSON 형태로 저장
-     * 예시: [{"type": "paragraph", "content": [{"type": "text", "value": "연립부등식 "}, {"type": "latex", "value": "\\begin{cases}..."}]}]
+     * 예시: [{"type": "paragraph", "content": [{"type": "text", "value": "연립부등식 "},
+     * {"type": "latex", "value": "\\begin{cases}..."}]}]
      */
     @Column(columnDefinition = "TEXT", nullable = false)
     private String questionText;
@@ -146,8 +147,6 @@ public class Question {
     @Column
     @Builder.Default
     private Integer points = 10;
-    
-
 
     /**
      * JSON 형태의 questionText를 HTML로 변환
@@ -156,19 +155,21 @@ public class Question {
      */
     public String getQuestionTextAsHtml() {
         try {
-            List<Map<String, Object>> questionData = objectMapper.readValue(questionText, new TypeReference<List<Map<String, Object>>>() {});
+            List<Map<String, Object>> questionData = objectMapper.readValue(questionText,
+                    new TypeReference<List<Map<String, Object>>>() {
+                    });
             StringBuilder html = new StringBuilder();
-            
+
             for (Map<String, Object> block : questionData) {
                 String type = (String) block.get("type");
                 List<Map<String, Object>> content = (List<Map<String, Object>>) block.get("content");
-                
+
                 if ("paragraph".equals(type)) {
                     html.append("<p>");
                     for (Map<String, Object> item : content) {
                         String itemType = (String) item.get("type");
                         String value = (String) item.get("value");
-                        
+
                         if ("text".equals(itemType)) {
                             html.append(value);
                         } else if ("latex".equals(itemType)) {
@@ -178,19 +179,20 @@ public class Question {
                     html.append("</p>");
                 }
             }
-            
+
             // 이미지가 있으면 문제 내용 아래에 추가
             List<String> imageUrls = getImageUrls();
             if (!imageUrls.isEmpty()) {
                 html.append("<div style='margin-top: 15px;'>");
                 for (String imageUrl : imageUrls) {
-                    html.append("<img src='").append(imageUrl).append("' alt='문제 이미지' style='max-width: 100%; height: auto; margin: 10px 0;'/>");
+                    html.append("<img src='").append(imageUrl)
+                            .append("' alt='문제 이미지' style='max-width: 100%; height: auto; margin: 10px 0;'/>");
                 }
                 html.append("</div>");
             }
-            
+
             return html.toString();
-            
+
         } catch (JsonProcessingException e) {
             log.error("JSON 파싱 오류: {}", e.getMessage(), e);
             return questionText; // JSON 파싱 실패 시 원본 반환
@@ -207,13 +209,14 @@ public class Question {
             if (image == null || image.trim().isEmpty()) {
                 return List.of();
             }
-            
-            Map<String, Object> imageData = objectMapper.readValue(image, new TypeReference<Map<String, Object>>() {});
+
+            Map<String, Object> imageData = objectMapper.readValue(image, new TypeReference<Map<String, Object>>() {
+            });
             @SuppressWarnings("unchecked")
             List<String> images = (List<String>) imageData.get("images");
-            
+
             return images != null ? images : List.of();
-            
+
         } catch (JsonProcessingException e) {
             log.error("이미지 JSON 파싱 오류: {}", e.getMessage(), e);
             return List.of();
@@ -248,9 +251,10 @@ public class Question {
             if (!isMultipleChoice() || choices == null || choices.trim().isEmpty()) {
                 return Map.of();
             }
-            
-            return objectMapper.readValue(choices, new TypeReference<Map<String, String>>() {});
-            
+
+            return objectMapper.readValue(choices, new TypeReference<Map<String, String>>() {
+            });
+
         } catch (JsonProcessingException e) {
             log.error("선택지 JSON 파싱 오류: {}", e.getMessage(), e);
             return Map.of();
@@ -274,19 +278,19 @@ public class Question {
 
         StringBuilder html = new StringBuilder();
         html.append("<div class='multiple-choice-options'>");
-        
+
         // 선택지 번호 순서대로 정렬 (1, 2, 3, 4, 5)
         choicesMap.entrySet().stream()
-            .sorted(Map.Entry.comparingByKey())
-            .forEach(entry -> {
-                String number = entry.getKey();
-                String content = entry.getValue();
-                html.append("<div class='choice-option'>")
-                    .append("<span class='choice-number'>").append(number).append("</span>")
-                    .append("<span class='choice-content'>").append(content).append("</span>")
-                    .append("</div>");
-            });
-        
+                .sorted(Map.Entry.comparingByKey())
+                .forEach(entry -> {
+                    String number = entry.getKey();
+                    String content = entry.getValue();
+                    html.append("<div class='choice-option'>")
+                            .append("<span class='choice-number'>").append(number).append("</span>")
+                            .append("<span class='choice-content'>").append(content).append("</span>")
+                            .append("</div>");
+                });
+
         html.append("</div>");
         return html.toString();
     }
@@ -311,15 +315,15 @@ public class Question {
      */
     public String getCompleteQuestionHtml() {
         StringBuilder html = new StringBuilder();
-        
+
         // 기본 문제 내용
         html.append(getQuestionTextAsHtml());
-        
+
         // 객관식인 경우 선택지 추가
         if (isMultipleChoice()) {
             html.append(getChoicesAsHtml());
         }
-        
+
         return html.toString();
     }
 
@@ -332,7 +336,7 @@ public class Question {
             this.id = UUIDv7Generator.generate();
         }
     }
-    
+
     /**
      * 문제 배점 반환
      * 
@@ -341,8 +345,6 @@ public class Question {
     public Integer getPoints() {
         return points;
     }
-    
-
 
     /**
      * 문제 난이도 열거형
@@ -360,7 +362,7 @@ public class Question {
          * 학생이 직접 답안을 작성하는 형태
          */
         SUBJECTIVE,
-        
+
         /**
          * 객관식 문제 (5지 선다)
          * 주어진 선택지 중 정답을 선택하는 형태

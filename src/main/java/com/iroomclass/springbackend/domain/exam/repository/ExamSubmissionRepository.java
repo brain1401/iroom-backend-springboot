@@ -67,7 +67,7 @@ public interface ExamSubmissionRepository extends JpaRepository<ExamSubmission, 
      * @param studentPhone 학생 전화번호
      * @return 해당 학생의 제출 목록
      */
-    List<ExamSubmission> findByUserNameAndUserPhone(String userName, String userPhone);
+    List<ExamSubmission> findByStudentNameAndStudentPhone(String studentName, String studentPhone);
 
     /**
      * 학생 이름과 전화번호로 제출 조회 (최신순)
@@ -79,7 +79,7 @@ public interface ExamSubmissionRepository extends JpaRepository<ExamSubmission, 
      * @param studentPhone 학생 전화번호
      * @return 해당 학생의 제출 목록 (최신순)
      */
-    List<ExamSubmission> findByUserNameAndUserPhoneOrderBySubmittedAtDesc(String userName, String userPhone);
+    List<ExamSubmission> findByStudentNameAndStudentPhoneOrderBySubmittedAtDesc(String studentName, String studentPhone);
 
     /**
      * 학생 이름과 전화번호로 최근 제출 조회 (최대 3건)
@@ -91,7 +91,7 @@ public interface ExamSubmissionRepository extends JpaRepository<ExamSubmission, 
      * @param studentPhone 학생 전화번호
      * @return 해당 학생의 최근 3건 제출 목록 (최신순)
      */
-    List<ExamSubmission> findTop3ByUserNameAndUserPhoneOrderBySubmittedAtDesc(String userName, String userPhone);
+    List<ExamSubmission> findTop3ByStudentNameAndStudentPhoneOrderBySubmittedAtDesc(String studentName, String studentPhone);
 
     /**
      * 학생 이름과 전화번호로 제출 수 조회
@@ -103,10 +103,22 @@ public interface ExamSubmissionRepository extends JpaRepository<ExamSubmission, 
      * @param studentPhone 학생 전화번호
      * @return 해당 학생의 제출 기록 수
      */
-    long countByUserNameAndUserPhone(String userName, String userPhone);
+    long countByStudentNameAndStudentPhone(String studentName, String studentPhone);
 
     /**
-     * 특정 시험에서 학생 제출 여부 확인
+     * 특정 시험에서 학생 제출 여부 확인 (학생 ID 기준)
+     * 
+     * 사용처: 중복 제출 방지
+     * 예시: 학생이 특정 시험에 이미 제출했는지 확인
+     * 
+     * @param examId 시험 ID
+     * @param studentId 학생 ID
+     * @return 제출 여부 (true: 제출됨, false: 제출 안됨)
+     */
+    boolean existsByExamIdAndStudentId(UUID examId, Long studentId);
+
+    /**
+     * 특정 시험에서 학생 제출 여부 확인 (이름/전화번호 기준)
      * 
      * 사용처: 중복 제출 방지
      * 예시: "김철수"가 "1학년 중간고사"에 이미 제출했는지 확인
@@ -116,7 +128,7 @@ public interface ExamSubmissionRepository extends JpaRepository<ExamSubmission, 
      * @param studentPhone 학생 전화번호
      * @return 제출 여부 (true: 제출됨, false: 제출 안됨)
      */
-    boolean existsByExamIdAndUserNameAndUserPhone(UUID examId, String userName, String userPhone);
+    boolean existsByExamIdAndStudentNameAndStudentPhone(UUID examId, String studentName, String studentPhone);
 
     /**
      * 학년별 시험 제출 조회

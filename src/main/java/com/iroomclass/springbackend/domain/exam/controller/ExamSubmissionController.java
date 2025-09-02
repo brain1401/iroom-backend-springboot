@@ -20,7 +20,6 @@ import com.iroomclass.springbackend.domain.exam.service.ExamSubmissionService;
 import com.iroomclass.springbackend.domain.exam.service.AdminExamSubmissionService;
 import com.iroomclass.springbackend.domain.exam.service.StudentAnswerSheetService;
 
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.List;
@@ -164,7 +163,6 @@ public class ExamSubmissionController {
      * @return 필터링된 시험 제출 목록
      */
     @GetMapping
-    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "시험 제출 목록 조회 (관리자)", description = "관리자가 특정 시험의 모든 학생 제출 현황을 조회합니다.")
     @io.swagger.v3.oas.annotations.responses.ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "성공"),
@@ -189,7 +187,6 @@ public class ExamSubmissionController {
      * @return 시험 제출 상세 정보
      */
     @GetMapping("/{submissionId}/details")
-    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "시험 제출 상세 조회 (관리자)", description = "관리자가 특정 시험 제출의 상세 정보를 조회합니다.")
     @io.swagger.v3.oas.annotations.responses.ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "성공"),
@@ -215,7 +212,6 @@ public class ExamSubmissionController {
      * @return 해당 학생의 제출 목록
      */
     @GetMapping("/student")
-    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "학생별 제출 목록 조회 (관리자)", description = "관리자가 특정 학생의 모든 시험 제출 이력을 조회합니다.")
     @io.swagger.v3.oas.annotations.responses.ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "성공"),
@@ -242,7 +238,6 @@ public class ExamSubmissionController {
      * @return 해당 시험의 제출 학생 수
      */
     @GetMapping("/exam/{examId}/count")
-    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "시험별 제출 학생 수 조회 (관리자)", description = "관리자가 특정 시험에 제출한 학생 수를 조회합니다.")
     @io.swagger.v3.oas.annotations.responses.ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "성공"),

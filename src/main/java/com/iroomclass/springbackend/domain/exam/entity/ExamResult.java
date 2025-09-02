@@ -44,7 +44,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Builder
 public class ExamResult {
-    
+
     /**
      * 시험 결과 고유 ID
      * UUIDv7 기본키
@@ -52,7 +52,7 @@ public class ExamResult {
     @Id
     @Column(columnDefinition = "BINARY(16)")
     private UUID id;
-    
+
     /**
      * 시험 제출과의 관계
      * ManyToOne: 여러 채점 결과가 하나의 제출에 속함 (재채점 시나리오)
@@ -60,7 +60,7 @@ public class ExamResult {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "submission_id", nullable = false)
     private ExamSubmission examSubmission;
-    
+
     /**
      * 시험지와의 관계
      * ManyToOne: 여러 채점 결과가 하나의 시험지에 속함
@@ -68,22 +68,21 @@ public class ExamResult {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "exam_sheet_id", nullable = false)
     private ExamSheet examSheet;
-    
-    
+
     /**
      * 채점일시
      * 채점이 완료된 날짜와 시간
      */
     @Column(name = "graded_at", nullable = false)
     private LocalDateTime gradedAt;
-    
+
     /**
      * 총점
      * 모든 문제 점수의 합계
      */
     @Column(name = "total_score")
     private Integer totalScore;
-    
+
     /**
      * 채점 상태
      * PENDING: 채점 대기
@@ -95,14 +94,14 @@ public class ExamResult {
     @Column(nullable = false)
     @Builder.Default
     private ResultStatus status = ResultStatus.PENDING;
-    
+
     /**
      * 채점 코멘트
      * 전체 시험에 대한 코멘트나 피드백
      */
     @Column(name = "grading_comment", columnDefinition = "TEXT")
     private String gradingComment;
-    
+
     /**
      * 재채점 버전
      * 동일한 제출물에 대한 채점 버전 관리
@@ -110,27 +109,27 @@ public class ExamResult {
     @Column(nullable = false)
     @Builder.Default
     private Integer version = 1;
-    
+
     /**
      * 생성일시
      */
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
-    
+
     /**
      * 수정일시
      */
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
-    
+
     /**
      * 문제별 채점 결과 목록
      * OneToMany: 하나의 시험 결과에 여러 문제별 결과가 속함
      */
     @OneToMany(mappedBy = "examResult", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
-    private List<QuestionResult> questionResults = new ArrayList<>();
-    
+    private List<ExamResultQuestion> questionResults = new ArrayList<>();
+
     /**
      * Entity 저장 전 실행되는 메서드
      */
@@ -150,7 +149,7 @@ public class ExamResult {
             gradedAt = now;
         }
     }
-    
+
     /**
      * Entity 업데이트 전 실행되는 메서드
      */
@@ -158,7 +157,7 @@ public class ExamResult {
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
     }
-    
+
     /**
      * 채점 상태 업데이트
      * 
@@ -170,17 +169,17 @@ public class ExamResult {
             this.gradedAt = LocalDateTime.now();
         }
     }
-    
+
     /**
      * 총점 업데이트
      * 문제별 점수 합계로 자동 계산
      */
     public void calculateAndUpdateTotalScore() {
         this.totalScore = questionResults.stream()
-            .mapToInt(qr -> qr.getScore() != null ? qr.getScore() : 0)
-            .sum();
+                .mapToInt(qr -> qr.getScore() != null ? qr.getScore() : 0)
+                .sum();
     }
-    
+
     /**
      * 채점 코멘트 업데이트
      * 
@@ -189,7 +188,7 @@ public class ExamResult {
     public void updateGradingComment(String comment) {
         this.gradingComment = comment;
     }
-    
+
     /**
      * 재채점을 위한 새 버전 생성
      * 
@@ -197,13 +196,13 @@ public class ExamResult {
      */
     public ExamResult createNewVersionForRegrading() {
         return ExamResult.builder()
-            .examSubmission(this.examSubmission)
-            .examSheet(this.examSheet)
-            .status(ResultStatus.PENDING)
-            .version(this.version + 1)
-            .build();
+                .examSubmission(this.examSubmission)
+                .examSheet(this.examSheet)
+                .status(ResultStatus.PENDING)
+                .version(this.version + 1)
+                .build();
     }
-    
+
     /**
      * AI 자동 채점 여부 확인
      * 모든 채점이 AI에 의해 자동으로 수행됨
@@ -213,7 +212,7 @@ public class ExamResult {
     public boolean isAutoGrading() {
         return true;
     }
-    
+
     /**
      * 채점 완료 여부 확인
      * 
@@ -222,7 +221,7 @@ public class ExamResult {
     public boolean isCompleted() {
         return status == ResultStatus.COMPLETED;
     }
-    
+
     /**
      * 재채점 여부 확인
      * 
@@ -231,7 +230,7 @@ public class ExamResult {
     public boolean isRegraded() {
         return status == ResultStatus.REGRADED || version > 1;
     }
-    
+
     /**
      * 채점 진행률 계산
      * 
@@ -241,24 +240,24 @@ public class ExamResult {
         if (questionResults.isEmpty()) {
             return BigDecimal.ZERO;
         }
-        
+
         long gradedCount = questionResults.stream()
-            .filter(qr -> qr.getScore() != null)
-            .count();
-        
+                .filter(qr -> qr.getScore() != null)
+                .count();
+
         return BigDecimal.valueOf(gradedCount)
-            .divide(BigDecimal.valueOf(questionResults.size()), 2, BigDecimal.ROUND_HALF_UP);
+                .divide(BigDecimal.valueOf(questionResults.size()), 2, BigDecimal.ROUND_HALF_UP);
     }
-    
+
     /**
      * 문제별 채점 결과 추가
      * 
      * @param questionResult 문제별 채점 결과
      */
-    public void addQuestionResult(QuestionResult questionResult) {
+    public void addQuestionResult(ExamResultQuestion questionResult) {
         questionResults.add(questionResult);
     }
-    
+
     /**
      * 채점 상태 열거형
      */
@@ -267,17 +266,17 @@ public class ExamResult {
          * 채점 대기
          */
         PENDING,
-        
+
         /**
          * 채점 진행중
          */
         IN_PROGRESS,
-        
+
         /**
          * 채점 완료
          */
         COMPLETED,
-        
+
         /**
          * 재채점
          */

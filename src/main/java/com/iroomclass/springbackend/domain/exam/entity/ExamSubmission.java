@@ -3,7 +3,7 @@ package com.iroomclass.springbackend.domain.exam.entity;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-import com.iroomclass.springbackend.domain.user.entity.User;
+import com.iroomclass.springbackend.domain.auth.entity.Student;
 import com.iroomclass.springbackend.common.UUIDv7Generator;
 
 import jakarta.persistence.Column;
@@ -59,13 +59,13 @@ public class ExamSubmission {
     private Exam exam;
     
     /**
-     * 사용자 정보 (학생)
-     * ManyToOne: 여러 시험 제출이 하나의 사용자에 속함
-     * FetchType.LAZY: 필요할 때만 사용자 정보를 조회
+     * 학생 정보
+     * ManyToOne: 여러 시험 제출이 하나의 학생에 속함
+     * FetchType.LAZY: 필요할 때만 학생 정보를 조회
      */
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
+    @JoinColumn(name = "student_id", nullable = false)
+    private Student student;
     
     /**
      * 제출일시
@@ -122,11 +122,11 @@ public class ExamSubmission {
     }
     
     /**
-     * 학생 정보 반환 (기존 코드 호환성을 위한 메서드)
+     * 학생 정보 반환
      * 
-     * @return 학생으로서의 User 정보
+     * @return 학생 정보
      */
-    public User getStudent() {
-        return user;
+    public Student getStudent() {
+        return student;
     }
 }

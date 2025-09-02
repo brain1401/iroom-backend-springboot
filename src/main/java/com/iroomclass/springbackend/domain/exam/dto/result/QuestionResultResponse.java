@@ -5,8 +5,8 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 import com.iroomclass.springbackend.common.BaseRecord;
-import com.iroomclass.springbackend.domain.exam.entity.QuestionResult;
-import com.iroomclass.springbackend.domain.exam.entity.QuestionResult.GradingMethod;
+import com.iroomclass.springbackend.domain.exam.entity.ExamResultQuestion;
+import com.iroomclass.springbackend.domain.exam.entity.ExamResultQuestion.GradingMethod;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
@@ -75,7 +75,7 @@ public record QuestionResultResponse(
      * @param entity QuestionResult 엔티티
      * @return QuestionResultResponse
      */
-    public static QuestionResultResponse from(QuestionResult entity) {
+    public static QuestionResultResponse from(ExamResultQuestion entity) {
         return new QuestionResultResponse(
                 entity.getId(),
                 entity.getExamResult().getId(),
