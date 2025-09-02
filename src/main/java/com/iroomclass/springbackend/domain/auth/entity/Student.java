@@ -26,64 +26,64 @@ import java.util.Objects;
  * @since 2025
  */
 @Entity
-@Table(name = "students")
+@Table(name = "student")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Builder
 @EntityListeners(AuditingEntityListener.class)
 public class Student {
-    
+
     /**
      * 학생 고유 식별자
      */
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    
+
     /**
      * 학생 이름
      */
     @Column(nullable = false, length = 50)
     private String name;
-    
+
     /**
      * 학생 전화번호
      */
     @Column(nullable = false, length = 20)
     private String phone;
-    
+
     /**
      * 학생 생년월일
      */
     @Column(nullable = false, name = "birth_date")
     private LocalDate birthDate;
-    
+
     /**
      * 생성 시간
      */
     @CreatedDate
     @Column(updatable = false, name = "created_at")
     private LocalDateTime createdAt;
-    
+
     /**
      * 수정 시간
      */
     @LastModifiedDate
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
-    
+
     /**
      * 학생 정보 유효성 검증
      * 
-     * @param name 이름
-     * @param phone 전화번호
+     * @param name      이름
+     * @param phone     전화번호
      * @param birthDate 생년월일
      * @return 검증 성공 여부
      */
     public boolean matches(String name, String phone, LocalDate birthDate) {
         return Objects.equals(this.name, name) &&
-               Objects.equals(this.phone, phone) &&
-               Objects.equals(this.birthDate, birthDate);
+                Objects.equals(this.phone, phone) &&
+                Objects.equals(this.birthDate, birthDate);
     }
 }

@@ -25,47 +25,47 @@ import java.util.Objects;
  * @since 2025
  */
 @Entity
-@Table(name = "teachers")
+@Table(name = "teacher")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Builder
 @EntityListeners(AuditingEntityListener.class)
 public class Teacher {
-    
+
     /**
      * 선생님 고유 식별자
      */
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    
+
     /**
      * 사용자명 (로그인용)
      */
     @Column(nullable = false, unique = true, length = 50)
     private String username;
-    
+
     /**
      * 비밀번호
      */
     @Column(nullable = false, length = 100)
     private String password;
-    
+
     /**
      * 생성 시간
      */
     @CreatedDate
     @Column(updatable = false, name = "created_at")
     private LocalDateTime createdAt;
-    
+
     /**
      * 수정 시간
      */
     @LastModifiedDate
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
-    
+
     /**
      * 선생님 인증 정보 유효성 검증
      * 
@@ -75,6 +75,6 @@ public class Teacher {
      */
     public boolean matches(String username, String password) {
         return Objects.equals(this.username, username) &&
-               Objects.equals(this.password, password);
+                Objects.equals(this.password, password);
     }
 }
