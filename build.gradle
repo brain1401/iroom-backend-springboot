@@ -14,6 +14,13 @@ java {
 	}
 }
 
+// Explicit Java 21 annotation processing configuration
+compileJava {
+	// options.compilerArgs += [
+	// 	'-processor', 'lombok.launch.AnnotationProcessorHider$AnnotationProcessor'
+	// ]
+}
+
 configurations {
 	compileOnly {
 		extendsFrom annotationProcessor
@@ -32,8 +39,8 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-web'
 	implementation 'org.springframework.boot:spring-boot-starter-webflux'
 	
-	// Swagger/OpenAPI 문서 자동 생성
-	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.7.0'
+	// Swagger/OpenAPI 문서 자동 생성 (Spring Boot 3.5.x 호환)
+	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.0'
 	
 	// YAML 변환을 위한 Jackson YAML 모듈
 	implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.15.3'
@@ -64,10 +71,13 @@ dependencies {
 	runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.6'
 	runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.6'
 	
+	// MySQL 드라이버 (최신 버전)
+	runtimeOnly 'com.mysql:mysql-connector-j:9.1.0'
+	
+	// Lombok annotation processing (표준 방식)
 	compileOnly 'org.projectlombok:lombok'
-	developmentOnly 'org.springframework.boot:spring-boot-devtools'
-	runtimeOnly 'com.mysql:mysql-connector-j'
 	annotationProcessor 'org.projectlombok:lombok'
+	annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testImplementation 'org.springframework.security:spring-security-test'
 	testImplementation 'org.springframework.boot:spring-boot-starter-webflux'

@@ -1,5 +1,6 @@
 package com.iroomclass.springbackend.domain.user.dto;
 
+import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -23,7 +24,34 @@ import java.util.Objects;
  * @author 이룸클래스
  * @since 2025
  */
-@Schema(description = "통합 로그인 요청")
+@Schema(
+    description = """
+        통합 로그인 요청 DTO
+        
+        userType에 따라 필수 필드가 달라집니다:
+        
+        **STUDENT (학생 3-factor 인증)**
+        - userType: "STUDENT" (필수)
+        - name: 학생 이름 (필수)
+        - phone: 전화번호 "010-1234-5678" 형식 (필수)
+        - birthDate: 생년월일 "2008-03-15" 형식 (필수)
+        - username, password: null 또는 생략
+        
+        **TEACHER (관리자 기본 인증)**  
+        - userType: "TEACHER" (필수)
+        - username: 관리자 사용자명 (필수)
+        - password: 관리자 비밀번호 (필수)
+        - name, phone, birthDate: null 또는 생략
+        """,
+    example = """
+        {
+          "userType": "STUDENT",
+          "name": "김철수", 
+          "phone": "010-1234-5678",
+          "birthDate": "2008-03-15"
+        }
+        """
+)
 public record UnifiedLoginRequest(
     // 관리자 로그인용 필드
     @Schema(description = "관리자 사용자명 (TEACHER 타입 전용)", 

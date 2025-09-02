@@ -1,5 +1,6 @@
 package com.iroomclass.springbackend.domain.user.dto;
 
+import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import java.time.LocalDate;
@@ -16,19 +17,23 @@ import java.util.UUID;
  */
 @Schema(
     name = "UnifiedLoginResponse",
-    description = "통합 로그인 응답 DTO",
+    description = """
+        통합 로그인 응답 DTO
+        
+        userType에 따라 포함되는 필드가 달라집니다:
+        - STUDENT: token, refreshToken, userId, name, role(STUDENT), phone, grade, birthDate, userType
+        - TEACHER: token, refreshToken, userId, username, name, role(ADMIN), email, academyName, userType
+        """,
     example = """
         {
           "token": "eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9...",
+          "refreshToken": "eyJhbGciOiJIUzUxMiJ9...",
           "userId": "123e4567-e89b-12d3-a456-426614174000",
-          "username": "admin01",
           "name": "김철수",
           "role": "STUDENT",
-          "email": "admin@example.com",
           "phone": "010-1234-5678",
           "grade": 1,
           "birthDate": "2008-03-15",
-          "academyName": "이룸클래스",
           "userType": "STUDENT"
         }
         """
@@ -36,11 +41,11 @@ import java.util.UUID;
 @Builder
 public record UnifiedLoginResponse(
         
-    @Schema(description = "JWT 액세스 토큰", 
+    @Schema(description = "JWT 액세스 토큰 (24시간 유효)", 
             example = "eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9...")
     String token,
     
-    @Schema(description = "JWT 리프레시 토큰", 
+    @Schema(description = "JWT 리프레시 토큰 (30일 유효)", 
             example = "eyJhbGciOiJIUzUxMiJ9...")
     String refreshToken,
     
@@ -48,40 +53,46 @@ public record UnifiedLoginResponse(
             example = "123e4567-e89b-12d3-a456-426614174000")
     UUID userId,
     
-    @Schema(description = "사용자명 (관리자만)", 
-            example = "admin01")
+    @Schema(description = "사용자명 (TEACHER 타입에서만 값 존재, STUDENT는 null)", 
+            example = "admin01",
+            nullable = true)
     String username,
     
-    @Schema(description = "이름", 
+    @Schema(description = "이름 (모든 타입에서 필수)", 
             example = "김철수")
     String name,
     
-    @Schema(description = "사용자 역할", 
+    @Schema(description = "사용자 역할 (DB 저장값)", 
             example = "STUDENT",
             allowableValues = {"STUDENT", "ADMIN"})
     String role,
     
-    @Schema(description = "이메일 (관리자만)", 
-            example = "admin@example.com")
+    @Schema(description = "이메일 (TEACHER 타입에서만 값 존재, STUDENT는 null)", 
+            example = "admin@example.com",
+            nullable = true)
     String email,
     
-    @Schema(description = "전화번호 (학생만)", 
-            example = "010-1234-5678")
+    @Schema(description = "전화번호 (STUDENT 타입에서만 값 존재, TEACHER는 null)", 
+            example = "010-1234-5678",
+            nullable = true)
     String phone,
     
-    @Schema(description = "학년 (학생만)", 
-            example = "1")
+    @Schema(description = "학년 (STUDENT 타입에서만 값 존재, TEACHER는 null)", 
+            example = "1",
+            nullable = true)
     Integer grade,
     
-    @Schema(description = "생년월일 (학생만)", 
-            example = "2008-03-15")
+    @Schema(description = "생년월일 (STUDENT 타입에서만 값 존재, TEACHER는 null)", 
+            example = "2008-03-15",
+            nullable = true)
     LocalDate birthDate,
     
-    @Schema(description = "학원명 (관리자만)", 
-            example = "이룸클래스")
+    @Schema(description = "학원명 (TEACHER 타입에서만 값 존재, STUDENT는 null)", 
+            example = "이룸클래스",
+            nullable = true)
     String academyName,
     
-    @Schema(description = "사용자 타입", 
+    @Schema(description = "사용자 타입 (요청 시 전달한 userType)", 
             example = "STUDENT",
             allowableValues = {"STUDENT", "TEACHER"})
     String userType
