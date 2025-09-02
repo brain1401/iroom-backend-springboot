@@ -40,6 +40,10 @@ public record UnifiedLoginResponse(
             example = "eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9...")
     String token,
     
+    @Schema(description = "JWT 리프레시 토큰", 
+            example = "eyJhbGciOiJIUzUxMiJ9...")
+    String refreshToken,
+    
     @Schema(description = "사용자 고유 ID", 
             example = "123e4567-e89b-12d3-a456-426614174000")
     UUID userId,
@@ -167,13 +171,15 @@ public record UnifiedLoginResponse(
      * User 엔티티에서 UnifiedLoginResponse 생성 (팩토리 메서드)
      * 
      * @param user 사용자 엔티티
-     * @param token JWT 토큰
+     * @param token JWT 액세스 토큰
+     * @param refreshToken JWT 리프레시 토큰
      * @return UnifiedLoginResponse 객체
      */
     public static UnifiedLoginResponse from(com.iroomclass.springbackend.domain.user.entity.User user, 
-                                            String token) {
+                                            String token, String refreshToken) {
         return UnifiedLoginResponse.builder()
                 .token(token)
+                .refreshToken(refreshToken)
                 .userId(user.getId())
                 .username(user.getUsername())
                 .name(user.getName())

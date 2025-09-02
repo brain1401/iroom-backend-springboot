@@ -25,8 +25,6 @@ import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
-
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -39,7 +37,7 @@ import lombok.extern.slf4j.Slf4j;
  * @since 2025
  */
 @RestController
-@RequestMapping("/admin/units")
+@RequestMapping("/units")
 @RequiredArgsConstructor
 @Slf4j
 @Tag(name = "단원 관리", description = "학년별 단원 목록 조회, 통계 API")

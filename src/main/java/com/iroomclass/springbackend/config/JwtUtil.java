@@ -37,6 +37,12 @@ public class JwtUtil {
     private Long expiration;
     
     /**
+     * Refresh Token 만료시간 (기본 7일)
+     */
+    @Value("${jwt.refresh-expiration:604800000}")
+    private Long refreshExpiration;
+    
+    /**
      * 서명에 사용할 SecretKey
      */
     private SecretKey key;
@@ -73,6 +79,99 @@ public class JwtUtil {
                 .expiration(expirationDate)
                 .signWith(key, Jwts.SIG.HS512)
                 .compact();
+    }
+    
+    /**
+     * Refresh Token 생성
+     * 
+     * @param username 사용자명
+     * @param userId 사용자 ID
+     * @param role 사용자 역할
+     * @return 생성된 Refresh Token
+     */
+    public String generateRefreshToken(String username, UUID userId, String role) {
+        Date now = new Date();
+        Date expirationDate = new Date(now.getTime() + refreshExpiration);
+        
+        return Jwts.builder()
+                .subject(username)
+                .claim("userId", userId.toString())
+                .claim("role", role)
+                .claim("tokenType", "refresh")  // refresh token 구분을 위한 claim
+                .issuedAt(now)
+                .expiration(expirationDate)
+                .signWith(key, Jwts.SIG.HS512)
+                .compact();
+    }
+    
+    /**
+     * Refresh Token으로 새로운 Access Token 생성
+     * 
+     * @param refreshToken 유효한 refresh token
+     * @return 새로운 access token
+     * @throws JwtException refresh token이 유효하지 않은 경우
+     */
+    public String refreshAccessToken(String refreshToken) {
+        Claims claims = getClaimsFromToken(refreshToken);
+        
+        // refresh token 타입 확인
+        String tokenType = claims.get("tokenType", String.class);
+        if (!"refresh".equals(tokenType)) {
+            throw new JwtException("잘못된 토큰 타입입니다. Refresh Token이 필요합니다.");
+        }
+        
+        // 새로운 access token 생성
+        String username = claims.getSubject();
+        String userIdStr = claims.get("userId", String.class);
+        String role = claims.get("role", String.class);
+        
+        UUID userId = UUID.fromString(userIdStr);
+        
+        return generateToken(username, userId, role);
+    }
+    
+    /**
+     * Refresh Token 유효성 검증
+     * 
+     * @param refreshToken refresh token
+     * @return 유효하면 true, 그렇지 않으면 false
+     */
+    public boolean validateRefreshToken(String refreshToken) {
+        try {
+            Claims claims = getClaimsFromToken(refreshToken);
+            
+            // refresh token 타입 확인
+            String tokenType = claims.get("tokenType", String.class);
+            if (!"refresh".equals(tokenType)) {
+                log.debug("잘못된 토큰 타입: {}", tokenType);
+                return false;
+            }
+            
+            return !isTokenExpired(refreshToken);
+        } catch (JwtException e) {
+            log.debug("Refresh Token 검증 실패: {}", e.getMessage());
+            return false;
+        }
+    }
+    
+    /**
+     * Refresh Token에서 사용자 ID 추출
+     * 
+     * @param refreshToken refresh token
+     * @return 사용자 ID
+     * @throws JwtException 토큰이 유효하지 않은 경우
+     */
+    public UUID getUserIdFromRefreshToken(String refreshToken) {
+        Claims claims = getClaimsFromToken(refreshToken);
+        
+        // refresh token 타입 확인
+        String tokenType = claims.get("tokenType", String.class);
+        if (!"refresh".equals(tokenType)) {
+            throw new JwtException("잘못된 토큰 타입입니다. Refresh Token이 아닙니다.");
+        }
+        
+        String userIdStr = claims.get("userId", String.class);
+        return UUID.fromString(userIdStr);
     }
     
     /**

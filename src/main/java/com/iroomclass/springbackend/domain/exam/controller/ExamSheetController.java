@@ -43,7 +43,7 @@ import lombok.extern.slf4j.Slf4j;
  * @since 2025
  */
 @RestController
-@RequestMapping("exam-sheets")
+@RequestMapping("/exam-sheets")
 @RequiredArgsConstructor
 @Slf4j
 @Tag(name = "관리자 - 시험지 관리", description = "시험지 생성, 조회, 수정, 삭제 API")

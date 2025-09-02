@@ -125,4 +125,12 @@ public interface UserRepository extends JpaRepository<User, UUID> {
      * @return 해당 역할의 사용자 수
      */
     long countByRole(UserRole role);
+    
+    /**
+     * Refresh Token으로 사용자 조회
+     * 
+     * @param refreshToken 리프레시 토큰
+     * @return 사용자 Optional
+     */
+    Optional<User> findByRefreshToken(String refreshToken);
 }

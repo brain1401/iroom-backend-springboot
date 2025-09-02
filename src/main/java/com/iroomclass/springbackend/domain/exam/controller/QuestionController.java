@@ -33,7 +33,7 @@ import lombok.extern.slf4j.Slf4j;
  * @since 2025
  */
 @RestController
-@RequestMapping("questions")
+@RequestMapping("/questions")
 @RequiredArgsConstructor
 @Slf4j
 @Tag(name = "문제 관리", description = "문제 목록 조회, 상세 조회, 통계, 검색 API")

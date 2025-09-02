@@ -33,7 +33,7 @@ import lombok.extern.slf4j.Slf4j;
  * @since 2025
  */
 @RestController
-@RequestMapping("/admin/exam-submissions")
+@RequestMapping("/exam-submissions")
 @RequiredArgsConstructor
 @Slf4j
 @Tag(name = "관리자 - 시험 제출 관리", description = "관리자 시험 제출 조회, 관리 API")

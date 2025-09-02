@@ -32,7 +32,7 @@ import java.util.Map;
  * </p>
  */
 @RestController
-@RequestMapping("/admin/ai/text-recognition")
+@RequestMapping("/ai/text-recognition")
 @RequiredArgsConstructor
 @Slf4j
 @Tag(name = "AI 텍스트 인식 API", description = "AI 서버 텍스트 인식 기능 프록시 API")

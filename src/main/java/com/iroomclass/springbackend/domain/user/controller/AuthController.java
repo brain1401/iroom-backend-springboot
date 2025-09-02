@@ -2,6 +2,7 @@ package com.iroomclass.springbackend.domain.user.controller;
 
 import com.iroomclass.springbackend.common.ApiResponse;
 import com.iroomclass.springbackend.domain.user.dto.*;
+import com.iroomclass.springbackend.domain.user.entity.User;
 import com.iroomclass.springbackend.domain.user.service.UnifiedAuthService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -31,7 +32,7 @@ import org.springframework.web.bind.annotation.*;
  * @since 2025
  */
 @RestController
-@RequestMapping("auth")
+@RequestMapping("/auth")
 @RequiredArgsConstructor
 @Slf4j
 @Tag(name = "통합 인증 API", description = "학생/관리자 로그인 및 JWT 토큰 관리 API")
@@ -200,34 +201,160 @@ public class AuthController {
      * 로그아웃
      * 
      * <p>
-     * JWT 토큰 기반 인증에서는 서버측에서 토큰을 무효화할 필요가 없습니다.
-     * 클라이언트에서 토큰을 삭제하면 로그아웃이 완료됩니다.
+     * 리프레시 토큰을 무효화하여 완전한 로그아웃을 수행합니다.
+     * 클라이언트에서도 저장된 토큰들을 삭제해야 합니다.
      * </p>
      * 
+     * @param refreshRequest 무효화할 리프레시 토큰 (선택사항)
      * @return 로그아웃 성공 메시지
      */
     @PostMapping("/logout")
     @Operation(summary = "로그아웃", description = """
             현재 로그인된 사용자를 로그아웃합니다.
 
-            **주의사항:**
-            - JWT 토큰은 서버측에서 무효화되지 않습니다
-            - 클라이언트에서 토큰을 삭제해야 합니다
-            - 보안상 중요한 작업 후에는 반드시 로그아웃하세요
+            **기능:**
+            - 서버에 저장된 리프레시 토큰 무효화
+            - 완전한 보안 로그아웃 처리
 
-            **모든 사용자 타입에서 동일하게 작동합니다**
+            **요청 방법:**
+            1. 리프레시 토큰을 포함하여 요청 (권장)
+            2. 빈 요청으로도 가능 (클라이언트 토큰만 삭제)
+
+            **요청 예시:**
+            ```json
+            {
+              "refreshToken": "eyJhbGciOiJIUzUxMiJ9..."
+            }
+            ```
+
+            **주의사항:**
+            - 로그아웃 후 모든 토큰이 무효화됩니다
+            - 재로그인이 필요합니다
+            - 클라이언트에서도 토큰을 삭제해야 합니다
             """)
     @ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "로그아웃 성공")
     })
-    public ResponseEntity<ApiResponse<Void>> logout() {
-        // JWT 기반 인증에서는 서버측에서 할 일이 없음
-        // 클라이언트에서 토큰 삭제만 하면 됨
+    public ResponseEntity<ApiResponse<Void>> logout(
+            @RequestBody(required = false) RefreshTokenRequest refreshRequest) {
 
         log.info("로그아웃 API 호출");
 
-        return ResponseEntity.ok(
-                ApiResponse.success("로그아웃이 완료되었습니다"));
+        try {
+            // 리프레시 토큰이 제공된 경우 무효화
+            if (refreshRequest != null && refreshRequest.refreshToken() != null) {
+                log.info("리프레시 토큰 무효화 처리 시작");
+
+                try {
+                    String refreshToken = refreshRequest.refreshToken();
+
+                    // 1. 리프레시 토큰 유효성 확인 (JwtUtil을 직접 주입받아야 함)
+                    // 현재는 UnifiedAuthService를 통해 처리
+
+                    // 2. 리프레시 토큰으로 사용자 찾아서 무효화
+                    User user = unifiedAuthService.getUserByRefreshToken(refreshToken);
+
+                    if (user != null) {
+                        unifiedAuthService.invalidateRefreshToken(user.getId());
+                        log.info("리프레시 토큰 무효화 완료: userId={}, 사용자={}",
+                                user.getId(), user.getName());
+                    } else {
+                        log.warn("리프레시 토큰에 해당하는 사용자를 찾을 수 없음");
+                    }
+
+                } catch (BadCredentialsException e) {
+                    log.warn("유효하지 않은 리프레시 토큰으로 로그아웃 시도: {}", e.getMessage());
+                    // 로그아웃은 실패하지 않도록 처리
+                } catch (Exception e) {
+                    log.error("리프레시 토큰 무효화 중 오류 발생: {}", e.getMessage(), e);
+                    // 로그아웃은 실패하지 않도록 처리
+                }
+            }
+
+            log.info("로그아웃 완료");
+
+            return ResponseEntity.ok(
+                    ApiResponse.success("로그아웃이 완료되었습니다"));
+
+        } catch (Exception e) {
+            log.error("로그아웃 처리 중 오류 발생: {}", e.getMessage(), e);
+            // 로그아웃은 항상 성공으로 처리 (보안상 이유)
+            return ResponseEntity.ok(
+                    ApiResponse.success("로그아웃이 완료되었습니다"));
+        }
+    }
+
+    /**
+     * 리프레시 토큰으로 액세스 토큰 갱신
+     * 
+     * <p>
+     * 유효한 리프레시 토큰을 사용하여 새로운 액세스 토큰을 발급받습니다.
+     * 보안을 위해 새로운 리프레시 토큰도 함께 발급됩니다.
+     * </p>
+     * 
+     * @param refreshRequest 리프레시 토큰 요청
+     * @return 새로운 액세스 토큰과 사용자 정보
+     */
+    @PostMapping("/refresh")
+    @Operation(summary = "토큰 갱신", description = """
+            리프레시 토큰을 사용하여 새로운 액세스 토큰을 발급받습니다.
+
+            **특징:**
+            - 액세스 토큰 만료 시 사용
+            - 보안을 위해 새로운 리프레시 토큰도 함께 발급
+            - 기존 리프레시 토큰은 자동으로 무효화
+
+            **요청 예시:**
+            ```json
+            {
+              "refreshToken": "eyJhbGciOiJIUzUxMiJ9..."
+            }
+            ```
+
+            **주의사항:**
+            - 리프레시 토큰은 7일간 유효합니다
+            - 만료된 리프레시 토큰은 재로그인이 필요합니다
+            """)
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "토큰 갱신 성공"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "잘못된 리프레시 토큰 형식"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "유효하지 않거나 만료된 리프레시 토큰"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "서버 내부 오류")
+    })
+    public ResponseEntity<ApiResponse<UnifiedLoginResponse>> refreshToken(
+            @Valid @RequestBody RefreshTokenRequest refreshRequest) {
+
+        try {
+            log.info("리프레시 토큰 갱신 API 호출");
+
+            // 리프레시 토큰으로 새로운 액세스 토큰 발급
+            UnifiedLoginResponse refreshResponse = unifiedAuthService.refreshToken(refreshRequest.refreshToken());
+
+            log.info("리프레시 토큰 갱신 성공: 사용자={}, 역할={}",
+                    refreshResponse.name(), refreshResponse.role());
+
+            return ResponseEntity.ok(
+                    ApiResponse.success("토큰 갱신이 완료되었습니다", refreshResponse));
+
+        } catch (BadCredentialsException e) {
+            log.warn("리프레시 토큰 갱신 실패: 사유={}", e.getMessage());
+
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body((ApiResponse<UnifiedLoginResponse>) (ApiResponse<?>) ApiResponse.error(e.getMessage()));
+
+        } catch (IllegalArgumentException e) {
+            log.warn("리프레시 토큰 요청 오류: 사유={}", e.getMessage());
+
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body((ApiResponse<UnifiedLoginResponse>) (ApiResponse<?>) ApiResponse.error(e.getMessage()));
+
+        } catch (Exception e) {
+            log.error("리프레시 토큰 갱신 서버 오류: 오류={}", e.getMessage(), e);
+
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body((ApiResponse<UnifiedLoginResponse>) (ApiResponse<?>) ApiResponse
+                            .error("토큰 갱신 처리 중 오류가 발생했습니다"));
+        }
     }
 
     /**

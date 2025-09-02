@@ -42,7 +42,7 @@ import lombok.RequiredArgsConstructor;
  * @since 2025
  */
 @RestController
-@RequestMapping("/student/exam-results")
+@RequestMapping("/exam-results")
 @RequiredArgsConstructor
 @Tag(name = "AI 시험 결과 API", description = "AI 기반 시험 채점 결과 관리 API")
 public class ExamResultController {
@@ -59,20 +59,9 @@ public class ExamResultController {
     @ResponseStatus(HttpStatus.CREATED)
     @Operation(summary = "AI 자동 채점 시작", description = "시험 제출에 대한 AI 자동 채점을 시작합니다.")
     @io.swagger.v3.oas.annotations.responses.ApiResponses({
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(
-                    responseCode = "201", 
-                    description = "AI 자동 채점 시작 성공", 
-                    content = @Content(schema = @Schema(implementation = ExamResultResponse.class))),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(
-                    responseCode = "400", 
-                    description = "잘못된 요청", 
-                    content = @Content(schema = @Schema(implementation = ApiResponse.ErrorResponse.class), 
-                            examples = @ExampleObject(name = "입력 검증 실패", value = ApiResponseConstants.BAD_REQUEST_EXAMPLE))),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(
-                    responseCode = "404", 
-                    description = "시험 제출물 없음", 
-                    content = @Content(schema = @Schema(implementation = ApiResponse.ErrorResponse.class), 
-                            examples = @ExampleObject(name = "시험 제출 없음", value = ApiResponseConstants.SUBMISSION_NOT_FOUND_EXAMPLE)))
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "201", description = "AI 자동 채점 시작 성공", content = @Content(schema = @Schema(implementation = ExamResultResponse.class))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "잘못된 요청", content = @Content(schema = @Schema(implementation = ApiResponse.ErrorResponse.class), examples = @ExampleObject(name = "입력 검증 실패", value = ApiResponseConstants.BAD_REQUEST_EXAMPLE))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "시험 제출물 없음", content = @Content(schema = @Schema(implementation = ApiResponse.ErrorResponse.class), examples = @ExampleObject(name = "시험 제출 없음", value = ApiResponseConstants.SUBMISSION_NOT_FOUND_EXAMPLE)))
     })
     public ApiResponse<ExamResultResponse> startGrading(@Valid @RequestBody StartGradingRequest request) {
         // AI 자동 채점만 지원
@@ -92,19 +81,9 @@ public class ExamResultController {
     @ResponseStatus(HttpStatus.CREATED)
     @Operation(summary = "AI 재채점 시작", description = "기존 채점 결과에 대한 AI 재채점을 시작합니다.")
     @io.swagger.v3.oas.annotations.responses.ApiResponses({
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(
-                    responseCode = "201", 
-                    description = "AI 재채점 시작 성공"),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(
-                    responseCode = "400", 
-                    description = "잘못된 요청", 
-                    content = @Content(schema = @Schema(implementation = ApiResponse.ErrorResponse.class), 
-                            examples = @ExampleObject(name = "입력 검증 실패", value = ApiResponseConstants.BAD_REQUEST_EXAMPLE))),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(
-                    responseCode = "404", 
-                    description = "기존 채점 결과 없음", 
-                    content = @Content(schema = @Schema(implementation = ApiResponse.ErrorResponse.class), 
-                            examples = @ExampleObject(name = "채점 결과 없음", value = ApiResponseConstants.ORIGINAL_RESULT_NOT_FOUND_EXAMPLE)))
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "201", description = "AI 재채점 시작 성공"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "잘못된 요청", content = @Content(schema = @Schema(implementation = ApiResponse.ErrorResponse.class), examples = @ExampleObject(name = "입력 검증 실패", value = ApiResponseConstants.BAD_REQUEST_EXAMPLE))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "기존 채점 결과 없음", content = @Content(schema = @Schema(implementation = ApiResponse.ErrorResponse.class), examples = @ExampleObject(name = "채점 결과 없음", value = ApiResponseConstants.ORIGINAL_RESULT_NOT_FOUND_EXAMPLE)))
     })
     public ApiResponse<ExamResultResponse> startRegrading(@Valid @RequestBody StartRegradingRequest request) {
         // AI 재채점은 기존 결과 ID만 필요
@@ -123,23 +102,12 @@ public class ExamResultController {
     @PutMapping("/complete")
     @Operation(summary = "채점 완료", description = "진행 중인 채점을 완료합니다.")
     @io.swagger.v3.oas.annotations.responses.ApiResponses({
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(
-                    responseCode = "200", 
-                    description = "성공", 
-                    content = @Content(schema = @Schema(implementation = ApiResponse.SuccessResponse.class))),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(
-                    responseCode = "400", 
-                    description = "잘못된 요청", 
-                    content = @Content(schema = @Schema(implementation = ApiResponse.ErrorResponse.class), 
-                            examples = {
-                                    @ExampleObject(name = "입력 검증 실패", value = ApiResponseConstants.BAD_REQUEST_EXAMPLE),
-                                    @ExampleObject(name = "채점 미완료", value = ApiResponseConstants.GRADING_NOT_COMPLETED_EXAMPLE)
-                            })),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(
-                    responseCode = "404", 
-                    description = "시험 결과 없음", 
-                    content = @Content(schema = @Schema(implementation = ApiResponse.ErrorResponse.class), 
-                            examples = @ExampleObject(name = "시험 결과 없음", value = ApiResponseConstants.RESULT_NOT_FOUND_EXAMPLE)))
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "성공", content = @Content(schema = @Schema(implementation = ApiResponse.SuccessResponse.class))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "잘못된 요청", content = @Content(schema = @Schema(implementation = ApiResponse.ErrorResponse.class), examples = {
+                    @ExampleObject(name = "입력 검증 실패", value = ApiResponseConstants.BAD_REQUEST_EXAMPLE),
+                    @ExampleObject(name = "채점 미완료", value = ApiResponseConstants.GRADING_NOT_COMPLETED_EXAMPLE)
+            })),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "시험 결과 없음", content = @Content(schema = @Schema(implementation = ApiResponse.ErrorResponse.class), examples = @ExampleObject(name = "시험 결과 없음", value = ApiResponseConstants.RESULT_NOT_FOUND_EXAMPLE)))
     })
     public ApiResponse<Void> completeGrading(@Valid @RequestBody CompleteGradingRequest request) {
         examResultService.completeGrading(request.resultId(), request.comment());

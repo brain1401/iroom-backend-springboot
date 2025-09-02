@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.*;
 
 @Slf4j
 @RestController
-@RequestMapping("/admin/statistics")
+@RequestMapping("/statistics")
 @RequiredArgsConstructor
 @Tag(name = "관리자 - 통계", description = "관리자 통계 관련 API")
 public class StatisticsController {

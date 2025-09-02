@@ -1,30 +1,15 @@
 package com.iroomclass.springbackend.domain.exam.service;
 
 import java.util.List;
-import java.util.ArrayList;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.iroomclass.springbackend.domain.exam.entity.StudentAnswerSheet;
 import com.iroomclass.springbackend.domain.exam.repository.StudentAnswerSheetRepository;
-import com.iroomclass.springbackend.domain.exam.entity.ExamSubmission;
-import com.iroomclass.springbackend.domain.exam.repository.ExamSubmissionRepository;
-import com.iroomclass.springbackend.domain.exam.entity.Question;
-import com.iroomclass.springbackend.domain.exam.repository.QuestionRepository;
 import com.iroomclass.springbackend.domain.exam.dto.answer.ExamAnswerListResponse;
 import com.iroomclass.springbackend.domain.exam.dto.answer.StudentExamAnswerResponse;
-import com.iroomclass.springbackend.domain.exam.dto.answer.ExamAnswerSheetCreateRequest;
-import com.iroomclass.springbackend.domain.exam.dto.answer.ExamAnswerSheetProcessResponse;
-import com.iroomclass.springbackend.domain.exam.dto.answer.ExamAnswerUpdateRequest;
-import com.iroomclass.springbackend.domain.exam.dto.answer.RecognizedAnswer;
-import com.iroomclass.springbackend.domain.exam.entity.ExamSheetQuestion;
-import com.iroomclass.springbackend.domain.exam.repository.ExamSheetQuestionRepository;
-import com.iroomclass.springbackend.domain.exam.service.QuestionResultService;
-import com.iroomclass.springbackend.domain.exam.entity.QuestionResult;
-
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 

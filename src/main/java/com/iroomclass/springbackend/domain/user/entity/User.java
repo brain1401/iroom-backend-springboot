@@ -59,6 +59,13 @@ public class User implements UserDetails {
     private String password;
 
     /**
+     * 리프레시 토큰
+     * JWT 토큰 재발급을 위한 긴 기간 유효한 토큰
+     */
+    @Column(name = "refresh_token", columnDefinition = "TEXT")
+    private String refreshToken;
+
+    /**
      * 사용자 이름
      * 모든 사용자에게 공통으로 사용되는 실제 이름
      */
@@ -219,5 +226,15 @@ public class User implements UserDetails {
      */
     public boolean canLogin() {
         return isAdmin() && username != null && password != null;
+    }
+    
+    /**
+     * 리프레시 토큰 설정
+     * JPA 엔티티 업데이트를 위한 setter 메서드
+     * 
+     * @param refreshToken 새로운 리프레시 토큰
+     */
+    public void setRefreshToken(String refreshToken) {
+        this.refreshToken = refreshToken;
     }
 }

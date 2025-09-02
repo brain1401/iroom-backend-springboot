@@ -13,6 +13,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.UUID;
+
 /**
  * 통합 인증 서비스
  * 
@@ -46,6 +48,7 @@ public class UnifiedAuthService {
      * @return 통합 로그인 응답 (JWT 토큰 포함)
      * @throws BadCredentialsException 인증 실패 시
      */
+    @Transactional  // 클래스 레벨의 readOnly=true를 오버라이드하여 쓰기 가능하도록 설정
     public UnifiedLoginResponse login(UnifiedLoginRequest loginRequest) {
         log.info("통합 로그인 요청: 사용자타입={}", loginRequest.userType());
         
@@ -60,15 +63,24 @@ public class UnifiedAuthService {
                 throw new BadCredentialsException("지원되지 않는 사용자 타입입니다: " + loginRequest.userType());
             }
             
-            // JWT 토큰 생성
+            // JWT 토큰과 Refresh Token 생성
             String token = jwtUtil.generateToken(
                 user.getUsername() != null ? user.getUsername() : user.getName(),
                 user.getId(),
                 user.getRole().name()
             );
             
+            String refreshToken = jwtUtil.generateRefreshToken(
+                user.getUsername() != null ? user.getUsername() : user.getName(),
+                user.getId(),
+                user.getRole().name()
+            );
+            
+            // Refresh Token을 사용자 정보에 저장
+            updateUserRefreshToken(user, refreshToken);
+            
             // 통합 응답 생성
-            UnifiedLoginResponse response = UnifiedLoginResponse.from(user, token);
+            UnifiedLoginResponse response = UnifiedLoginResponse.from(user, token, refreshToken);
             
             log.info("통합 로그인 성공: 사용자타입={}, 사용자={}, 역할={}", 
                     loginRequest.userType(), user.getName(), user.getRole());
@@ -184,5 +196,119 @@ public class UnifiedAuthService {
         long count = userRepository.countByRole(role);
         log.debug("사용자 수 통계: {}={}", role, count);
         return count;
+    }
+    
+    /**
+     * 사용자의 Refresh Token 업데이트
+     * 
+     * @param user 사용자 엔티티
+     * @param refreshToken 새로운 refresh token
+     */
+    @Transactional(propagation = org.springframework.transaction.annotation.Propagation.REQUIRES_NEW)
+    private void updateUserRefreshToken(User user, String refreshToken) {
+        // 새로운 트랜잭션에서 refresh token 업데이트 실행
+        User existingUser = userRepository.findById(user.getId())
+            .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다: " + user.getId()));
+        
+        existingUser.setRefreshToken(refreshToken);
+        userRepository.saveAndFlush(existingUser);  // 즉시 DB에 반영
+        
+        log.info("Refresh Token 저장 완료: userId={}", user.getId());
+    }
+    
+    /**
+     * Refresh Token으로 Access Token 갱신
+     * 
+     * @param refreshToken 유효한 refresh token
+     * @return 새로운 UnifiedLoginResponse (새 access token 포함)
+     * @throws BadCredentialsException refresh token이 유효하지 않거나 만료된 경우
+     */
+    @Transactional
+    public UnifiedLoginResponse refreshToken(String refreshToken) {
+        log.info("Refresh Token을 통한 Access Token 갱신 요청");
+        
+        try {
+            // Refresh Token 유효성 검증
+            if (!jwtUtil.validateRefreshToken(refreshToken)) {
+                log.warn("유효하지 않은 Refresh Token");
+                throw new BadCredentialsException("유효하지 않은 Refresh Token입니다");
+            }
+            
+            // DB에서 해당 refresh token을 가진 사용자 찾기
+            User user = userRepository.findByRefreshToken(refreshToken)
+                    .orElseThrow(() -> {
+                        log.warn("DB에서 Refresh Token을 찾을 수 없음");
+                        return new BadCredentialsException("등록되지 않은 Refresh Token입니다");
+                    });
+            
+            // 새로운 Access Token 생성
+            String newAccessToken = jwtUtil.refreshAccessToken(refreshToken);
+            
+            // 새로운 Refresh Token 생성 및 저장 (보안 강화)
+            String newRefreshToken = jwtUtil.generateRefreshToken(
+                user.getUsername() != null ? user.getUsername() : user.getName(),
+                user.getId(),
+                user.getRole().name()
+            );
+            
+            updateUserRefreshToken(user, newRefreshToken);
+            
+            // 응답 생성
+            UnifiedLoginResponse response = UnifiedLoginResponse.from(user, newAccessToken, newRefreshToken);
+            
+            log.info("Access Token 갱신 성공: userId={}, 사용자={}", user.getId(), user.getName());
+            
+            return response;
+            
+        } catch (BadCredentialsException e) {
+            log.warn("Refresh Token 갱신 실패: 사유={}", e.getMessage());
+            throw e;
+            
+        } catch (Exception e) {
+            log.error("Refresh Token 갱신 오류: 오류={}", e.getMessage(), e);
+            throw new BadCredentialsException("토큰 갱신 중 오류가 발생했습니다");
+        }
+    }
+    
+    /**
+     * 로그아웃 시 Refresh Token 무효화
+     * 
+     * @param userId 사용자 ID
+     */
+    @Transactional
+    public void invalidateRefreshToken(UUID userId) {
+        log.info("Refresh Token 무효화: userId={}", userId);
+        
+        userRepository.findById(userId).ifPresent(user -> {
+            updateUserRefreshToken(user, null);  // refresh token을 null로 설정
+        });
+    }
+    
+    /**
+     * Refresh Token으로 사용자 조회
+     * 
+     * @param refreshToken 리프레시 토큰
+     * @return 사용자 엔티티 (없으면 null)
+     * @throws BadCredentialsException refresh token이 유효하지 않은 경우
+     */
+    @Transactional(readOnly = true)
+    public User getUserByRefreshToken(String refreshToken) {
+        try {
+            // 1. JWT 토큰 형식 검증
+            if (!jwtUtil.validateRefreshToken(refreshToken)) {
+                throw new BadCredentialsException("유효하지 않은 리프레시 토큰입니다");
+            }
+            
+            // 2. DB에서 해당 refresh token을 가진 사용자 찾기
+            return userRepository.findByRefreshToken(refreshToken)
+                    .orElseThrow(() -> new BadCredentialsException("등록되지 않은 리프레시 토큰입니다"));
+                    
+        } catch (BadCredentialsException e) {
+            log.warn("리프레시 토큰으로 사용자 조회 실패: 사유={}", e.getMessage());
+            throw e;
+        } catch (Exception e) {
+            log.error("리프레시 토큰으로 사용자 조회 오류: 오류={}", e.getMessage(), e);
+            throw new BadCredentialsException("사용자 조회 중 오류가 발생했습니다");
+        }
     }
 }
