@@ -99,132 +99,78 @@ public class AuthController {
             ```
             """)
     @ApiResponses({
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(
-                    responseCode = "200", 
-                    description = "로그인 성공 - JWT 토큰과 사용자 정보 반환",
-                    content = @Content(
-                            mediaType = "application/json",
-                            schema = @Schema(implementation = ApiResponse.class),
-                            examples = {
-                                    @ExampleObject(
-                                            name = "학생 로그인 성공",
-                                            summary = "학생 3-factor 인증 성공 응답",
-                                            value = """
-                                            {
-                                              "result": "SUCCESS",
-                                              "message": "로그인이 성공했습니다",
-                                              "data": {
-                                                "token": "eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9...",
-                                                "refreshToken": "eyJhbGciOiJIUzUxMiJ9...",
-                                                "userId": "123e4567-e89b-12d3-a456-426614174000",
-                                                "username": null,
-                                                "name": "김철수",
-                                                "role": "STUDENT",
-                                                "email": null,
-                                                "phone": "010-1234-5678",
-                                                "grade": 1,
-                                                "birthDate": "2008-03-15",
-                                                "academyName": null,
-                                                "userType": "STUDENT"
-                                              }
-                                            }
-                                            """
-                                    ),
-                                    @ExampleObject(
-                                            name = "관리자 로그인 성공",
-                                            summary = "관리자 기본 인증 성공 응답",
-                                            value = """
-                                            {
-                                              "result": "SUCCESS",
-                                              "message": "로그인이 성공했습니다",
-                                              "data": {
-                                                "token": "eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9...",
-                                                "refreshToken": "eyJhbGciOiJIUzUxMiJ9...",
-                                                "userId": "123e4567-e89b-12d3-a456-426614174001",
-                                                "username": "admin",
-                                                "name": "관리자",
-                                                "role": "ADMIN",
-                                                "email": "admin@example.com",
-                                                "phone": null,
-                                                "grade": null,
-                                                "birthDate": null,
-                                                "academyName": "이룸클래스",
-                                                "userType": "TEACHER"
-                                              }
-                                            }
-                                            """
-                                    )
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "로그인 성공 - JWT 토큰과 사용자 정보 반환", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiResponse.class), examples = {
+                    @ExampleObject(name = "학생 로그인 성공", summary = "학생 3-factor 인증 성공 응답", value = """
+                            {
+                              "result": "SUCCESS",
+                              "message": "로그인이 성공했습니다",
+                              "data": {
+                                "token": "eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9...",
+                                "refreshToken": "eyJhbGciOiJIUzUxMiJ9...",
+                                "userId": "123e4567-e89b-12d3-a456-426614174000",
+                                "username": null,
+                                "name": "김철수",
+                                "role": "STUDENT",
+                                "email": null,
+                                "phone": "010-1234-5678",
+                                "grade": 1,
+                                "birthDate": "2008-03-15",
+                                "academyName": null,
+                                "userType": "STUDENT"
+                              }
                             }
-                    )
-            ),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(
-                    responseCode = "400", 
-                    description = "입력 데이터 검증 오류 - 필수 필드 누락 또는 잘못된 userType",
-                    content = @Content(
-                            mediaType = "application/json",
-                            schema = @Schema(implementation = ApiResponse.class),
-                            examples = @ExampleObject(
-                                    name = "검증 오류 예시",
-                                    value = """
-                                    {
-                                      "result": "ERROR",
-                                      "message": "학생 타입에서는 name이 필수입니다",
-                                      "data": null
-                                    }
-                                    """
-                            )
-                    )
-            ),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(
-                    responseCode = "401", 
-                    description = "인증 실패 - 잘못된 인증 정보",
-                    content = @Content(
-                            mediaType = "application/json",
-                            schema = @Schema(implementation = ApiResponse.class),
-                            examples = {
-                                    @ExampleObject(
-                                            name = "학생 인증 실패",
-                                            summary = "학생 3-factor 인증 실패",
-                                            value = """
-                                            {
-                                              "result": "ERROR",
-                                              "message": "이름, 전화번호, 생년월일이 일치하는 학생을 찾을 수 없습니다",
-                                              "data": null
-                                            }
-                                            """
-                                    ),
-                                    @ExampleObject(
-                                            name = "관리자 인증 실패",
-                                            summary = "관리자 기본 인증 실패",
-                                            value = """
-                                            {
-                                              "result": "ERROR",
-                                              "message": "잘못된 사용자명 또는 비밀번호입니다",
-                                              "data": null
-                                            }
-                                            """
-                                    )
+                            """),
+                    @ExampleObject(name = "관리자 로그인 성공", summary = "관리자 기본 인증 성공 응답", value = """
+                            {
+                              "result": "SUCCESS",
+                              "message": "로그인이 성공했습니다",
+                              "data": {
+                                "token": "eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9...",
+                                "refreshToken": "eyJhbGciOiJIUzUxMiJ9...",
+                                "userId": "123e4567-e89b-12d3-a456-426614174001",
+                                "username": "admin",
+                                "name": "관리자",
+                                "role": "ADMIN",
+                                "email": "admin@example.com",
+                                "phone": null,
+                                "grade": null,
+                                "birthDate": null,
+                                "academyName": "이룸클래스",
+                                "userType": "TEACHER"
+                              }
                             }
-                    )
-            ),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(
-                    responseCode = "500", 
-                    description = "서버 내부 오류",
-                    content = @Content(
-                            mediaType = "application/json",
-                            schema = @Schema(implementation = ApiResponse.class),
-                            examples = @ExampleObject(
-                                    name = "서버 오류 예시",
-                                    value = """
-                                    {
-                                      "result": "ERROR",
-                                      "message": "로그인 처리 중 오류가 발생했습니다",
-                                      "data": null
-                                    }
-                                    """
-                            )
-                    )
-            )
+                            """)
+            })),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "입력 데이터 검증 오류 - 필수 필드 누락 또는 잘못된 userType", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiResponse.class), examples = @ExampleObject(name = "검증 오류 예시", value = """
+                    {
+                      "result": "ERROR",
+                      "message": "학생 타입에서는 name이 필수입니다",
+                      "data": null
+                    }
+                    """))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "인증 실패 - 잘못된 인증 정보", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiResponse.class), examples = {
+                    @ExampleObject(name = "학생 인증 실패", summary = "학생 3-factor 인증 실패", value = """
+                            {
+                              "result": "ERROR",
+                              "message": "이름, 전화번호, 생년월일이 일치하는 학생을 찾을 수 없습니다",
+                              "data": null
+                            }
+                            """),
+                    @ExampleObject(name = "관리자 인증 실패", summary = "관리자 기본 인증 실패", value = """
+                            {
+                              "result": "ERROR",
+                              "message": "잘못된 사용자명 또는 비밀번호입니다",
+                              "data": null
+                            }
+                            """)
+            })),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "서버 내부 오류", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiResponse.class), examples = @ExampleObject(name = "서버 오류 예시", value = """
+                    {
+                      "result": "ERROR",
+                      "message": "로그인 처리 중 오류가 발생했습니다",
+                      "data": null
+                    }
+                    """)))
     })
     public ResponseEntity<ApiResponse<UnifiedLoginResponse>> login(
             @Valid @RequestBody UnifiedLoginRequest loginRequest) {

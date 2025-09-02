@@ -39,22 +39,22 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-web'
 	implementation 'org.springframework.boot:spring-boot-starter-webflux'
 	
-	// Swagger/OpenAPI 문서 자동 생성 (Spring Boot 3.5.x 호환)
-	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.0'
+	// Swagger/OpenAPI 문서 자동 생성 
+	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.9'
 	
 	// YAML 변환을 위한 Jackson YAML 모듈
-	implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.15.3'
+	implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.19.2'
 	
 	// QR 코드 생성 라이브러리
-	implementation 'com.google.zxing:core:3.5.2'
-	implementation 'com.google.zxing:javase:3.5.2'
+	implementation 'com.google.zxing:core:3.5.3'
+	implementation 'com.google.zxing:javase:3.5.3'
 	
 	// HTML to PDF 변환 라이브러리
-	implementation 'com.openhtmltopdf:openhtmltopdf-core:1.0.10'
-	implementation 'com.openhtmltopdf:openhtmltopdf-pdfbox:1.0.10'
+  implementation 'io.github.openhtmltopdf:openhtmltopdf-core:1.1.30'
+  implementation 'io.github.openhtmltopdf:openhtmltopdf-pdfbox:1.1.30'
 	
 	// HTML 정규화 및 정리 라이브러리
-	implementation 'org.jsoup:jsoup:1.17.2'
+	implementation 'org.jsoup:jsoup:1.21.2'
 	
 	// LaTeX 수식 렌더링 라이브러리
 	implementation 'org.scilab.forge:jlatexmath:1.0.7'
@@ -72,7 +72,7 @@ dependencies {
 	runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.6'
 	
 	// MySQL 드라이버 (최신 버전)
-	runtimeOnly 'com.mysql:mysql-connector-j:9.1.0'
+	runtimeOnly 'com.mysql:mysql-connector-j:9.3.0'
 	
 	// Lombok annotation processing (표준 방식)
 	compileOnly 'org.projectlombok:lombok'
