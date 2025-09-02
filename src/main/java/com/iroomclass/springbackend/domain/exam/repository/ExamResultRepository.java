@@ -167,4 +167,67 @@ public interface ExamResultRepository extends JpaRepository<ExamResult, UUID> {
            "WHERE er.status = 'COMPLETED' " +
            "ORDER BY er.gradedAt DESC")
     Page<ExamResult> findCompletedResultsWithQuestionResults(Pageable pageable);
+    
+    /**
+     * 여러 제출 ID들에 대한 최신 채점 결과 일괄 조회 (N+1 문제 해결)
+     * 
+     * @param submissionIds 시험 제출 ID 목록
+     * @return 각 제출의 최신 채점 결과 목록
+     */
+    @Query("SELECT er FROM ExamResult er " +
+           "WHERE er.examSubmission.id IN :submissionIds " +
+           "AND er.version = (SELECT MAX(er2.version) FROM ExamResult er2 " +
+           "                 WHERE er2.examSubmission.id = er.examSubmission.id)")
+    List<ExamResult> findLatestBySubmissionIds(@Param("submissionIds") List<UUID> submissionIds);
+    
+    /**
+     * 학년별 학생 평균 성적 통계 조회 (한 번의 쿼리로 처리)
+     * 
+     * @param grade 학년 (1, 2, 3)
+     * @return 학생별 평균 성적 목록 (Student ID, 평균 점수)
+     */
+    @Query("SELECT s.id as studentId, s.name as studentName, AVG(er.totalScore) as averageScore " +
+           "FROM ExamResult er " +
+           "JOIN er.examSubmission es " +
+           "JOIN es.student s " +
+           "JOIN es.exam e " +
+           "WHERE e.grade = :grade " +
+           "AND er.version = (SELECT MAX(er2.version) FROM ExamResult er2 " +
+           "                 WHERE er2.examSubmission.id = er.examSubmission.id) " +
+           "GROUP BY s.id, s.name")
+    List<StudentAverageScoreProjection> findStudentAverageScoresByGrade(@Param("grade") Integer grade);
+    
+    /**
+     * 전체 학생 평균 성적 통계 조회 (한 번의 쿼리로 처리)
+     * 
+     * @return 학생별 평균 성적 목록 (Student ID, 평균 점수, 학년)
+     */
+    @Query("SELECT s.id as studentId, s.name as studentName, AVG(er.totalScore) as averageScore, e.grade as grade " +
+           "FROM ExamResult er " +
+           "JOIN er.examSubmission es " +
+           "JOIN es.student s " +
+           "JOIN es.exam e " +
+           "WHERE er.version = (SELECT MAX(er2.version) FROM ExamResult er2 " +
+           "                 WHERE er2.examSubmission.id = er.examSubmission.id) " +
+           "GROUP BY s.id, s.name, e.grade")
+    List<StudentAverageScoreWithGradeProjection> findAllStudentAverageScores();
+    
+    /**
+     * 학생 평균 성적 Projection 인터페이스
+     */
+    interface StudentAverageScoreProjection {
+        Long getStudentId();
+        String getStudentName();
+        Double getAverageScore();
+    }
+    
+    /**
+     * 학년별 학생 평균 성적 Projection 인터페이스
+     */
+    interface StudentAverageScoreWithGradeProjection {
+        Long getStudentId();
+        String getStudentName();
+        Double getAverageScore();
+        Integer getGrade();
+    }
 }

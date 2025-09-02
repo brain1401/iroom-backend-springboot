@@ -139,7 +139,8 @@ public interface ExamSubmissionRepository extends JpaRepository<ExamSubmission, 
      * @param grade 학년 (1, 2, 3)
      * @return 해당 학년의 시험 제출 목록
      */
-    List<ExamSubmission> findByExamGrade(Integer grade);
+    @Query("SELECT es FROM ExamSubmission es JOIN es.exam e WHERE e.grade = :grade")
+    List<ExamSubmission> findByExamGrade(@Param("grade") Integer grade);
 
     /**
      * 시험 ID로 제출 목록 조회 (순서 무관)

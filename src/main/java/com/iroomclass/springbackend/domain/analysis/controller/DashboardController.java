@@ -4,7 +4,7 @@ import com.iroomclass.springbackend.common.ApiResponse;
 import com.iroomclass.springbackend.domain.analysis.dto.GradeSubmissionStatusResponse;
 import com.iroomclass.springbackend.domain.analysis.dto.GradeScoreDistributionResponse;
 import com.iroomclass.springbackend.domain.analysis.dto.OverallStatisticsResponse;
-import com.iroomclass.springbackend.domain.analysis.service.DashboardService;
+import com.iroomclass.springbackend.domain.analysis.service.DashboardServiceOptimized;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -34,7 +34,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class DashboardController {
 
-    private final DashboardService dashboardService;
+    private final DashboardServiceOptimized dashboardService;
 
     /**
      * 전체 학년 통합 통계 조회
