@@ -1,6 +1,7 @@
 package com.iroomclass.springbackend.domain.user.controller;
 
 import com.iroomclass.springbackend.common.ApiResponse;
+import com.iroomclass.springbackend.common.ApiResponseConstants;
 import com.iroomclass.springbackend.domain.user.dto.*;
 import com.iroomclass.springbackend.domain.user.entity.User;
 import com.iroomclass.springbackend.domain.user.service.UnifiedAuthService;
@@ -13,8 +14,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.annotation.*;
 
@@ -172,7 +171,7 @@ public class AuthController {
                     }
                     """)))
     })
-    public ResponseEntity<ApiResponse<UnifiedLoginResponse>> login(
+    public ApiResponse<UnifiedLoginResponse> login(
             @Valid @RequestBody UnifiedLoginRequest loginRequest) {
 
         try {
@@ -184,29 +183,22 @@ public class AuthController {
             log.info("통합 로그인 API 성공: 사용자타입={}, 사용자={}, 역할={}",
                     loginRequest.userType(), loginResponse.name(), loginResponse.role());
 
-            return ResponseEntity.ok(
-                    ApiResponse.success("로그인이 성공했습니다", loginResponse));
+            return ApiResponse.success("로그인이 성공했습니다", loginResponse);
 
         } catch (BadCredentialsException e) {
             log.warn("통합 로그인 실패: 사용자타입={}, 사유={}",
                     loginRequest.userType(), e.getMessage());
-
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(ApiResponse.<UnifiedLoginResponse>errorWithType(e.getMessage()));
+            throw e; // GlobalExceptionHandler에서 처리
 
         } catch (IllegalArgumentException e) {
             log.warn("통합 로그인 요청 오류: 사용자타입={}, 사유={}",
                     loginRequest.userType(), e.getMessage());
-
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(ApiResponse.<UnifiedLoginResponse>errorWithType(e.getMessage()));
+            throw e; // GlobalExceptionHandler에서 처리
 
         } catch (Exception e) {
             log.error("통합 로그인 서버 오류: 사용자타입={}, 오류={}",
                     loginRequest.userType(), e.getMessage(), e);
-
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ApiResponse.<UnifiedLoginResponse>errorWithType("로그인 처리 중 오류가 발생했습니다"));
+            throw new RuntimeException("로그인 처리 중 오류가 발생했습니다", e);
         }
     }
 
@@ -231,7 +223,7 @@ public class AuthController {
             **인증 방식:** 3-factor 인증 (이름 + 전화번호 + 생년월일)
             """, deprecated = true)
     @Deprecated
-    public ResponseEntity<ApiResponse<StudentLoginResponse>> studentLogin(
+    public ApiResponse<StudentLoginResponse> studentLogin(
             @Valid @RequestBody StudentLoginRequest studentRequest) {
 
         log.info("학생 전용 로그인 API 호출 (deprecated): 이름={}", studentRequest.name());
@@ -255,14 +247,11 @@ public class AuthController {
             log.info("학생 전용 로그인 API 성공: 이름={}, ID={}",
                     studentResponse.name(), studentResponse.userId());
 
-            return ResponseEntity.ok(
-                    ApiResponse.success("학생 로그인이 성공했습니다", studentResponse));
+            return ApiResponse.success("학생 로그인이 성공했습니다", studentResponse);
 
         } catch (Exception e) {
             log.error("학생 전용 로그인 오류: 이름={}, 오류={}", studentRequest.name(), e.getMessage(), e);
-
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(ApiResponse.<StudentLoginResponse>errorWithType("학생 로그인에 실패했습니다: " + e.getMessage()));
+            throw new RuntimeException("학생 로그인에 실패했습니다: " + e.getMessage(), e);
         }
     }
 
@@ -304,7 +293,7 @@ public class AuthController {
     @ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "로그아웃 성공")
     })
-    public ResponseEntity<ApiResponse<Void>> logout(
+    public ApiResponse<Void> logout(
             @RequestBody(required = false) RefreshTokenRequest refreshRequest) {
 
         log.info("로그아웃 API 호출");
@@ -312,44 +301,42 @@ public class AuthController {
         try {
             // 리프레시 토큰이 제공된 경우 무효화
             if (refreshRequest != null && refreshRequest.refreshToken() != null) {
-                log.info("리프레시 토큰 무효화 처리 시작");
+                log.info("리프래시 토큰 무효화 처리 시작");
 
                 try {
                     String refreshToken = refreshRequest.refreshToken();
 
-                    // 1. 리프레시 토큰 유효성 확인 (JwtUtil을 직접 주입받아야 함)
+                    // 1. 리프래시 토큰 유효성 확인 (JwtUtil을 직접 주입받아야 함)
                     // 현재는 UnifiedAuthService를 통해 처리
 
-                    // 2. 리프레시 토큰으로 사용자 찾아서 무효화
+                    // 2. 리프래시 토큰으로 사용자 찾아서 무효화
                     User user = unifiedAuthService.getUserByRefreshToken(refreshToken);
 
                     if (user != null) {
                         unifiedAuthService.invalidateRefreshToken(user.getId());
-                        log.info("리프레시 토큰 무효화 완료: userId={}, 사용자={}",
+                        log.info("리프래시 토큰 무효화 완료: userId={}, 사용자={}",
                                 user.getId(), user.getName());
                     } else {
-                        log.warn("리프레시 토큰에 해당하는 사용자를 찾을 수 없음");
+                        log.warn("리프래시 토큰에 해당하는 사용자를 찾을 수 없음");
                     }
 
                 } catch (BadCredentialsException e) {
-                    log.warn("유효하지 않은 리프레시 토큰으로 로그아웃 시도: {}", e.getMessage());
+                    log.warn("유효하지 않은 리프래시 토큰으로 로그아웃 시도: {}", e.getMessage());
                     // 로그아웃은 실패하지 않도록 처리
                 } catch (Exception e) {
-                    log.error("리프레시 토큰 무효화 중 오류 발생: {}", e.getMessage(), e);
+                    log.error("리프래시 토큰 무효화 중 오류 발생: {}", e.getMessage(), e);
                     // 로그아웃은 실패하지 않도록 처리
                 }
             }
 
             log.info("로그아웃 완료");
 
-            return ResponseEntity.ok(
-                    ApiResponse.success("로그아웃이 완료되었습니다"));
+            return ApiResponse.success(ApiResponseConstants.LOGOUT_SUCCESS);
 
         } catch (Exception e) {
             log.error("로그아웃 처리 중 오류 발생: {}", e.getMessage(), e);
             // 로그아웃은 항상 성공으로 처리 (보안상 이유)
-            return ResponseEntity.ok(
-                    ApiResponse.success("로그아웃이 완료되었습니다"));
+            return ApiResponse.success(ApiResponseConstants.LOGOUT_SUCCESS);
         }
     }
 
@@ -390,7 +377,7 @@ public class AuthController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "유효하지 않거나 만료된 리프레시 토큰"),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "서버 내부 오류")
     })
-    public ResponseEntity<ApiResponse<UnifiedLoginResponse>> refreshToken(
+    public ApiResponse<UnifiedLoginResponse> refreshToken(
             @Valid @RequestBody RefreshTokenRequest refreshRequest) {
 
         try {
@@ -402,26 +389,19 @@ public class AuthController {
             log.info("리프레시 토큰 갱신 성공: 사용자={}, 역할={}",
                     refreshResponse.name(), refreshResponse.role());
 
-            return ResponseEntity.ok(
-                    ApiResponse.success("토큰 갱신이 완료되었습니다", refreshResponse));
+            return ApiResponse.success("토큰 갱신이 완료되었습니다", refreshResponse);
 
         } catch (BadCredentialsException e) {
             log.warn("리프레시 토큰 갱신 실패: 사유={}", e.getMessage());
-
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(ApiResponse.<UnifiedLoginResponse>errorWithType(e.getMessage()));
+            throw e; // GlobalExceptionHandler에서 처리
 
         } catch (IllegalArgumentException e) {
             log.warn("리프레시 토큰 요청 오류: 사유={}", e.getMessage());
-
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(ApiResponse.<UnifiedLoginResponse>errorWithType(e.getMessage()));
+            throw e; // GlobalExceptionHandler에서 처리
 
         } catch (Exception e) {
             log.error("리프레시 토큰 갱신 서버 오류: 오류={}", e.getMessage(), e);
-
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ApiResponse.<UnifiedLoginResponse>errorWithType("토큰 갱신 처리 중 오류가 발생했습니다"));
+            throw new RuntimeException("토큰 갱신 처리 중 오류가 발생했습니다", e);
         }
     }
 
@@ -448,12 +428,11 @@ public class AuthController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "조회 성공"),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "인증 토큰이 없거나 만료된 경우")
     })
-    public ResponseEntity<ApiResponse<UnifiedLoginResponse>> getCurrentUser() {
+    public ApiResponse<UnifiedLoginResponse> getCurrentUser() {
         // TODO: JWT에서 사용자 정보를 추출하여 반환
         // 현재는 예제 응답만 반환
         log.info("현재 사용자 정보 조회 API 호출");
 
-        return ResponseEntity.ok(
-                ApiResponse.success("현재 로그인 정보 조회 성공", null));
+        return ApiResponse.success("현재 로그인 정보 조회 성공", null);
     }
 }

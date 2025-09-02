@@ -53,6 +53,11 @@ public final class ApiResponseConstants {
     public static final String GRADING_NOT_COMPLETED = "채점이 아직 완료되지 않았습니다";
     public static final String ORIGINAL_RESULT_NOT_FOUND = "기존 채점 결과를 찾을 수 없습니다";
     public static final String REFERENCE_INTEGRITY_VIOLATION = "참조 무결성 제약 조건에 위배됩니다";
+    public static final String MANUAL_GRADING_SUCCESS = "수동 채점이 처리되었습니다";
+    public static final String QUESTION_RESULT_DELETE_SUCCESS = "문제별 결과 삭제 성공";
+    
+    // 인증 관련
+    public static final String LOGOUT_SUCCESS = "로그아웃이 완료되었습니다";
 
     // === HTTP 상태 코드별 응답 예시 ===
     

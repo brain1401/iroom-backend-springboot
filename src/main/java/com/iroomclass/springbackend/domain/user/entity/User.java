@@ -225,7 +225,21 @@ public class User implements UserDetails {
      * @return 로그인 가능하면 true, 그렇지 않으면 false
      */
     public boolean canLogin() {
-        return isAdmin() && username != null && password != null;
+        // 1. 관리자 역할인지 확인
+        if (!isAdmin()) {
+            return false;
+        }
+        
+        // 2. 사용자명과 비밀번호가 모두 존재하는지 확인
+        if (username == null || username.trim().isEmpty()) {
+            return false;
+        }
+        
+        if (password == null || password.trim().isEmpty()) {
+            return false;
+        }
+        
+        return true;
     }
     
     /**

@@ -1,9 +1,9 @@
 package com.iroomclass.springbackend.domain.exam.dto.exam;
 
 import java.util.List;
-import java.util.Objects;
 import java.util.UUID;
 
+import com.iroomclass.springbackend.common.BaseRecord;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 /**
@@ -26,14 +26,16 @@ public record ExamSheetDetailResponse(
 
         @Schema(description = "선택된 단원 목록") List<UnitInfo> units,
 
-        @Schema(description = "선택된 문제 목록") List<QuestionInfo> questions) {
+        @Schema(description = "선택된 문제 목록") List<QuestionInfo> questions) implements BaseRecord {
     public ExamSheetDetailResponse {
-        Objects.requireNonNull(examSheetId, "examSheetId는 필수입니다");
-        Objects.requireNonNull(examName, "examName은 필수입니다");
-        Objects.requireNonNull(grade, "grade는 필수입니다");
-        Objects.requireNonNull(totalQuestions, "totalQuestions는 필수입니다");
-        Objects.requireNonNull(units, "units는 필수입니다");
-        Objects.requireNonNull(questions, "questions는 필수입니다");
+        requireAllNonNull(
+            "examSheetId", examSheetId,
+            "examName", examName,
+            "grade", grade,
+            "totalQuestions", totalQuestions,
+            "units", units,
+            "questions", questions
+        );
     }
 
     /**
@@ -43,10 +45,9 @@ public record ExamSheetDetailResponse(
     public record UnitInfo(
             @Schema(description = "단원 ID", example = "123e4567-e89b-12d3-a456-426614174000") UUID unitId,
 
-            @Schema(description = "단원명", example = "자연수와 0") String unitName) {
+            @Schema(description = "단원명", example = "자연수와 0") String unitName) implements BaseRecord {
         public UnitInfo {
-            Objects.requireNonNull(unitId, "unitId는 필수입니다");
-            Objects.requireNonNull(unitName, "unitName은 필수입니다");
+            requireAllNonNull("unitId", unitId, "unitName", unitName);
         }
     }
 
@@ -68,15 +69,17 @@ public record ExamSheetDetailResponse(
 
             @Schema(description = "문제 내용 (HTML)", example = "<p>다음 중 자연수는?</p>") String stem,
 
-            @Schema(description = "배점", example = "10") Integer points){
+            @Schema(description = "배점", example = "10") Integer points) implements BaseRecord {
         public QuestionInfo {
-            Objects.requireNonNull(seqNo, "seqNo는 필수입니다");
-            Objects.requireNonNull(questionId, "questionId는 필수입니다");
-            Objects.requireNonNull(unitId, "unitId는 필수입니다");
-            Objects.requireNonNull(unitName, "unitName은 필수입니다");
-            Objects.requireNonNull(difficulty, "difficulty는 필수입니다");
-            Objects.requireNonNull(stem, "stem은 필수입니다");
-            Objects.requireNonNull(points, "points는 필수입니다");
+            requireAllNonNull(
+                "seqNo", seqNo,
+                "questionId", questionId,
+                "unitId", unitId,
+                "unitName", unitName,
+                "difficulty", difficulty,
+                "stem", stem,
+                "points", points
+            );
         }
     }
 }

@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.iroomclass.springbackend.common.ApiResponse;
+import com.iroomclass.springbackend.common.ApiResponseConstants;
 import com.iroomclass.springbackend.domain.exam.dto.result.ManualGradingRequest;
 import com.iroomclass.springbackend.domain.exam.dto.result.QuestionResultResponse;
 import com.iroomclass.springbackend.domain.exam.entity.QuestionResult;
@@ -68,7 +69,7 @@ public class QuestionResultController {
                 request.isCorrect(),
                 request.feedback());
 
-        return ApiResponse.success("수동 채점이 처리되었습니다");
+        return ApiResponse.success(ApiResponseConstants.MANUAL_GRADING_SUCCESS);
     }
 
     /**

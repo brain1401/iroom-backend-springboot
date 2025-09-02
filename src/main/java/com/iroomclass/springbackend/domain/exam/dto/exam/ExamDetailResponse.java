@@ -1,9 +1,9 @@
 package com.iroomclass.springbackend.domain.exam.dto.exam;
 
 import java.time.LocalDateTime;
-import java.util.Objects;
 import java.util.UUID;
 
+import com.iroomclass.springbackend.common.BaseRecord;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 /**
@@ -28,14 +28,16 @@ public record ExamDetailResponse(
 
         @Schema(description = "QR 코드 URL", example = "https://example.com/qr/123") String qrCodeUrl,
 
-        @Schema(description = "등록일시", example = "2024-06-01T12:34:56") LocalDateTime createdAt) {
+        @Schema(description = "등록일시", example = "2024-06-01T12:34:56") LocalDateTime createdAt) implements BaseRecord {
     public ExamDetailResponse {
-        Objects.requireNonNull(examId, "examId는 필수입니다");
-        Objects.requireNonNull(examSheetId, "examSheetId는 필수입니다");
-        Objects.requireNonNull(examName, "examName은 필수입니다");
-        Objects.requireNonNull(grade, "grade는 필수입니다");
-        Objects.requireNonNull(studentCount, "studentCount는 필수입니다");
-        Objects.requireNonNull(qrCodeUrl, "qrCodeUrl은 필수입니다");
-        Objects.requireNonNull(createdAt, "createdAt은 필수입니다");
+        requireAllNonNull(
+            "examId", examId,
+            "examSheetId", examSheetId,
+            "examName", examName,
+            "grade", grade,
+            "studentCount", studentCount,
+            "qrCodeUrl", qrCodeUrl,
+            "createdAt", createdAt
+        );
     }
 }

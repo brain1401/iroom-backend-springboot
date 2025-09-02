@@ -34,6 +34,11 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+import com.iroomclass.springbackend.common.ApiResponseDocumentation.StandardCreate;
+import com.iroomclass.springbackend.common.ApiResponseDocumentation.StandardRead;
+import com.iroomclass.springbackend.common.ApiResponseDocumentation.StandardUpdate;
+import com.iroomclass.springbackend.common.ApiResponseDocumentation.StandardDelete;
+
 /**
  * 시험지 관리 컨트롤러
  * 
@@ -59,11 +64,7 @@ public class ExamSheetController {
      */
     @PostMapping
     @Operation(summary = "시험지 생성", description = "학년, 단원, 문제 개수를 선택하여 시험지를 생성합니다. 선택된 단원들에서 랜덤으로 문제를 선택합니다.")
-    @io.swagger.v3.oas.annotations.responses.ApiResponses({
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "생성 성공"),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "잘못된 입력값"),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "존재하지 않는 단원")
-    })
+    @StandardCreate
     public ApiResponse<ExamSheetCreateResponse> createExamSheet(@Valid @RequestBody ExamSheetCreateRequest request) {
         log.info("시험지 생성 요청: 학년={}, 단원={}개, 문제={}개",
                 request.grade(), request.unitIds().size(), request.totalQuestions());
@@ -106,10 +107,7 @@ public class ExamSheetController {
             - 문제 개수가 15-25개인 중간고사 시험지
             - "기말" 키워드가 포함된 모든 시험지
             """)
-    @io.swagger.v3.oas.annotations.responses.ApiResponses({
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "조회 성공"),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "잘못된 필터 조건")
-    })
+    @StandardRead
     public ApiResponse<ExamSheetListResponse> getFilteredExamSheets(
             @Parameter(description = "학년 필터", example = "2") @RequestParam(required = false) Integer grade,
 
@@ -149,9 +147,7 @@ public class ExamSheetController {
      */
     @GetMapping("/all")
     @Operation(summary = "전체 시험지 목록 조회", description = "모든 학년의 시험지 목록을 최신순으로 조회합니다.")
-    @io.swagger.v3.oas.annotations.responses.ApiResponses({
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "조회 성공")
-    })
+    @StandardRead
     public ApiResponse<ExamSheetListResponse> getAllExamSheets() {
         log.info("전체 시험지 목록 조회 요청");
 
@@ -170,10 +166,7 @@ public class ExamSheetController {
      */
     @GetMapping("/grade/{grade}")
     @Operation(summary = "학년별 시험지 목록 조회", description = "특정 학년의 모든 시험지 목록을 조회합니다. 최신순으로 정렬됩니다.")
-    @io.swagger.v3.oas.annotations.responses.ApiResponses({
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "조회 성공"),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "잘못된 학년")
-    })
+    @StandardRead
     public ApiResponse<ExamSheetListResponse> getExamSheetsByGrade(
             @Parameter(description = "학년 (1/2/3)", example = "2") @PathVariable int grade) {
         log.info("학년 {} 시험지 목록 조회 요청", grade);
@@ -193,11 +186,7 @@ public class ExamSheetController {
      */
     @GetMapping("/{examSheetId}")
     @Operation(summary = "시험지 상세 조회", description = "특정 시험지의 상세 정보를 조회합니다. 선택된 단원들과 문제들을 포함합니다.")
-    @io.swagger.v3.oas.annotations.responses.ApiResponses({
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "조회 성공"),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "잘못된 시험지 ID"),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "존재하지 않는 시험지")
-    })
+    @StandardRead
     public ApiResponse<ExamSheetDetailResponse> getExamSheetDetail(
             @Parameter(description = "시험지 ID", example = "123e4567-e89b-12d3-a456-426614174000") @PathVariable UUID examSheetId) {
         log.info("시험지 {} 상세 조회 요청", examSheetId);
@@ -219,11 +208,7 @@ public class ExamSheetController {
      */
     @PutMapping("/{examSheetId}")
     @Operation(summary = "시험지 수정 (문제 교체)", description = "시험지의 특정 문제를 같은 단원의 다른 문제로 교체합니다.")
-    @io.swagger.v3.oas.annotations.responses.ApiResponses({
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "수정 성공"),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "잘못된 요청"),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "존재하지 않는 시험지 또는 문제")
-    })
+    @StandardUpdate
     public ApiResponse<ExamSheetDetailResponse> updateExamSheet(
             @Parameter(description = "시험지 ID", example = "123e4567-e89b-12d3-a456-426614174000") @PathVariable UUID examSheetId,
             @Valid @RequestBody ExamSheetUpdateRequest request) {
@@ -257,11 +242,7 @@ public class ExamSheetController {
             - 기존 문제는 시험지에 포함되어 있어야 함
             - 새로운 문제는 존재해야 하고, 시험지에 중복되지 않아야 함
             """)
-    @io.swagger.v3.oas.annotations.responses.ApiResponses({
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "교체 성공"),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "잘못된 요청 (중복 문제, 존재하지 않는 문제 등)"),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "시험지 또는 문제를 찾을 수 없음")
-    })
+    @StandardUpdate
     public ApiResponse<ExamSheetDetailResponse> replaceQuestion(
             @Parameter(description = "시험지 ID", example = "1", required = true) @PathVariable UUID examSheetId,
             @Valid @RequestBody QuestionReplaceRequest request) {
@@ -300,11 +281,7 @@ public class ExamSheetController {
 
             이미 시험지에 포함된 문제는 alreadySelected=true로 표시됩니다.
             """)
-    @io.swagger.v3.oas.annotations.responses.ApiResponses({
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "조회 성공"),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "잘못된 매개변수"),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "시험지를 찾을 수 없음")
-    })
+    @StandardRead
     public ApiResponse<SelectableQuestionsResponse> getSelectableQuestions(
             @Parameter(description = "시험지 ID", example = "1", required = true) @PathVariable UUID examSheetId,
             @Parameter(description = "단원 ID", example = "550e8400-e29b-41d4-a716-446655440000") @RequestParam(required = false) UUID unitId,
@@ -344,11 +321,7 @@ public class ExamSheetController {
             - 중복 문제 추가 방지
             - 배점 자동 계산 또는 수동 설정 가능
             """)
-    @io.swagger.v3.oas.annotations.responses.ApiResponses({
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "추가 성공"),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "잘못된 요청 (중복 문제, 존재하지 않는 문제 등)"),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "시험지 또는 문제를 찾을 수 없음")
-    })
+    @StandardCreate
     public ApiResponse<ExamSheetQuestionManageResponse> addQuestionToExamSheet(
             @Parameter(description = "시험지 ID", example = "1", required = true) @PathVariable UUID examSheetId,
             @Valid @RequestBody QuestionSelectionRequest request) {
@@ -384,11 +357,7 @@ public class ExamSheetController {
             - 총 배점 자동 재계산
             - 문제 유형별 개수 자동 업데이트
             """)
-    @io.swagger.v3.oas.annotations.responses.ApiResponses({
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "제거 성공"),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "잘못된 요청"),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "시험지 또는 문제를 찾을 수 없음")
-    })
+    @StandardDelete
     public ApiResponse<ExamSheetQuestionManageResponse> removeQuestionFromExamSheet(
             @Parameter(description = "시험지 ID", example = "1", required = true) @PathVariable UUID examSheetId,
             @Parameter(description = "제거할 문제 ID", example = "123", required = true) @PathVariable UUID questionId) {
@@ -423,10 +392,7 @@ public class ExamSheetController {
             - 총 배점 및 문제별 배점
             - 각 문제의 상세 정보 (단원, 난이도, 선택 방식)
             """)
-    @io.swagger.v3.oas.annotations.responses.ApiResponses({
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "조회 성공"),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "시험지를 찾을 수 없음")
-    })
+    @StandardRead
     public ApiResponse<ExamSheetQuestionManageResponse> getExamSheetQuestionManagement(
             @Parameter(description = "시험지 ID", example = "1", required = true) @PathVariable UUID examSheetId) {
 
@@ -466,10 +432,7 @@ public class ExamSheetController {
             - 출제 균형 확인
             - 배점 분포 검증
             """)
-    @io.swagger.v3.oas.annotations.responses.ApiResponses({
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "미리보기 조회 성공"),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "시험지를 찾을 수 없음")
-    })
+    @StandardRead
     public ApiResponse<ExamSheetPreviewResponse> getExamSheetPreview(
             @Parameter(description = "시험지 ID", example = "1", required = true) @PathVariable UUID examSheetId) {
 
@@ -509,11 +472,7 @@ public class ExamSheetController {
             - 동일한 문제로의 교체는 불가
             - 이미 시험지에 포함된 문제로의 교체는 불가
             """)
-    @io.swagger.v3.oas.annotations.responses.ApiResponses({
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "교체 성공"),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "잘못된 요청 (중복 문제, 동일 문제 등)"),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "시험지 또는 문제를 찾을 수 없음")
-    })
+    @StandardUpdate
     public ApiResponse<ExamSheetQuestionManageResponse> replaceQuestionInExamSheet(
             @Parameter(description = "시험지 ID", example = "1", required = true) @PathVariable UUID examSheetId,
             @Valid @RequestBody QuestionReplaceRequest request) {

@@ -2,10 +2,10 @@ package com.iroomclass.springbackend.domain.exam.dto.answer;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Objects;
 import java.util.UUID;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.iroomclass.springbackend.common.BaseRecord;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
@@ -59,17 +59,19 @@ public record AiGradingResponse(
     @Schema(description = "버전")
     @JsonProperty("version")
     Integer version
-) {
+) implements BaseRecord {
     public AiGradingResponse {
-        Objects.requireNonNull(resultId, "resultId는 필수입니다");
-        Objects.requireNonNull(submissionId, "submissionId는 필수입니다");
-        Objects.requireNonNull(examSheetId, "examSheetId는 필수입니다");
-        Objects.requireNonNull(status, "status는 필수입니다");
-        Objects.requireNonNull(totalScore, "totalScore는 필수입니다");
-        Objects.requireNonNull(maxTotalScore, "maxTotalScore는 필수입니다");
-        Objects.requireNonNull(questionResults, "questionResults는 필수입니다");
-        Objects.requireNonNull(metadata, "metadata는 필수입니다");
-        Objects.requireNonNull(version, "version는 필수입니다");
+        requireAllNonNull(
+            "resultId", resultId,
+            "submissionId", submissionId,
+            "examSheetId", examSheetId,
+            "status", status,
+            "totalScore", totalScore,
+            "maxTotalScore", maxTotalScore,
+            "questionResults", questionResults,
+            "metadata", metadata,
+            "version", version
+        );
     }
     
     /**
@@ -119,15 +121,17 @@ public record AiGradingResponse(
         @Schema(description = "생성 시간")
         @JsonProperty("created_at")
         LocalDateTime createdAt
-    ) {
+    ) implements BaseRecord {
         public AiQuestionResult {
-            Objects.requireNonNull(questionId, "questionId는 필수입니다");
-            Objects.requireNonNull(answerId, "answerId는 필수입니다");
-            Objects.requireNonNull(isCorrect, "isCorrect는 필수입니다");
-            Objects.requireNonNull(score, "score는 필수입니다");
-            Objects.requireNonNull(maxScore, "maxScore는 필수입니다");
-            Objects.requireNonNull(gradingMethod, "gradingMethod는 필수입니다");
-            Objects.requireNonNull(createdAt, "createdAt는 필수입니다");
+            requireAllNonNull(
+                "questionId", questionId,
+                "answerId", answerId,
+                "isCorrect", isCorrect,
+                "score", score,
+                "maxScore", maxScore,
+                "gradingMethod", gradingMethod,
+                "createdAt", createdAt
+            );
         }
     }
     
@@ -155,13 +159,15 @@ public record AiGradingResponse(
         @Schema(description = "AI 모델 버전")
         @JsonProperty("ai_model_version")
         String aiModelVersion
-    ) {
+    ) implements BaseRecord {
         public AiGradingMetadata {
-            Objects.requireNonNull(totalQuestions, "totalQuestions는 필수입니다");
-            Objects.requireNonNull(multipleChoiceCount, "multipleChoiceCount는 필수입니다");
-            Objects.requireNonNull(subjectiveCount, "subjectiveCount는 필수입니다");
-            Objects.requireNonNull(processingTimeMs, "processingTimeMs는 필수입니다");
-            Objects.requireNonNull(aiModelVersion, "aiModelVersion는 필수입니다");
+            requireAllNonNull(
+                "totalQuestions", totalQuestions,
+                "multipleChoiceCount", multipleChoiceCount,
+                "subjectiveCount", subjectiveCount,
+                "processingTimeMs", processingTimeMs,
+                "aiModelVersion", aiModelVersion
+            );
         }
     }
 }

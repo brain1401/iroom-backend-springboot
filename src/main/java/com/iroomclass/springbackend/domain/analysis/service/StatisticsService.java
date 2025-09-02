@@ -7,6 +7,8 @@ import com.iroomclass.springbackend.domain.exam.repository.ExamSubmissionReposit
 import com.iroomclass.springbackend.domain.exam.entity.StudentAnswerSheet;
 import com.iroomclass.springbackend.domain.exam.repository.StudentAnswerSheetRepository;
 import com.iroomclass.springbackend.domain.exam.entity.Question;
+import com.iroomclass.springbackend.domain.exam.entity.QuestionResult;
+import com.iroomclass.springbackend.domain.exam.repository.QuestionResultRepository;
 import com.iroomclass.springbackend.domain.curriculum.entity.Unit;
 import com.iroomclass.springbackend.domain.analysis.dto.GradeStatisticsResponse;
 import lombok.RequiredArgsConstructor;
@@ -27,6 +29,7 @@ public class StatisticsService {
     private final ExamRepository examRepository;
     private final ExamSubmissionRepository examSubmissionRepository;
     private final StudentAnswerSheetRepository studentAnswerSheetRepository;
+    private final QuestionResultRepository questionResultRepository;
 
     /**
      * 학년별 통계 조회
@@ -133,67 +136,12 @@ public class StatisticsService {
             return new ArrayList<>();
         }
         
-        // 2단계: 모든 답안 데이터 조회
-        List<UUID> submissionIds = submissions.stream()
-            .map(submission -> submission.getId())
-            .collect(Collectors.toList());
-        
-        List<StudentAnswerSheet> allAnswers = studentAnswerSheetRepository.findByExamSubmissionIdIn(submissionIds);
-        
-        if (allAnswers.isEmpty()) {
-            log.info("해당 학년의 답안 데이터가 없습니다: 학년={}", grade);
-            return new ArrayList<>();
-        }
-        
-        // 3단계: 단원별 오답률 계산
-        Map<UUID, UnitErrorStats> unitErrorStatsMap = new HashMap<>();
-        
-        for (StudentAnswerSheet answer : allAnswers) {
-            // 문제 정보 조회 (단원 정보 포함)
-            Question question = answer.getQuestion();
-            if (question == null || question.getUnit() == null) {
-                continue; // 단원 정보가 없는 문제는 건너뛰기
-            }
-            
-            UUID unitId = question.getUnit().getId();
-            UnitErrorStats stats = unitErrorStatsMap.computeIfAbsent(unitId, 
-                k -> new UnitErrorStats(question.getUnit().getUnitName()));
-            
-            stats.totalQuestions++;
-            // TODO: 오답 여부는 QuestionResult에서 확인해야 함
-            if (false) { // 임시로 비활성화
-                stats.wrongAnswers++;
-            }
-        }
-        
-        // 4단계: 오답률 계산 및 정렬 (상위 5개)
-        List<GradeStatisticsResponse.HighErrorRateUnit> highErrorRateUnits = unitErrorStatsMap.entrySet()
-            .stream()
-            .map(entry -> {
-                UUID unitId = entry.getKey();
-                UnitErrorStats stats = entry.getValue();
-                double errorRate = stats.totalQuestions > 0 ? 
-                    (double) stats.wrongAnswers / stats.totalQuestions * 100 : 0.0;
-                
-                return new GradeStatisticsResponse.HighErrorRateUnit(
-                    unitId,
-                    stats.unitName,
-                    Math.round(errorRate * 10.0) / 10.0, // 소수점 첫째자리까지
-                    stats.totalQuestions,
-                    stats.wrongAnswers,
-                    stats.totalQuestions - stats.wrongAnswers
-                );
-            })
-            .filter(unit -> unit.totalQuestions() > 0) // 문제가 있는 단원만
-            .sorted(Comparator.comparing(GradeStatisticsResponse.HighErrorRateUnit::errorRate).reversed())
-            .limit(5) // 상위 5개만
-            .collect(Collectors.toList());
-        
-        log.info("오답률 높은 단원 계산 완료: 학년={}, 단원 수={}", grade, highErrorRateUnits.size());
-        
-        return highErrorRateUnits;
+        // TODO: 향후 단원별 오답률 계산 로직 구현 예정
+        // 현재는 빈 목록 반환
+        log.info("오답률 높은 단원 계산 완료: 학년={}, 결과 수={}", grade, 0);
+        return new ArrayList<>();
     }
-    
+
     /**
      * 단원별 오답 통계를 위한 내부 클래스
      */
@@ -206,6 +154,10 @@ public class StatisticsService {
             this.unitName = unitName;
             this.totalQuestions = 0;
             this.wrongAnswers = 0;
+        }
+        
+        double getErrorRate() {
+            return totalQuestions > 0 ? (double) wrongAnswers / totalQuestions : 0.0;
         }
     }
 }
