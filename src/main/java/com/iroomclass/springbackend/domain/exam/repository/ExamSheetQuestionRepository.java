@@ -1,6 +1,8 @@
 package com.iroomclass.springbackend.domain.exam.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import com.iroomclass.springbackend.domain.exam.entity.ExamSheetQuestion;
 
@@ -27,6 +29,20 @@ public interface ExamSheetQuestionRepository extends JpaRepository<ExamSheetQues
      * @return 해당 시험지의 문제 목록 (순서대로)
      */
     List<ExamSheetQuestion> findByExamSheetIdOrderBySeqNo(UUID examSheetId);
+    
+    /**
+     * 특정 시험지에 포함된 문제 목록 조회 (Question과 함께 fetch)
+     * 
+     * LazyInitializationException 방지를 위해 Question 엔티티도 함께 가져옵니다.
+     * 
+     * @param examSheetId 시험지 ID
+     * @return 해당 시험지의 문제 목록 (순서대로, Question 포함)
+     */
+    @Query("SELECT esq FROM ExamSheetQuestion esq " +
+           "LEFT JOIN FETCH esq.question q " +
+           "WHERE esq.examSheet.id = :examSheetId " +
+           "ORDER BY esq.seqNo")
+    List<ExamSheetQuestion> findByExamSheetIdWithQuestionOrderBySeqNo(@Param("examSheetId") UUID examSheetId);
     
     /**
      * 특정 시험지의 문제 개수 조회

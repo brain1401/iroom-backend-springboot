@@ -7,6 +7,8 @@ import com.iroomclass.springbackend.domain.auth.repository.TeacherRepository;
 import com.iroomclass.springbackend.domain.curriculum.entity.Unit;
 import com.iroomclass.springbackend.domain.curriculum.repository.UnitRepository;
 import com.iroomclass.springbackend.domain.exam.entity.Exam;
+import com.iroomclass.springbackend.domain.exam.entity.ExamResult;
+import com.iroomclass.springbackend.domain.exam.entity.ExamResultQuestion;
 import com.iroomclass.springbackend.domain.exam.entity.ExamSheet;
 import com.iroomclass.springbackend.domain.exam.entity.ExamSheetQuestion;
 import com.iroomclass.springbackend.domain.exam.entity.ExamSheetSelectedUnit;
@@ -29,12 +31,15 @@ import com.iroomclass.springbackend.domain.exam.repository.StudentAnswerSheetRep
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import jakarta.persistence.EntityManager;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -42,6 +47,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 
@@ -66,6 +72,7 @@ import java.util.stream.Collectors;
 @Component
 @RequiredArgsConstructor
 @Slf4j
+@ConditionalOnProperty(name = "data.initialization.enabled", havingValue = "true", matchIfMissing = false)
 public class RichDataInitializer implements CommandLineRunner {
 
     // Repository 의존성 주입
@@ -86,22 +93,34 @@ public class RichDataInitializer implements CommandLineRunner {
 
     // JPA EntityManager 주입
     private final EntityManager entityManager;
+    
+    // 트랜잭션 템플릿 주입
+    private final TransactionTemplate transactionTemplate;
 
     /**
      * Spring Boot 시작 시 실행되는 메서드
      */
     @Override
-    @Transactional
     public void run(String... args) throws Exception {
         log.info("===============================================");
         log.info("RichDataInitializer 실행 시작");
         log.info("===============================================");
 
-        // 안전한 데이터 초기화
-        clearExistingData();
+        try {
+            // 안전한 데이터 초기화
+            clearExistingData();
+            log.info("데이터 초기화 완료");
+        } catch (Exception e) {
+            log.error("데이터 초기화 실패: {}", e.getMessage(), e);
+        }
 
-        // 풍부한 테스트 데이터 생성
-        generateRichTestData();
+        try {
+            // 풍부한 테스트 데이터 생성
+            generateRichTestData();
+            log.info("테스트 데이터 생성 완료");
+        } catch (Exception e) {
+            log.error("테스트 데이터 생성 실패: {}", e.getMessage(), e);
+        }
 
         log.info("===============================================");
         log.info("RichDataInitializer 실행 완료");
@@ -114,45 +133,45 @@ public class RichDataInitializer implements CommandLineRunner {
      * 보존할 테이블: unit, unit_category, unit_subcategory, question
      * 삭제할 테이블: 나머지 모든 테이블의 데이터
      */
-    @Transactional
     private void clearExistingData() {
-        log.info("=== 기존 데이터 정리 시작 ===");
-        log.info("보존할 데이터: unit, unit_category, unit_subcategory, question 테이블");
+        transactionTemplate.executeWithoutResult(status -> {
+            log.info("=== 기존 데이터 정리 시작 ===");
+            log.info("보존할 데이터: unit, unit_category, unit_subcategory, question 테이블");
 
-        // 외래키 체크 비활성화
-        entityManager.createNativeQuery("SET FOREIGN_KEY_CHECKS = 0").executeUpdate();
+            // 외래키 체크 비활성화
+            entityManager.createNativeQuery("SET FOREIGN_KEY_CHECKS = 0").executeUpdate();
 
-        try {
-            // 삭제할 테이블 목록 (순서 중요 - 참조 관계 고려)
-            List<String> tablesToClear = Arrays.asList(
-                    "question_result",
-                    "exam_result_question",
-                    "student_answer_sheet_problem",
-                    "student_answer_sheet",
-                    "exam_result",
-                    "exam_submission",
-                    "exam",
-                    "exam_sheet_question",
-                    "exam_sheet_selected_unit",
-                    "exam_sheet",
-                    "exam_document",
-                    "teacher",
-                    "student");
+            try {
+                // 삭제할 테이블 목록 (순서 중요 - 참조 관계 고려)
+                List<String> tablesToClear = Arrays.asList(
+                        "exam_result_question",
+                        "student_answer_sheet_question",
+                        "student_answer_sheet",
+                        "exam_result",
+                        "exam_submission",
+                        "exam",
+                        "exam_sheet_question",
+                        "exam_sheet_selected_unit",
+                        "exam_sheet",
+                        "exam_document",
+                        "teacher",
+                        "student");
 
-            for (String table : tablesToClear) {
-                try {
-                    deleteTableData(table, "기존 " + table + " 테이블 데이터");
-                } catch (Exception e) {
-                    log.warn("테이블 {} 정리 중 오류 (테이블이 존재하지 않을 수 있음): {}", table, e.getMessage());
+                for (String table : tablesToClear) {
+                    try {
+                        deleteTableData(table, "기존 " + table + " 테이블 데이터");
+                    } catch (Exception e) {
+                        log.warn("테이블 {} 정리 중 오류 (테이블이 존재하지 않을 수 있음): {}", table, e.getMessage());
+                    }
                 }
+
+                log.info("=== 기존 데이터 정리 완료 ===");
+
+            } finally {
+                // 외래키 체크 재활성화
+                entityManager.createNativeQuery("SET FOREIGN_KEY_CHECKS = 1").executeUpdate();
             }
-
-            log.info("=== 기존 데이터 정리 완료 ===");
-
-        } finally {
-            // 외래키 체크 재활성화
-            entityManager.createNativeQuery("SET FOREIGN_KEY_CHECKS = 1").executeUpdate();
-        }
+        });
     }
 
     /**
@@ -207,6 +226,14 @@ public class RichDataInitializer implements CommandLineRunner {
         // 학생 답안지 데이터 생성
         log.info("=== 학생 답안지 데이터 생성 시작 ===");
         List<StudentAnswerSheet> studentAnswerSheets = createStudentAnswerSheets(examSubmissions);
+
+        // 시험 결과 데이터 생성 (채점 결과)
+        log.info("=== 시험 결과 데이터 생성 시작 ===");
+        List<ExamResult> examResults = createExamResults(examSubmissions);
+
+        // 문제별 채점 결과 데이터 생성
+        log.info("=== 문제별 채점 결과 데이터 생성 시작 ===");
+        List<ExamResultQuestion> examResultQuestions = createExamResultQuestions(examResults, studentAnswerSheets);
 
         log.info("=== 풍부한 가데이터 생성 완료 ===");
         log.info("최종 데이터: 학생 {}명, 교사 {}명, 시험지 {}개, 시험지문제 {}개, 시험지단원 {}개, 시험 {}개",
@@ -574,10 +601,172 @@ public class RichDataInitializer implements CommandLineRunner {
             List<StudentAnswerSheet> savedSheets = studentAnswerSheetRepository.saveAll(studentAnswerSheets);
             log.info("학생 답안지 {}개 생성 완료", savedSheets.size());
 
+            // 각 답안지에 대해 문제별 답안 생성
+            createStudentAnswerSheetQuestions(savedSheets);
+
             return savedSheets;
         }
 
         return null;
+    }
+
+    /**
+     * 학생 답안지의 문제별 답안 데이터 생성
+     */
+    private void createStudentAnswerSheetQuestions(List<StudentAnswerSheet> studentAnswerSheets) {
+        log.info("학생 답안지 문제별 답안 데이터 생성 중... 총 답안지 수: {}", studentAnswerSheets.size());
+        
+        List<StudentAnswerSheetQuestion> allAnswerQuestions = new ArrayList<>();
+        int totalCreated = 0;
+
+        for (StudentAnswerSheet answerSheet : studentAnswerSheets) {
+            try {
+                log.debug("답안지 처리 시작: ID={}, 학생명={}", answerSheet.getId(), answerSheet.getStudentName());
+                
+                // 해당 답안지의 시험에서 시험지 정보 가져오기
+                ExamSubmission examSubmission = answerSheet.getExamSubmission();
+                if (examSubmission == null) {
+                    log.warn("ExamSubmission이 null입니다. 답안지 ID: {}", answerSheet.getId());
+                    continue;
+                }
+                
+                Exam exam = examSubmission.getExam();
+                if (exam == null) {
+                    log.warn("Exam이 null입니다. ExamSubmission ID: {}", examSubmission.getId());
+                    continue;
+                }
+                
+                ExamSheet examSheet = exam.getExamSheet();
+                if (examSheet == null) {
+                    log.warn("ExamSheet이 null입니다. Exam ID: {}", exam.getId());
+                    continue;
+                }
+                
+                log.debug("시험지 정보: ID={}, 이름={}", examSheet.getId(), examSheet.getExamName());
+                
+                // 해당 시험지의 모든 문제 조회
+                List<ExamSheetQuestion> examSheetQuestions = examSheetQuestionRepository.findByExamSheetIdWithQuestionOrderBySeqNo(examSheet.getId());
+                
+                log.debug("조회된 시험지 문제 수: {}", examSheetQuestions.size());
+                
+                if (examSheetQuestions.isEmpty()) {
+                    log.warn("시험지 '{}'에 연결된 문제가 없습니다.", examSheet.getExamName());
+                    continue;
+                }
+
+                log.debug("답안지 생성 중: 학생={}, 시험지={}, 문제수={}", 
+                    answerSheet.getStudentName(), examSheet.getExamName(), examSheetQuestions.size());
+
+                // 각 문제에 대해 답안 생성
+                for (ExamSheetQuestion examSheetQuestion : examSheetQuestions) {
+                    Question question = examSheetQuestion.getQuestion();
+                    
+                    if (question == null || question.getId() == null) {
+                        log.warn("유효하지 않은 문제입니다. ExamSheetQuestion ID: {}", examSheetQuestion.getId());
+                        continue;
+                    }
+
+                    log.debug("문제별 답안 생성: Question ID={}, 타입={}", question.getId(), question.getQuestionType());
+                    
+                    StudentAnswerSheetQuestion answerQuestion = createAnswerForQuestion(answerSheet, question);
+                    if (answerQuestion != null) {
+                        allAnswerQuestions.add(answerQuestion);
+                        totalCreated++;
+                        log.debug("답안 생성 성공: totalCreated={}", totalCreated);
+                    } else {
+                        log.warn("답안 생성 실패: Question ID={}", question.getId());
+                    }
+                }
+
+            } catch (Exception e) {
+                log.error("답안지 문제 생성 중 오류 발생. 답안지 ID: {}, 오류: {}", 
+                    answerSheet.getId(), e.getMessage(), e);
+            }
+        }
+
+        // 배치 저장
+        if (!allAnswerQuestions.isEmpty()) {
+            try {
+                List<StudentAnswerSheetQuestion> savedQuestions = studentAnswerSheetProblemRepository.saveAll(allAnswerQuestions);
+                log.info("학생 답안지 문제별 답안 {}개 생성 완료", savedQuestions.size());
+            } catch (Exception e) {
+                log.error("답안지 문제별 답안 저장 중 오류: {}", e.getMessage(), e);
+                throw e;
+            }
+        } else {
+            log.warn("생성된 답안지 문제별 답안이 없습니다.");
+        }
+    }
+
+    /**
+     * 문제별 답안 생성
+     */
+    private StudentAnswerSheetQuestion createAnswerForQuestion(StudentAnswerSheet answerSheet, Question question) {
+        try {
+            log.debug("답안 생성 시작: AnswerSheet ID={}, Question ID={}, Question Type={}", 
+                answerSheet.getId(), question.getId(), question.getQuestionType());
+            
+            StudentAnswerSheetQuestion.StudentAnswerSheetQuestionBuilder builder = StudentAnswerSheetQuestion.builder()
+                    .studentAnswerSheet(answerSheet)
+                    .question(question);
+
+            // 문제 유형에 따라 답안 생성
+            if (question.isMultipleChoice()) {
+                // 객관식: 70% 정답률로 답안 생성
+                Integer correctAnswer = question.getCorrectChoice();
+                Integer selectedChoice;
+                
+                log.debug("객관식 문제 처리: Question ID={}, Correct Answer={}", 
+                    question.getId(), correctAnswer);
+                
+                if (correctAnswer != null && ThreadLocalRandom.current().nextInt(100) < 70) {
+                    // 70% 확률로 정답 선택
+                    selectedChoice = correctAnswer;
+                    log.debug("정답 선택: {}", selectedChoice);
+                } else {
+                    // 30% 확률로 오답 선택 (정답 제외한 1~5 중 선택)
+                    List<Integer> wrongChoices = new ArrayList<>();
+                    for (int i = 1; i <= 5; i++) {
+                        if (correctAnswer == null || i != correctAnswer.intValue()) {
+                            wrongChoices.add(i);
+                        }
+                    }
+                    selectedChoice = wrongChoices.get(ThreadLocalRandom.current().nextInt(wrongChoices.size()));
+                    log.debug("오답 선택: {} (정답: {})", selectedChoice, correctAnswer);
+                }
+                
+                builder.selectedChoice(selectedChoice);
+                
+            } else {
+                // 주관식: 간단한 답안 텍스트 생성
+                log.debug("주관식 문제 처리: Question ID={}", question.getId());
+                
+                String[] subjectiveAnswers = {
+                    "계산 과정을 통해 답을 구했습니다.",
+                    "주어진 조건을 이용하여 해결했습니다.",
+                    "단계별로 풀이하여 답을 도출했습니다.",
+                    "공식을 적용하여 답을 구했습니다.",
+                    "그래프를 그려서 해결했습니다.",
+                    "식을 정리하여 답을 구했습니다."
+                };
+                
+                String answerText = subjectiveAnswers[ThreadLocalRandom.current().nextInt(subjectiveAnswers.length)];
+                builder.answerText(answerText);
+                log.debug("주관식 답안 생성: {}", answerText);
+            }
+
+            StudentAnswerSheetQuestion result = builder.build();
+            log.debug("답안 생성 완료: AnswerSheet ID={}, Question ID={}, 답안 타입={}", 
+                answerSheet.getId(), question.getId(), 
+                result.getSelectedChoice() != null ? "객관식" : "주관식");
+                
+            return result;
+
+        } catch (Exception e) {
+            log.error("문제별 답안 생성 중 오류. Question ID: {}, 오류: {}", 
+                question.getId(), e.getMessage(), e);
+            return null;
+        }
     }
 
     /**
@@ -638,5 +827,164 @@ public class RichDataInitializer implements CommandLineRunner {
         int day = ThreadLocalRandom.current().nextInt(1, 29); // 안전하게 28일까지
 
         return LocalDate.of(birthYear, month, day);
+    }
+
+    /**
+     * 시험 결과 데이터 생성 (채점 결과)
+     */
+    private List<ExamResult> createExamResults(List<ExamSubmission> examSubmissions) {
+        log.info("시험 결과 데이터 생성 중... (총 {}개)", examSubmissions.size());
+
+        List<ExamResult> examResults = new ArrayList<>();
+
+        for (ExamSubmission submission : examSubmissions) {
+            ExamResult examResult = ExamResult.builder()
+                    .examSubmission(submission)
+                    .examSheet(submission.getExam().getExamSheet())
+                    .status(ExamResult.ResultStatus.COMPLETED)
+                    .gradedAt(submission.getSubmittedAt().plusMinutes(ThreadLocalRandom.current().nextInt(5, 30)))
+                    .version(1)
+                    .scoringComment(generateRandomGradingComment())
+                    .build();
+
+            examResults.add(examResult);
+        }
+
+        transactionTemplate.executeWithoutResult(status -> {
+            examResultRepository.saveAll(examResults);
+        });
+
+        log.info("시험 결과 데이터 생성 완료: {}개", examResults.size());
+        return examResults;
+    }
+
+    /**
+     * 문제별 채점 결과 데이터 생성
+     */
+    private List<ExamResultQuestion> createExamResultQuestions(List<ExamResult> examResults, List<StudentAnswerSheet> studentAnswerSheets) {
+        log.info("문제별 채점 결과 데이터 생성 중...");
+
+        List<ExamResultQuestion> examResultQuestions = new ArrayList<>();
+
+        // StudentAnswerSheet를 ExamSubmission ID로 그룹화
+        Map<UUID, List<StudentAnswerSheet>> answerSheetsBySubmission = studentAnswerSheets.stream()
+                .collect(Collectors.groupingBy(sheet -> sheet.getExamSubmission().getId()));
+
+        for (ExamResult examResult : examResults) {
+            UUID submissionId = examResult.getExamSubmission().getId();
+            List<StudentAnswerSheet> submissionAnswerSheets = answerSheetsBySubmission.get(submissionId);
+
+            if (submissionAnswerSheets == null || submissionAnswerSheets.isEmpty()) {
+                continue;
+            }
+
+            // 각 답안지의 문제에 대해 채점 결과 생성
+            for (StudentAnswerSheet answerSheet : submissionAnswerSheets) {
+                List<StudentAnswerSheetQuestion> answerQuestions = 
+                    studentAnswerSheetProblemRepository.findByStudentAnswerSheetIdWithQuestions(answerSheet.getId());
+
+                for (StudentAnswerSheetQuestion answerQuestion : answerQuestions) {
+                    ExamResultQuestion resultQuestion = createExamResultQuestion(examResult, answerSheet, answerQuestion);
+                    examResultQuestions.add(resultQuestion);
+                }
+            }
+
+            // ExamResult에 총점 계산 및 업데이트
+            int totalScore = examResultQuestions.stream()
+                    .filter(q -> q.getExamResult().getId().equals(examResult.getId()))
+                    .filter(q -> q.getScore() != null)
+                    .mapToInt(ExamResultQuestion::getScore)
+                    .sum();
+
+            examResult.calculateAndUpdateTotalScore();
+        }
+
+        // 배치로 저장
+        transactionTemplate.executeWithoutResult(status -> {
+            questionResultRepository.saveAll(examResultQuestions);
+        });
+
+        log.info("문제별 채점 결과 데이터 생성 완료: {}개", examResultQuestions.size());
+        return examResultQuestions;
+    }
+
+    /**
+     * 개별 문제 채점 결과 생성
+     */
+    private ExamResultQuestion createExamResultQuestion(ExamResult examResult, StudentAnswerSheet answerSheet, StudentAnswerSheetQuestion answerQuestion) {
+        Question question = answerQuestion.getQuestion();
+        boolean isCorrect;
+        int score;
+        String comment;
+        ExamResultQuestion.ScoringMethod scoringMethod;
+        BigDecimal confidenceScore = null;
+
+        if (question.isMultipleChoice()) {
+            // 객관식 자동 채점
+            isCorrect = question.isCorrectChoice(answerQuestion.getSelectedChoice());
+            score = isCorrect ? question.getPoints() : 0;
+            comment = isCorrect ? "정답입니다." : "오답입니다. 정답은 " + question.getCorrectChoice() + "번입니다.";
+            scoringMethod = ExamResultQuestion.ScoringMethod.AUTO;
+            confidenceScore = BigDecimal.ONE; // 객관식은 신뢰도 100%
+        } else {
+            // 주관식 AI 보조 채점 (가상)
+            scoringMethod = ExamResultQuestion.ScoringMethod.AI_ASSISTED;
+            confidenceScore = generateRandomConfidence();
+            
+            // 80% 확률로 부분점수 또는 만점
+            double correctnessRate = ThreadLocalRandom.current().nextDouble();
+            if (correctnessRate < 0.6) {
+                // 60% 확률로 만점
+                isCorrect = true;
+                score = question.getPoints();
+                comment = "우수한 답안입니다.";
+            } else if (correctnessRate < 0.85) {
+                // 25% 확률로 부분점수
+                isCorrect = false;
+                score = ThreadLocalRandom.current().nextInt(1, question.getPoints());
+                comment = "부분적으로 정확한 답안입니다.";
+            } else {
+                // 15% 확률로 0점
+                isCorrect = false;
+                score = 0;
+                comment = "답안이 부정확합니다. 다시 검토해 주세요.";
+            }
+        }
+
+        return ExamResultQuestion.builder()
+                .examResult(examResult)
+                .question(question)
+                .studentAnswerSheet(answerSheet)
+                .isCorrect(isCorrect)
+                .score(score)
+                .scoringMethod(scoringMethod)
+                .scoringComment(comment)
+                .confidenceScore(confidenceScore)
+                .build();
+    }
+
+    /**
+     * 랜덤 채점 코멘트 생성
+     */
+    private String generateRandomGradingComment() {
+        String[] comments = {
+                "전체적으로 우수한 답안입니다.",
+                "기본기가 잘 다져진 답안입니다.",
+                "좀 더 꼼꼼히 검토가 필요합니다.",
+                "열심히 공부한 흔적이 보입니다.",
+                "다음에는 더 좋은 결과를 기대합니다.",
+                "지속적인 노력이 필요합니다.",
+                "이해도가 높은 훌륭한 답안입니다."
+        };
+        
+        return comments[ThreadLocalRandom.current().nextInt(comments.length)];
+    }
+
+    /**
+     * AI 채점 신뢰도 점수 생성 (0.60 ~ 1.00)
+     */
+    private BigDecimal generateRandomConfidence() {
+        double confidence = 0.60 + (ThreadLocalRandom.current().nextDouble() * 0.40);
+        return BigDecimal.valueOf(confidence).setScale(2, BigDecimal.ROUND_HALF_UP);
     }
 }

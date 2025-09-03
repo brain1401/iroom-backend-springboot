@@ -44,7 +44,7 @@ public interface StudentAnswerSheetProblemRepository extends JpaRepository<Stude
      * @param questionId           문제 ID
      * @return 해당 문제의 답안
      */
-    @Query("SELECT p FROM StudentAnswerSheetProblem p " +
+    @Query("SELECT p FROM StudentAnswerSheetQuestion p " +
             "WHERE p.studentAnswerSheet.id = :studentAnswerSheetId " +
             "AND p.question.id = :questionId")
     StudentAnswerSheetQuestion findByStudentAnswerSheetIdAndQuestionId(
@@ -57,9 +57,9 @@ public interface StudentAnswerSheetProblemRepository extends JpaRepository<Stude
      * @param studentAnswerSheetId 학생 답안지 ID
      * @return 답안이 있는 문제 수
      */
-    @Query("SELECT COUNT(p) FROM StudentAnswerSheetProblem p " +
+    @Query("SELECT COUNT(p) FROM StudentAnswerSheetQuestion p " +
             "WHERE p.studentAnswerSheet.id = :studentAnswerSheetId " +
-            "AND (p.answerText IS NOT NULL OR p.selectedChoice IS NOT NULL)")
+            "AND (p.answerText <> '' OR p.selectedChoice IS NOT NULL)")
     int countAnsweredProblemsByStudentAnswerSheetId(@Param("studentAnswerSheetId") UUID studentAnswerSheetId);
 
     /**
@@ -76,7 +76,7 @@ public interface StudentAnswerSheetProblemRepository extends JpaRepository<Stude
      * @param submissionId 시험 제출 ID
      * @return 문제별 답안 목록 (문제 정보 포함)
      */
-    @Query("SELECT p FROM StudentAnswerSheetProblem p " +
+    @Query("SELECT p FROM StudentAnswerSheetQuestion p " +
             "JOIN FETCH p.question q " +
             "WHERE p.studentAnswerSheet.examSubmission.id = :submissionId " +
             "ORDER BY q.id")
@@ -88,9 +88,21 @@ public interface StudentAnswerSheetProblemRepository extends JpaRepository<Stude
      * @param studentAnswerSheetId 학생 답안지 ID
      * @return 답안이 있는 문제별 답안 목록
      */
-    @Query("SELECT p FROM StudentAnswerSheetProblem p " +
+    @Query("SELECT p FROM StudentAnswerSheetQuestion p " +
             "WHERE p.studentAnswerSheet.id = :studentAnswerSheetId " +
-            "AND (p.answerText IS NOT NULL OR p.selectedChoice IS NOT NULL)")
+            "AND (p.answerText <> '' OR p.selectedChoice IS NOT NULL)")
     List<StudentAnswerSheetQuestion> findAnsweredProblemsByStudentAnswerSheetId(
             @Param("studentAnswerSheetId") UUID studentAnswerSheetId);
+
+    /**
+     * 특정 답안지의 모든 문제별 답안을 문제와 함께 조회 (FETCH JOIN)
+     * 
+     * @param studentAnswerSheetId 학생 답안지 ID
+     * @return 문제별 답안 목록 (문제 정보 포함)
+     */
+    @Query("SELECT p FROM StudentAnswerSheetQuestion p " +
+            "JOIN FETCH p.question q " +
+            "WHERE p.studentAnswerSheet.id = :studentAnswerSheetId " +
+            "ORDER BY q.id")
+    List<StudentAnswerSheetQuestion> findByStudentAnswerSheetIdWithQuestions(@Param("studentAnswerSheetId") UUID studentAnswerSheetId);
 }

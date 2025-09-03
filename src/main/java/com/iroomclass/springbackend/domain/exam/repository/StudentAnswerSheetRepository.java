@@ -55,7 +55,7 @@ public interface StudentAnswerSheetRepository extends JpaRepository<StudentAnswe
      * @param questionId       문제 ID
      * @return 해당 문제의 답안
      */
-    @Query("SELECT sas FROM StudentAnswerSheet sas JOIN sas.problems p WHERE sas.examSubmission.id = :examSubmissionId AND p.question.id = :questionId")
+    @Query("SELECT sas FROM StudentAnswerSheet sas JOIN sas.studentAnswerSheetQuestions p WHERE sas.examSubmission.id = :examSubmissionId AND p.question.id = :questionId")
     Optional<StudentAnswerSheet> findByExamSubmissionIdAndQuestionId(@Param("examSubmissionId") UUID examSubmissionId, @Param("questionId") UUID questionId);
 
     /**
@@ -91,7 +91,7 @@ public interface StudentAnswerSheetRepository extends JpaRepository<StudentAnswe
      * @param questionId       문제 ID
      * @return 답안 존재 여부
      */
-    @Query("SELECT COUNT(sas) > 0 FROM StudentAnswerSheet sas JOIN sas.problems p WHERE sas.examSubmission.id = :examSubmissionId AND p.question.id = :questionId")
+    @Query("SELECT COUNT(sas) > 0 FROM StudentAnswerSheet sas JOIN sas.studentAnswerSheetQuestions p WHERE sas.examSubmission.id = :examSubmissionId AND p.question.id = :questionId")
     boolean existsByExamSubmissionIdAndQuestionId(@Param("examSubmissionId") UUID examSubmissionId, @Param("questionId") UUID questionId);
 
     /**
@@ -114,8 +114,8 @@ public interface StudentAnswerSheetRepository extends JpaRepository<StudentAnswe
      * @param submissionId 시험 제출 ID
      * @return 문제 순서대로 정렬된 답안 목록
      */
-    @Query("SELECT DISTINCT sas FROM StudentAnswerSheet sas JOIN sas.problems p JOIN p.question q WHERE sas.examSubmission.id = :submissionId ORDER BY q.id ASC")
-    List<StudentAnswerSheet> findByExamSubmissionIdOrderByQuestionOrder(@Param("submissionId") UUID submissionId);
+    @Query("SELECT DISTINCT sas FROM StudentAnswerSheet sas JOIN sas.studentAnswerSheetQuestions p JOIN p.question q WHERE sas.examSubmission.id = :submissionId ORDER BY q.id ASC")
+    List<StudentAnswerSheet> findByExamSubmissionIdOrderByQuestionId(@Param("submissionId") UUID submissionId);
 
     /**
      * 시험 제출 ID로 답안 목록을 문제 순서대로 조회 (Question 정보 포함)
@@ -126,7 +126,7 @@ public interface StudentAnswerSheetRepository extends JpaRepository<StudentAnswe
      * @param submissionId 시험 제출 ID
      * @return 문제 순서대로 정렬된 답안 목록 (Question 정보 포함)
      */
-    @Query("SELECT DISTINCT sas FROM StudentAnswerSheet sas JOIN FETCH sas.problems p JOIN FETCH p.question q WHERE sas.examSubmission.id = :submissionId ORDER BY q.id ASC")
+    @Query("SELECT DISTINCT sas FROM StudentAnswerSheet sas JOIN FETCH sas.studentAnswerSheetQuestions p JOIN FETCH p.question q WHERE sas.examSubmission.id = :submissionId ORDER BY q.id ASC")
     List<StudentAnswerSheet> findBySubmissionIdOrderByQuestionOrderWithQuestion(@Param("submissionId") UUID submissionId);
 
     /**
@@ -136,6 +136,6 @@ public interface StudentAnswerSheetRepository extends JpaRepository<StudentAnswe
      * @return 문제 순서대로 정렬된 답안 목록
      */
     default List<StudentAnswerSheet> findBySubmissionIdOrderByQuestionOrder(UUID submissionId) {
-        return findByExamSubmissionIdOrderByQuestionOrder(submissionId);
+        return findByExamSubmissionIdOrderByQuestionId(submissionId);
     }
 }

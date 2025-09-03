@@ -106,30 +106,46 @@ public class ExamSheet {
      * @return 총 문제 수 (임시로 questions.size() 반환)
      */
     public Integer getTotalQuestions() {
-        return questions.size(); // 임시 기본값
+        if (questions == null) return 0;
+        return questions.size();
     }
 
     /**
      * 객관식 문제 수 계산 (임시 메서드)
      * TODO: 추후 examSheetQuestionRepository를 통해 객관식 문제 COUNT 조회로 변경
      * 
-     * @return 객관식 문제 수 (임시로 15 반환)
+     * @return 객관식 문제 수
      */
-    public Long getMultipleChoiceCount() {
-        return questions.stream()
-                .filter(q -> q.getQuestion().getQuestionType() == Question.QuestionType.MULTIPLE_CHOICE).count(); // 임시
-                                                                                                                  // 기본값
+    public Integer getMultipleChoiceCount() {
+        if (questions == null) return 0;
+        return Math.toIntExact(questions.stream()
+                .filter(q -> q.getQuestion() != null && q.getQuestion().getQuestionType() == Question.QuestionType.MULTIPLE_CHOICE)
+                .count());
     }
 
     /**
      * 주관식 문제 수 계산 (임시 메서드)
      * TODO: 추후 examSheetQuestionRepository를 통해 주관식 문제 COUNT 조회로 변경
      * 
-     * @return 주관식 문제 수 (임시로 5 반환)
+     * @return 주관식 문제 수
      */
-    public Long getSubjectiveCount() {
-        return questions.stream()
-                .filter(q -> q.getQuestion().getQuestionType() == Question.QuestionType.SUBJECTIVE).count(); // 임시 기본값
+    public Integer getSubjectiveCount() {
+        if (questions == null) return 0;
+        return Math.toIntExact(questions.stream()
+                .filter(q -> q.getQuestion() != null && q.getQuestion().getQuestionType() == Question.QuestionType.SUBJECTIVE)
+                .count());
+    }
+
+    /**
+     * 문제 개수 업데이트 (임시 메서드)
+     * 
+     * @param totalQuestions 총 문제 수
+     * @param multipleChoiceCount 객관식 문제 수
+     * @param subjectiveCount 주관식 문제 수
+     */
+    public void updateQuestionCounts(Integer totalQuestions, long multipleChoiceCount, long subjectiveCount) {
+        // 현재는 실제 업데이트 로직이 없음 - questions 리스트가 실제 데이터를 반영
+        // 필요시 추후 구현
     }
 
 }

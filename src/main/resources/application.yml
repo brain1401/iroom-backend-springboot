@@ -1,6 +1,6 @@
 # 서버 설정
 server:
-  port: 3055
+  port: 3057
 
   servlet:
     context-path: /api
@@ -25,7 +25,7 @@ spring:
   # JPA 설정
   jpa:
     hibernate:
-      ddl-auto: create
+      ddl-auto: update
     properties:
       hibernate:
         dialect: org.hibernate.dialect.MySQLDialect
@@ -74,6 +74,11 @@ aws:
     bucket-name: ${AWS_S3_BUCKET_NAME:}
     presigned-url-duration: ${AWS_S3_PRESIGNED_URL_DURATION:60}
     multipart-min-part-size: ${AWS_S3_MULTIPART_MIN_PART_SIZE:8}
+
+# 데이터 초기화 설정
+data:
+  initialization:
+    enabled: ${DATA_INIT_ENABLED:false}
 
 # Swagger/OpenAPI 설정
 springdoc:
