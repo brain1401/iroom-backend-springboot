@@ -33,6 +33,7 @@ import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -73,6 +74,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Slf4j
 @ConditionalOnProperty(name = "data.initialization.enabled", havingValue = "true", matchIfMissing = false)
+@ConditionalOnClass(name = "com.iroomclass.springbackend.domain.exam.repository.ExamRepository")
 public class RichDataInitializer implements CommandLineRunner {
 
     // Repository 의존성 주입
