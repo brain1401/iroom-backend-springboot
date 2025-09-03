@@ -10,7 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.iroomclass.springbackend.domain.exam.entity.StudentAnswerSheet;
-import com.iroomclass.springbackend.domain.exam.entity.StudentAnswerSheetProblem;
+import com.iroomclass.springbackend.domain.exam.entity.StudentAnswerSheetQuestion;
 import com.iroomclass.springbackend.domain.exam.repository.StudentAnswerSheetRepository;
 import com.iroomclass.springbackend.domain.exam.entity.ExamSubmission;
 import com.iroomclass.springbackend.domain.exam.entity.ExamResult;
@@ -55,7 +55,7 @@ public class QuestionResultService {
 
         for (StudentAnswerSheet answer : answers) {
             // 각 답안지의 문제별 답안에 대해 자동 채점 수행
-            for (StudentAnswerSheetProblem problem : answer.getProblems()) {
+            for (StudentAnswerSheetQuestion problem : answer.getStudentAnswerSheetQuestions()) {
                 createAndProcessAutoGrading(examResult, answer, problem);
             }
         }
@@ -80,7 +80,7 @@ public class QuestionResultService {
 
         for (StudentAnswerSheet answer : answers) {
             // 각 답안지의 문제별 답안에 대해 ExamResultQuestion 생성
-            for (StudentAnswerSheetProblem problem : answer.getProblems()) {
+            for (StudentAnswerSheetQuestion problem : answer.getStudentAnswerSheetQuestions()) {
                 ExamResultQuestion questionResult = ExamResultQuestion.builder()
                         .examResult(examResult)
                         .studentAnswerSheet(answer)
@@ -141,7 +141,7 @@ public class QuestionResultService {
                 .findByExamResultIdOrderByQuestionOrder(examResult.getId());
 
         for (ExamResultQuestion questionResult : questionResults) {
-            StudentAnswerSheetProblem problem = questionResult.getStudentAnswerSheet()
+            StudentAnswerSheetQuestion problem = questionResult.getStudentAnswerSheet()
                     .getProblemByQuestionId(questionResult.getQuestion().getId());
             if (questionResult.getQuestion().isMultipleChoice()
                     && problem != null && problem.getSelectedChoice() != null) {
@@ -166,7 +166,8 @@ public class QuestionResultService {
      * @param answer     학생 답안지
      */
     @Transactional
-    protected void createAndProcessAutoGrading(ExamResult examResult, StudentAnswerSheet answer, StudentAnswerSheetProblem problem) {
+    protected void createAndProcessAutoGrading(ExamResult examResult, StudentAnswerSheet answer,
+            StudentAnswerSheetQuestion problem) {
         ExamResultQuestion questionResult = ExamResultQuestion.builder()
                 .examResult(examResult)
                 .studentAnswerSheet(answer)

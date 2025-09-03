@@ -80,7 +80,7 @@ public class StudentAnswerSheet {
      */
     @OneToMany(mappedBy = "studentAnswerSheet", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
-    private List<StudentAnswerSheetProblem> problems = new ArrayList<>();
+    private List<StudentAnswerSheetQuestion> studentAnswerSheetQuestions = new ArrayList<>();
 
     /**
      * Entity 저장 전 실행되는 메서드
@@ -107,8 +107,8 @@ public class StudentAnswerSheet {
      * 
      * @param problem 추가할 문제별 답안
      */
-    public void addProblem(StudentAnswerSheetProblem problem) {
-        problems.add(problem);
+    public void addProblem(StudentAnswerSheetQuestion problem) {
+        studentAnswerSheetQuestions.add(problem);
     }
 
     /**
@@ -116,8 +116,8 @@ public class StudentAnswerSheet {
      * 
      * @param problem 제거할 문제별 답안
      */
-    public void removeProblem(StudentAnswerSheetProblem problem) {
-        problems.remove(problem);
+    public void removeProblem(StudentAnswerSheetQuestion problem) {
+        studentAnswerSheetQuestions.remove(problem);
     }
 
     /**
@@ -126,7 +126,7 @@ public class StudentAnswerSheet {
      * @return 총 문제 수
      */
     public int getTotalProblemCount() {
-        return problems.size();
+        return studentAnswerSheetQuestions.size();
     }
 
     /**
@@ -135,7 +135,7 @@ public class StudentAnswerSheet {
      * @return 답안이 제출된 문제 수
      */
     public int getAnsweredProblemCount() {
-        return (int) problems.stream().filter(StudentAnswerSheetProblem::hasAnswer).count();
+        return (int) studentAnswerSheetQuestions.stream().filter(StudentAnswerSheetQuestion::hasAnswer).count();
     }
 
     /**
@@ -144,9 +144,9 @@ public class StudentAnswerSheet {
      * @param questionId 문제 ID
      * @return 해당 문제의 답안, 없으면 null
      */
-    public StudentAnswerSheetProblem getProblemByQuestionId(UUID questionId) {
-        return problems.stream()
-                .filter(problem -> questionId.equals(problem.getQuestionId()))
+    public StudentAnswerSheetQuestion getProblemByQuestionId(UUID questionId) {
+        return studentAnswerSheetQuestions.stream()
+                .filter(question -> questionId.equals(question.getQuestionId()))
                 .findFirst()
                 .orElse(null);
     }
@@ -157,8 +157,8 @@ public class StudentAnswerSheet {
      * @return 모든 문제에 답안이 있으면 true
      */
     public boolean isCompleted() {
-        return !problems.isEmpty() && problems.stream().allMatch(StudentAnswerSheetProblem::hasAnswer);
+        return !studentAnswerSheetQuestions.isEmpty()
+                && studentAnswerSheetQuestions.stream().allMatch(StudentAnswerSheetQuestion::hasAnswer);
     }
-
 
 }

@@ -115,15 +115,16 @@ public record QuestionResultResponse(
          * @return AnswerInfo
          */
         public static AnswerInfo from(
-                com.iroomclass.springbackend.domain.exam.entity.StudentAnswerSheetProblem problem) {
+                com.iroomclass.springbackend.domain.exam.entity.StudentAnswerSheetQuestion problem) {
             // 답안 타입 결정 로직
-            String answerType = problem.getSelectedChoice() != null ? "MULTIPLE_CHOICE" : 
-                               (problem.getAnswerText() != null || problem.getAnswerImageUrl() != null) ? "SUBJECTIVE" : "UNANSWERED";
-            
+            String answerType = problem.getSelectedChoice() != null ? "MULTIPLE_CHOICE"
+                    : (problem.getAnswerText() != null || problem.getAnswerImageUrl() != null) ? "SUBJECTIVE"
+                            : "UNANSWERED";
+
             // 제출된 답안 결정
-            String submittedAnswer = problem.getSelectedChoice() != null ? 
-                                   problem.getSelectedChoice().toString() : problem.getAnswerText();
-            
+            String submittedAnswer = problem.getSelectedChoice() != null ? problem.getSelectedChoice().toString()
+                    : problem.getAnswerText();
+
             return new AnswerInfo(
                     problem.getId(),
                     problem.getQuestion().getId(),

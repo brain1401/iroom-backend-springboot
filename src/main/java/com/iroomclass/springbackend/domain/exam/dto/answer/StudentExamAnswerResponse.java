@@ -1,7 +1,7 @@
 package com.iroomclass.springbackend.domain.exam.dto.answer;
 
 import com.iroomclass.springbackend.domain.exam.entity.StudentAnswerSheet;
-import com.iroomclass.springbackend.domain.exam.entity.StudentAnswerSheetProblem;
+import com.iroomclass.springbackend.domain.exam.entity.StudentAnswerSheetQuestion;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
@@ -47,7 +47,7 @@ public record StudentExamAnswerResponse(
      * 
      * NOTE: 채점 정보(정답 여부, 점수)는 QuestionResult에서 관리되므로 제외됨
      */
-    public static StudentExamAnswerResponse from(StudentAnswerSheetProblem problem, StudentAnswerSheet answerSheet) {
+    public static StudentExamAnswerResponse from(StudentAnswerSheetQuestion problem, StudentAnswerSheet answerSheet) {
         return new StudentExamAnswerResponse(
                 problem.getId(),
                 answerSheet.getExamSubmission().getId(),

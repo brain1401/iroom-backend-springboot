@@ -8,7 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import com.iroomclass.springbackend.domain.exam.entity.StudentAnswerSheetProblem;
+import com.iroomclass.springbackend.domain.exam.entity.StudentAnswerSheetQuestion;
 
 /**
  * 학생 답안지 문제별 답안 Repository
@@ -19,7 +19,7 @@ import com.iroomclass.springbackend.domain.exam.entity.StudentAnswerSheetProblem
  * @since 2025
  */
 @Repository
-public interface StudentAnswerSheetProblemRepository extends JpaRepository<StudentAnswerSheetProblem, UUID> {
+public interface StudentAnswerSheetProblemRepository extends JpaRepository<StudentAnswerSheetQuestion, UUID> {
 
     /**
      * 특정 답안지의 모든 문제별 답안 조회
@@ -27,7 +27,7 @@ public interface StudentAnswerSheetProblemRepository extends JpaRepository<Stude
      * @param studentAnswerSheetId 학생 답안지 ID
      * @return 문제별 답안 목록
      */
-    List<StudentAnswerSheetProblem> findByStudentAnswerSheet_Id(UUID studentAnswerSheetId);
+    List<StudentAnswerSheetQuestion> findByStudentAnswerSheet_Id(UUID studentAnswerSheetId);
 
     /**
      * 특정 문제의 모든 답안 조회
@@ -35,7 +35,7 @@ public interface StudentAnswerSheetProblemRepository extends JpaRepository<Stude
      * @param questionId 문제 ID
      * @return 문제별 답안 목록
      */
-    List<StudentAnswerSheetProblem> findByQuestion_Id(UUID questionId);
+    List<StudentAnswerSheetQuestion> findByQuestion_Id(UUID questionId);
 
     /**
      * 특정 답안지의 특정 문제 답안 조회
@@ -45,9 +45,9 @@ public interface StudentAnswerSheetProblemRepository extends JpaRepository<Stude
      * @return 해당 문제의 답안
      */
     @Query("SELECT p FROM StudentAnswerSheetProblem p " +
-           "WHERE p.studentAnswerSheet.id = :studentAnswerSheetId " +
-           "AND p.question.id = :questionId")
-    StudentAnswerSheetProblem findByStudentAnswerSheetIdAndQuestionId(
+            "WHERE p.studentAnswerSheet.id = :studentAnswerSheetId " +
+            "AND p.question.id = :questionId")
+    StudentAnswerSheetQuestion findByStudentAnswerSheetIdAndQuestionId(
             @Param("studentAnswerSheetId") UUID studentAnswerSheetId,
             @Param("questionId") UUID questionId);
 
@@ -58,8 +58,8 @@ public interface StudentAnswerSheetProblemRepository extends JpaRepository<Stude
      * @return 답안이 있는 문제 수
      */
     @Query("SELECT COUNT(p) FROM StudentAnswerSheetProblem p " +
-           "WHERE p.studentAnswerSheet.id = :studentAnswerSheetId " +
-           "AND (p.answerText IS NOT NULL OR p.selectedChoice IS NOT NULL)")
+            "WHERE p.studentAnswerSheet.id = :studentAnswerSheetId " +
+            "AND (p.answerText IS NOT NULL OR p.selectedChoice IS NOT NULL)")
     int countAnsweredProblemsByStudentAnswerSheetId(@Param("studentAnswerSheetId") UUID studentAnswerSheetId);
 
     /**
@@ -77,10 +77,10 @@ public interface StudentAnswerSheetProblemRepository extends JpaRepository<Stude
      * @return 문제별 답안 목록 (문제 정보 포함)
      */
     @Query("SELECT p FROM StudentAnswerSheetProblem p " +
-           "JOIN FETCH p.question q " +
-           "WHERE p.studentAnswerSheet.examSubmission.id = :submissionId " +
-           "ORDER BY q.id")
-    List<StudentAnswerSheetProblem> findBySubmissionIdWithQuestions(@Param("submissionId") UUID submissionId);
+            "JOIN FETCH p.question q " +
+            "WHERE p.studentAnswerSheet.examSubmission.id = :submissionId " +
+            "ORDER BY q.id")
+    List<StudentAnswerSheetQuestion> findBySubmissionIdWithQuestions(@Param("submissionId") UUID submissionId);
 
     /**
      * 답안이 있는 문제별 답안들만 조회
@@ -89,7 +89,8 @@ public interface StudentAnswerSheetProblemRepository extends JpaRepository<Stude
      * @return 답안이 있는 문제별 답안 목록
      */
     @Query("SELECT p FROM StudentAnswerSheetProblem p " +
-           "WHERE p.studentAnswerSheet.id = :studentAnswerSheetId " +
-           "AND (p.answerText IS NOT NULL OR p.selectedChoice IS NOT NULL)")
-    List<StudentAnswerSheetProblem> findAnsweredProblemsByStudentAnswerSheetId(@Param("studentAnswerSheetId") UUID studentAnswerSheetId);
+            "WHERE p.studentAnswerSheet.id = :studentAnswerSheetId " +
+            "AND (p.answerText IS NOT NULL OR p.selectedChoice IS NOT NULL)")
+    List<StudentAnswerSheetQuestion> findAnsweredProblemsByStudentAnswerSheetId(
+            @Param("studentAnswerSheetId") UUID studentAnswerSheetId);
 }

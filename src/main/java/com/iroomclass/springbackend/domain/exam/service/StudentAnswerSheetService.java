@@ -7,7 +7,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.iroomclass.springbackend.domain.exam.entity.StudentAnswerSheet;
-import com.iroomclass.springbackend.domain.exam.entity.StudentAnswerSheetProblem;
+import com.iroomclass.springbackend.domain.exam.entity.StudentAnswerSheetQuestion;
 import com.iroomclass.springbackend.domain.exam.repository.StudentAnswerSheetRepository;
 import com.iroomclass.springbackend.domain.exam.dto.answer.ExamAnswerListResponse;
 import com.iroomclass.springbackend.domain.exam.dto.answer.StudentExamAnswerResponse;
@@ -64,8 +64,8 @@ public class StudentAnswerSheetService {
             throw new IllegalArgumentException("존재하지 않는 답안지입니다: 시험 제출 ID=" + examSubmissionId);
         }
         StudentAnswerSheet studentAnswerSheet = answerSheets.get(0);
-        
-        StudentAnswerSheetProblem problem = studentAnswerSheet.getProblemByQuestionId(questionId);
+
+        StudentAnswerSheetQuestion problem = studentAnswerSheet.getProblemByQuestionId(questionId);
         if (problem == null) {
             throw new IllegalArgumentException("해당 문제의 답안을 찾을 수 없습니다: 문제 ID=" + questionId);
         }

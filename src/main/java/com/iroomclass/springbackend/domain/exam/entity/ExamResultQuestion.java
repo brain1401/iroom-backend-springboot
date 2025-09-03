@@ -87,8 +87,6 @@ public class ExamResultQuestion {
     @Column
     private Integer score;
 
-
-
     /**
      * 채점 방식
      * AUTO: 자동 채점 (객관식)
@@ -200,7 +198,7 @@ public class ExamResultQuestion {
      * @return 채점 성공 여부
      */
     public boolean performAutoScoring() {
-        StudentAnswerSheetProblem problem = studentAnswerSheet.getProblemByQuestionId(question.getId());
+        StudentAnswerSheetQuestion problem = studentAnswerSheet.getProblemByQuestionId(question.getId());
         if (!question.isMultipleChoice() || problem == null || problem.getSelectedChoice() == null) {
             return false;
         }

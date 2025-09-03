@@ -37,7 +37,7 @@ public record ExamAnswerListResponse(
      */
     public static ExamAnswerListResponse from(List<StudentAnswerSheet> studentAnswerSheets, UUID examSubmissionId) {
         List<StudentExamAnswerResponse> answerResponses = studentAnswerSheets.stream()
-                .flatMap(answerSheet -> answerSheet.getProblems().stream()
+                .flatMap(answerSheet -> answerSheet.getStudentAnswerSheetQuestions().stream()
                         .map(problem -> StudentExamAnswerResponse.from(problem, answerSheet)))
                 .toList();
 

@@ -5,6 +5,8 @@ import lombok.*;
 import com.iroomclass.springbackend.common.UUIDv7Generator;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -48,7 +50,6 @@ public class ExamSheet {
     @Column(nullable = false)
     private Integer grade;
 
-    
     /**
      * 생성일시
      * 시험지가 생성된 날짜와 시간
@@ -56,7 +57,7 @@ public class ExamSheet {
      */
     @Column(nullable = false)
     private LocalDateTime createdAt;
-    
+
     /**
      * 수정일시
      * 시험지가 마지막으로 수정된 날짜와 시간
@@ -64,7 +65,13 @@ public class ExamSheet {
      */
     @Column(nullable = false)
     private LocalDateTime updatedAt;
-    
+
+    /**
+     * 시험지 문제 목록
+     */
+    @OneToMany(mappedBy = "examSheet", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ExamSheetQuestion> questions;
+
     /**
      * Entity 저장 전 실행되는 메서드
      * UUID, 생성일시와 수정일시를 자동으로 설정합니다.
@@ -83,7 +90,7 @@ public class ExamSheet {
             updatedAt = now;
         }
     }
-    
+
     /**
      * Entity 업데이트 전 실행되는 메서드
      * 수정일시를 자동으로 설정합니다.
@@ -92,39 +99,37 @@ public class ExamSheet {
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
     }
-    
+
     /**
      * 총 문제 수 계산 (임시 메서드 - 실제로는 examSheetQuestionRepository를 통해 COUNT 조회)
-     * TODO: 추후 examSheetQuestionRepository를 주입받아서 실제 COUNT 쿼리로 변경
-     * @return 총 문제 수 (임시로 20 반환)
+     * 
+     * @return 총 문제 수 (임시로 questions.size() 반환)
      */
     public Integer getTotalQuestions() {
-        return 20; // 임시 기본값
+        return questions.size(); // 임시 기본값
     }
-    
+
     /**
      * 객관식 문제 수 계산 (임시 메서드)
      * TODO: 추후 examSheetQuestionRepository를 통해 객관식 문제 COUNT 조회로 변경
+     * 
      * @return 객관식 문제 수 (임시로 15 반환)
      */
-    public Integer getMultipleChoiceCount() {
-        return 15; // 임시 기본값
+    public Long getMultipleChoiceCount() {
+        return questions.stream()
+                .filter(q -> q.getQuestion().getQuestionType() == Question.QuestionType.MULTIPLE_CHOICE).count(); // 임시
+                                                                                                                  // 기본값
     }
-    
+
     /**
      * 주관식 문제 수 계산 (임시 메서드)
      * TODO: 추후 examSheetQuestionRepository를 통해 주관식 문제 COUNT 조회로 변경
+     * 
      * @return 주관식 문제 수 (임시로 5 반환)
      */
-    public Integer getSubjectiveCount() {
-        return 5; // 임시 기본값
+    public Long getSubjectiveCount() {
+        return questions.stream()
+                .filter(q -> q.getQuestion().getQuestionType() == Question.QuestionType.SUBJECTIVE).count(); // 임시 기본값
     }
-    
-    /**
-     * 문제 수 업데이트 (임시 메서드 - 실제로는 아무것도 하지 않음)
-     * TODO: 추후 실제 로직으로 변경 필요
-     */
-    public void updateQuestionCounts(Integer totalQuestions, int multipleChoiceCount, int subjectiveCount) {
-        // 임시로 아무것도 하지 않음 (컬럼이 제거되어 업데이트할 것이 없음)
-    }
+
 }

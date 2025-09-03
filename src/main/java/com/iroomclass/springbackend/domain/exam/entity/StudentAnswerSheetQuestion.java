@@ -37,12 +37,12 @@ import lombok.NoArgsConstructor;
  * @since 2025
  */
 @Entity
-@Table(name = "student_answer_sheet_problem")
+@Table(name = "student_answer_sheet_question")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Builder
-public class StudentAnswerSheetProblem {
+public class StudentAnswerSheetQuestion {
 
     /**
      * 답안 문제별 고유 ID
