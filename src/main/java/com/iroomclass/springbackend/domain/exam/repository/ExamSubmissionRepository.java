@@ -166,4 +166,19 @@ public interface ExamSubmissionRepository extends JpaRepository<ExamSubmission, 
             "JOIN FETCH e.examSheet " +
             "WHERE es.id = :id")
     Optional<ExamSubmission> findByIdWithExamAndExamSheet(@Param("id") UUID id);
+
+    /**
+     * 특정 학년의 총 활성 학생 수 조회
+     * 
+     * 해당 학년의 모든 시험에 참여한 unique 학생 수를 조회합니다.
+     * 이를 통해 학년별 전체 학생 수를 추정할 수 있습니다.
+     * 
+     * 사용처: 대시보드에서 제출률 계산 시 분모로 사용
+     * 예시: 1학년의 모든 시험에 참여한 서로 다른 학생의 총 수
+     * 
+     * @param grade 학년 (1, 2, 3)
+     * @return 해당 학년의 총 활성 학생 수
+     */
+    @Query("SELECT COUNT(DISTINCT es.student.id) FROM ExamSubmission es JOIN es.exam e WHERE e.grade = :grade")
+    long countDistinctStudentsByGrade(@Param("grade") Integer grade);
 }
