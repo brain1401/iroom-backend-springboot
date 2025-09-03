@@ -4,7 +4,7 @@ import java.math.BigDecimal;
 import java.util.Objects;
 
 import com.iroomclass.springbackend.common.BaseRecord;
-import com.iroomclass.springbackend.domain.exam.entity.ExamResultQuestion.GradingMethod;
+import com.iroomclass.springbackend.domain.exam.entity.ExamResultQuestion.ScoringMethod;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.DecimalMax;
@@ -18,7 +18,7 @@ import jakarta.validation.constraints.NotNull;
  * 
  * @param isCorrect       정답 여부
  * @param score           획득 점수
- * @param gradingMethod   채점 방법
+ * @param scoringMethod   채점 방법
  * @param confidenceScore 신뢰도 점수
  * @param feedback        피드백
  * @param aiAnalysis      AI 분석 결과
@@ -31,7 +31,7 @@ public record QuestionResultUpdateRequest(
 
         @Schema(description = "획득 점수", example = "5", requiredMode = Schema.RequiredMode.REQUIRED) @NotNull(message = "획득 점수는 필수입니다") @Min(value = 0, message = "점수는 0 이상이어야 합니다") @Max(value = 100, message = "점수는 100 이하여야 합니다") Integer score,
 
-        @Schema(description = "채점 방법", example = "MANUAL") GradingMethod gradingMethod,
+        @Schema(description = "채점 방법", example = "MANUAL") ScoringMethod scoringMethod,
 
         @Schema(description = "신뢰도 점수", example = "0.95") @DecimalMin(value = "0.0", message = "신뢰도 점수는 0.0 이상이어야 합니다") @DecimalMax(value = "1.0", message = "신뢰도 점수는 1.0 이하여야 합니다") BigDecimal confidenceScore,
 

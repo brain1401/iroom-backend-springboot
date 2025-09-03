@@ -50,7 +50,7 @@ public record AiGradingResponse(
     
     @Schema(description = "채점 코멘트")
     @JsonProperty("grading_comment")
-    String gradingComment,
+    String scoringComment,
     
     @Schema(description = "채점 완료 시간")
     @JsonProperty("graded_at")
@@ -102,13 +102,9 @@ public record AiGradingResponse(
         @JsonProperty("score")
         Double score,
         
-        @Schema(description = "최대 점수")
-        @JsonProperty("max_score")
-        Double maxScore,
-        
         @Schema(description = "채점 방식")
         @JsonProperty("grading_method")
-        String gradingMethod,
+        String scoringMethod,
         
         @Schema(description = "신뢰도 점수")
         @JsonProperty("confidence_score")
@@ -116,7 +112,7 @@ public record AiGradingResponse(
         
         @Schema(description = "채점 코멘트")
         @JsonProperty("grading_comment")
-        String gradingComment,
+        String scoringComment,
         
         @Schema(description = "생성 시간")
         @JsonProperty("created_at")
@@ -128,8 +124,7 @@ public record AiGradingResponse(
                 "answerId", answerId,
                 "isCorrect", isCorrect,
                 "score", score,
-                "maxScore", maxScore,
-                "gradingMethod", gradingMethod,
+                "scoringMethod", scoringMethod,
                 "createdAt", createdAt
             );
         }

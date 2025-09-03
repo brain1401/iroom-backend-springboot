@@ -10,11 +10,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.iroomclass.springbackend.domain.exam.entity.StudentAnswerSheet;
+import com.iroomclass.springbackend.domain.exam.entity.StudentAnswerSheetProblem;
 import com.iroomclass.springbackend.domain.exam.repository.StudentAnswerSheetRepository;
 import com.iroomclass.springbackend.domain.exam.entity.ExamSubmission;
 import com.iroomclass.springbackend.domain.exam.entity.ExamResult;
 import com.iroomclass.springbackend.domain.exam.entity.ExamResultQuestion;
-import com.iroomclass.springbackend.domain.exam.entity.ExamResultQuestion.GradingMethod;
+import com.iroomclass.springbackend.domain.exam.entity.ExamResultQuestion.ScoringMethod;
 import com.iroomclass.springbackend.domain.exam.repository.QuestionResultRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -50,10 +51,13 @@ public class QuestionResultService {
                 examResult.getId(), submission.getId());
 
         List<StudentAnswerSheet> answers = studentAnswerSheetRepository
-                .findBySubmissionIdOrderByQuestionOrderWithQuestion(submission.getId());
+                .findBySubmissionIdOrderByQuestionOrder(submission.getId());
 
         for (StudentAnswerSheet answer : answers) {
-            createAndProcessAutoGrading(examResult, answer);
+            // 각 답안지의 문제별 답안에 대해 자동 채점 수행
+            for (StudentAnswerSheetProblem problem : answer.getProblems()) {
+                createAndProcessAutoGrading(examResult, answer, problem);
+            }
         }
 
         log.info("문제별 자동 채점 완료: examResultId={}, 처리된 문제 수={}",
@@ -75,16 +79,18 @@ public class QuestionResultService {
                 .findBySubmissionIdOrderByQuestionOrder(submission.getId());
 
         for (StudentAnswerSheet answer : answers) {
-            ExamResultQuestion questionResult = ExamResultQuestion.builder()
-                    .examResult(examResult)
-                    .studentAnswerSheet(answer)
-                    .question(answer.getQuestion()) // Question 명시적 설정
-                    .gradingMethod(GradingMethod.MANUAL)
-                    .maxScore(answer.getMaxScore())
-                    .build();
+            // 각 답안지의 문제별 답안에 대해 ExamResultQuestion 생성
+            for (StudentAnswerSheetProblem problem : answer.getProblems()) {
+                ExamResultQuestion questionResult = ExamResultQuestion.builder()
+                        .examResult(examResult)
+                        .studentAnswerSheet(answer)
+                        .question(problem.getQuestion()) // 문제별 Question 설정
+                        .scoringMethod(ScoringMethod.MANUAL)
+                        .build();
 
-            questionResultRepository.save(questionResult);
-            examResult.addQuestionResult(questionResult);
+                questionResultRepository.save(questionResult);
+                examResult.addQuestionResult(questionResult);
+            }
         }
 
         log.info("수동 채점 준비 완료: examResultId={}, 준비된 문제 수={}",
@@ -110,8 +116,8 @@ public class QuestionResultService {
                     .examResult(newResult)
                     .studentAnswerSheet(original.getStudentAnswerSheet())
                     .question(original.getQuestion()) // Question 명시적 설정
-                    .gradingMethod(GradingMethod.MANUAL) // 재채점은 기본적으로 수동
-                    .maxScore(original.getMaxScore())
+                    .scoringMethod(ScoringMethod.MANUAL) // 재채점은 기본적으로 수동
+
                     .build();
 
             questionResultRepository.save(newQuestionResult);
@@ -135,10 +141,12 @@ public class QuestionResultService {
                 .findByExamResultIdOrderByQuestionOrder(examResult.getId());
 
         for (ExamResultQuestion questionResult : questionResults) {
+            StudentAnswerSheetProblem problem = questionResult.getStudentAnswerSheet()
+                    .getProblemByQuestionId(questionResult.getQuestion().getId());
             if (questionResult.getQuestion().isMultipleChoice()
-                    && questionResult.getStudentAnswerSheet().getSelectedChoice() != null) {
+                    && problem != null && problem.getSelectedChoice() != null) {
                 // 객관식 문제에 대해 자동 채점 실행
-                boolean success = questionResult.processAutoGrading();
+                boolean success = questionResult.processAutoScoring();
                 if (success) {
                     questionResultRepository.save(questionResult);
                     log.debug("재채점 자동 채점 완료: questionId={}, score={}",
@@ -158,24 +166,23 @@ public class QuestionResultService {
      * @param answer     학생 답안지
      */
     @Transactional
-    protected void createAndProcessAutoGrading(ExamResult examResult, StudentAnswerSheet answer) {
+    protected void createAndProcessAutoGrading(ExamResult examResult, StudentAnswerSheet answer, StudentAnswerSheetProblem problem) {
         ExamResultQuestion questionResult = ExamResultQuestion.builder()
                 .examResult(examResult)
                 .studentAnswerSheet(answer)
-                .question(answer.getQuestion()) // Question 명시적 설정
-                .gradingMethod(GradingMethod.AUTO)
-                .maxScore(answer.getMaxScore())
+                .question(problem.getQuestion()) // 문제별 Question 설정
+                .scoringMethod(ScoringMethod.AUTO)
                 .confidenceScore(BigDecimal.ONE) // 자동 채점은 신뢰도 100%
                 .build();
 
         // 자동 채점 로직 실행
-        questionResult.processAutoGrading();
+        questionResult.processAutoScoring();
 
         questionResultRepository.save(questionResult);
         examResult.addQuestionResult(questionResult);
 
         log.debug("자동 채점 완료: questionId={}, score={}, isCorrect={}",
-                answer.getQuestion().getId(), questionResult.getScore(), questionResult.getIsCorrect());
+                problem.getQuestion().getId(), questionResult.getScore(), questionResult.getIsCorrect());
     }
 
     /**
@@ -194,12 +201,12 @@ public class QuestionResultService {
         ExamResultQuestion questionResult = questionResultRepository.findById(resultId)
                 .orElseThrow(() -> new IllegalArgumentException("문제별 결과를 찾을 수 없습니다: " + resultId));
 
-        if (questionResult.getGradingMethod() != GradingMethod.MANUAL) {
+        if (questionResult.getScoringMethod() != ScoringMethod.MANUAL) {
             throw new IllegalStateException("수동 채점 대상이 아닙니다: " + resultId);
         }
 
         // 수동 채점 처리
-        questionResult.processManualGrading(score, isCorrect, feedback);
+        questionResult.processManualScoring(score, isCorrect, feedback);
         questionResultRepository.save(questionResult);
 
         log.info("수동 채점 완료: resultId={}, score={}", resultId, score);
@@ -224,7 +231,7 @@ public class QuestionResultService {
                 .orElseThrow(() -> new IllegalArgumentException("문제별 결과를 찾을 수 없습니다: " + resultId));
 
         // AI 보조 채점 처리
-        questionResult.processAIAssistedGrading(score, isCorrect, confidence, aiAnalysis);
+        questionResult.processAIAssistedScoring(score, isCorrect, confidence, aiAnalysis);
         questionResultRepository.save(questionResult);
 
         log.info("AI 보조 채점 완료: resultId={}, score={}, confidence={}", resultId, score, confidence);
@@ -285,12 +292,12 @@ public class QuestionResultService {
     /**
      * 채점 방법별 결과 조회
      * 
-     * @param gradingMethod 채점 방법
+     * @param scoringMethod 채점 방법
      * @param pageable      페이징 정보
      * @return 해당 방법으로 채점된 결과 페이지
      */
-    public Page<ExamResultQuestion> findByGradingMethod(GradingMethod gradingMethod, Pageable pageable) {
-        return questionResultRepository.findByGradingMethodOrderByCreatedAtDesc(gradingMethod, pageable);
+    public Page<ExamResultQuestion> findByScoringMethod(ScoringMethod scoringMethod, Pageable pageable) {
+        return questionResultRepository.findByScoringMethodOrderByCreatedAtDesc(scoringMethod, pageable);
     }
 
     /**
@@ -347,11 +354,11 @@ public class QuestionResultService {
     /**
      * 채점 방법별 통계 조회
      * 
-     * @param gradingMethod 채점 방법
+     * @param scoringMethod 채점 방법
      * @return 통계 정보 배열 [총 개수, 정답 개수, 평균 점수, 평균 신뢰도]
      */
-    public Object[] getStatisticsByGradingMethod(GradingMethod gradingMethod) {
-        return questionResultRepository.getStatisticsByGradingMethod(gradingMethod);
+    public Object[] getStatisticsByScoringMethod(ScoringMethod scoringMethod) {
+        return questionResultRepository.getStatisticsByScoringMethod(scoringMethod);
     }
 
     /**
@@ -424,10 +431,10 @@ public class QuestionResultService {
         ExamResultQuestion questionResult = ExamResultQuestion.builder()
                 .isCorrect(request.isCorrect())
                 .score(request.score())
-                .maxScore(request.maxScore())
-                .gradingMethod(request.gradingMethod())
+
+                .scoringMethod(request.scoringMethod())
                 .confidenceScore(request.confidenceScore())
-                .gradingComment(request.feedback())
+                .scoringComment(request.feedback())
 
                 .build();
 
@@ -483,7 +490,7 @@ public class QuestionResultService {
         List<ExamResultQuestion> results = questionResultRepository
                 .findByExamResultIdOrderByQuestionOrder(examResultId);
         ExamResultQuestion questionResult = results.stream()
-                .filter(r -> r.getStudentAnswerSheet().getQuestionId().equals(questionId))
+                .filter(r -> r.getQuestion().getId().equals(questionId))
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("해당 문제의 결과를 찾을 수 없습니다"));
 
@@ -507,7 +514,7 @@ public class QuestionResultService {
         }
 
         int totalScore = results.stream().mapToInt(ExamResultQuestion::getScore).sum();
-        int maxPossibleScore = results.stream().mapToInt(ExamResultQuestion::getMaxScore).sum();
+        int maxPossibleScore = results.stream().mapToInt(r -> r.getQuestion().getPoints()).sum();
         double averageScore = results.stream().mapToInt(ExamResultQuestion::getScore).average().orElse(0.0);
         int correctCount = (int) results.stream().filter(ExamResultQuestion::getIsCorrect).count();
         int totalCount = results.size();

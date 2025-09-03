@@ -21,7 +21,7 @@ import com.iroomclass.springbackend.common.ApiResponseConstants;
 import com.iroomclass.springbackend.domain.exam.dto.result.ManualGradingRequest;
 import com.iroomclass.springbackend.domain.exam.dto.result.QuestionResultResponse;
 import com.iroomclass.springbackend.domain.exam.entity.ExamResultQuestion;
-import com.iroomclass.springbackend.domain.exam.entity.ExamResultQuestion.GradingMethod;
+import com.iroomclass.springbackend.domain.exam.entity.ExamResultQuestion.ScoringMethod;
 import com.iroomclass.springbackend.domain.exam.service.QuestionResultService;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -148,14 +148,14 @@ public class QuestionResultController {
     @Operation(summary = "채점 방법별 결과 조회", description = "특정 채점 방법으로 처리된 결과들을 조회합니다.", responses = {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "조회 성공")
     })
-    public ApiResponse<Page<QuestionResultResponse>> getResultsByGradingMethod(
-            @Parameter(description = "채점 방법", example = "AUTO") @PathVariable GradingMethod gradingMethod,
+    public ApiResponse<Page<QuestionResultResponse>> getResultsByScoringMethod(
+            @Parameter(description = "채점 방법", example = "AUTO") @PathVariable ScoringMethod scoringMethod,
 
             @Parameter(description = "페이지 번호 (0부터 시작)", example = "0") @RequestParam(defaultValue = "0") int page,
 
             @Parameter(description = "페이지 크기", example = "20") @RequestParam(defaultValue = "20") int size) {
         Pageable pageable = PageRequest.of(page, size);
-        Page<ExamResultQuestion> results = questionResultService.findByGradingMethod(gradingMethod, pageable);
+        Page<ExamResultQuestion> results = questionResultService.findByScoringMethod(scoringMethod, pageable);
         Page<QuestionResultResponse> dtos = results.map(QuestionResultResponse::from);
 
         return ApiResponse.success("채점 방법별 결과 조회 성공", dtos);
@@ -240,10 +240,10 @@ public class QuestionResultController {
     @Operation(summary = "채점 방법별 통계 조회", description = "각 채점 방법별 통계 정보를 조회합니다.", responses = {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "조회 성공")
     })
-    public ApiResponse<Object> getGradingMethodStatistics() {
-        Object[] autoStats = questionResultService.getStatisticsByGradingMethod(GradingMethod.AUTO);
-        Object[] manualStats = questionResultService.getStatisticsByGradingMethod(GradingMethod.MANUAL);
-        Object[] aiAssistedStats = questionResultService.getStatisticsByGradingMethod(GradingMethod.AI_ASSISTED);
+    public ApiResponse<Object> getScoringMethodStatistics() {
+        Object[] autoStats = questionResultService.getStatisticsByScoringMethod(ScoringMethod.AUTO);
+        Object[] manualStats = questionResultService.getStatisticsByScoringMethod(ScoringMethod.MANUAL);
+        Object[] aiAssistedStats = questionResultService.getStatisticsByScoringMethod(ScoringMethod.AI_ASSISTED);
 
         return ApiResponse.success("채점 방법별 통계 조회 성공",
                 java.util.Map.of(

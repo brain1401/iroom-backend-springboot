@@ -1,15 +1,19 @@
 package com.iroomclass.springbackend.domain.exam.entity;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 import com.iroomclass.springbackend.common.UUIDv7Generator;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 
@@ -63,57 +67,20 @@ public class StudentAnswerSheet {
     private ExamSubmission examSubmission;
 
     /**
-     * 문제와의 관계
-     * ManyToOne: 여러 답안이 하나의 문제를 참조할 수 있음
-     * FetchType.LAZY: 필요할 때만 문제 정보를 조회
+     * 학생 이름
+     * 시험을 응시한 학생의 이름
+     * 최대 100자, 필수 입력
      */
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "question_id", nullable = false)
-    private Question question;
+    @Column(nullable = false, length = 100)
+    private String studentName;
 
     /**
-     * 답안 이미지 URL
-     * 주관식 문제의 경우 학생이 촬영한 답안 이미지
-     * 최대 500자, 주관식 문제에서 필수
+     * 문제별 답안 목록
+     * OneToMany: 하나의 답안지에 여러 문제별 답안이 속함
      */
-    @Column(length = 500)
-    private String answerImageUrl;
-
-    /**
-     * AI가 인식한 답안 텍스트
-     * 주관식 문제의 경우 AI가 이미지에서 인식한 텍스트
-     * 최대 1000자
-     */
-    @Column(length = 1000)
-    private String answerText;
-
-    /**
-     * 객관식 선택 답안
-     * 객관식 문제의 경우 선택한 번호 (1~5)
-     */
-    @Column
-    private Integer selectedChoice;
-
-    /**
-     * AI 해답 처리 과정
-     * AI가 문제를 분석하고 해결하는 과정을 설명
-     */
-    @Column(columnDefinition = "TEXT")
-    private String aiSolutionProcess;
-
-    /**
-     * 정답 여부
-     * AI 채점 결과
-     */
-    @Column
-    private Boolean isCorrect;
-
-    /**
-     * 획득 점수
-     * AI 채점을 통해 부여된 점수
-     */
-    @Column
-    private Integer score;
+    @OneToMany(mappedBy = "studentAnswerSheet", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private List<StudentAnswerSheetProblem> problems = new ArrayList<>();
 
     /**
      * Entity 저장 전 실행되는 메서드
@@ -127,142 +94,71 @@ public class StudentAnswerSheet {
     }
 
     /**
-     * 답안 텍스트 업데이트 (주관식용)
+     * 학생 이름 업데이트
      * 
-     * @param answerText 새로운 답안 텍스트
+     * @param studentName 새로운 학생 이름
      */
-    public void updateAnswerText(String answerText) {
-        this.answerText = answerText;
+    public void updateStudentName(String studentName) {
+        this.studentName = studentName;
     }
 
     /**
-     * 선택 답안 업데이트 (객관식용)
+     * 문제별 답안 추가
      * 
-     * @param selectedChoice 새로운 선택 답안
+     * @param problem 추가할 문제별 답안
      */
-    public void updateSelectedChoice(Integer selectedChoice) {
-        this.selectedChoice = selectedChoice;
+    public void addProblem(StudentAnswerSheetProblem problem) {
+        problems.add(problem);
     }
 
     /**
-     * 이미지 URL 업데이트
+     * 문제별 답안 제거
      * 
-     * @param imageUrl 새로운 이미지 URL
+     * @param problem 제거할 문제별 답안
      */
-    public void updateImageUrl(String imageUrl) {
-        this.answerImageUrl = imageUrl;
+    public void removeProblem(StudentAnswerSheetProblem problem) {
+        problems.remove(problem);
     }
 
     /**
-     * 채점 결과 업데이트
+     * 총 문제 수 반환
      * 
-     * @param isCorrect 정답 여부
-     * @param score     획득 점수
+     * @return 총 문제 수
      */
-    public void updateGradingResult(Boolean isCorrect, Integer score) {
-        this.isCorrect = isCorrect;
-        this.score = score;
+    public int getTotalProblemCount() {
+        return problems.size();
     }
 
     /**
-     * 답안 내용 반환 (문제 유형에 따라)
+     * 답안이 제출된 문제 수 반환
      * 
-     * @return 답안 내용
+     * @return 답안이 제출된 문제 수
      */
-    public String getAnswerContent() {
-        if (selectedChoice != null) {
-            return selectedChoice.toString();
-        } else if (answerText != null) {
-            return answerText;
-        }
-        return null;
+    public int getAnsweredProblemCount() {
+        return (int) problems.stream().filter(StudentAnswerSheetProblem::hasAnswer).count();
     }
 
     /**
-     * 객관식 문제 여부 확인
+     * 특정 문제의 답안 반환
      * 
-     * @return 객관식 문제면 true
+     * @param questionId 문제 ID
+     * @return 해당 문제의 답안, 없으면 null
      */
-    public boolean isMultipleChoiceQuestion() {
-        return question != null && question.isMultipleChoice();
+    public StudentAnswerSheetProblem getProblemByQuestionId(UUID questionId) {
+        return problems.stream()
+                .filter(problem -> questionId.equals(problem.getQuestionId()))
+                .findFirst()
+                .orElse(null);
     }
 
     /**
-     * 답안 제출 여부 확인
+     * 답안 완료 여부 확인
      * 
-     * @return 답안이 제출되었으면 true
+     * @return 모든 문제에 답안이 있으면 true
      */
-    public boolean hasAnswer() {
-        return selectedChoice != null || answerText != null;
+    public boolean isCompleted() {
+        return !problems.isEmpty() && problems.stream().allMatch(StudentAnswerSheetProblem::hasAnswer);
     }
 
-    /**
-     * 문제 ID 반환
-     * 
-     * @return 문제 ID
-     */
-    public UUID getQuestionId() {
-        return question != null ? question.getId() : null;
-    }
 
-    /**
-     * 제출된 답안 반환
-     * 
-     * @return 제출된 답안
-     */
-    public String getSubmittedAnswer() {
-        return getAnswerContent();
-    }
-
-    /**
-     * 답안 유형 반환
-     * 
-     * @return 답안 유형
-     */
-    public AnswerType getAnswerType() {
-        if (isMultipleChoiceQuestion()) {
-            return AnswerType.MULTIPLE_CHOICE;
-        } else {
-            return AnswerType.SUBJECTIVE;
-        }
-    }
-
-    /**
-     * 최대 점수 반환 (문제에서 가져옴)
-     * 
-     * @return 최대 점수
-     */
-    public Integer getMaxScore() {
-        return question != null ? question.getPoints() : 0;
-    }
-
-    /**
-     * 답안 유형 열거형
-     */
-    public enum AnswerType {
-        /**
-         * 객관식 답안
-         */
-        MULTIPLE_CHOICE,
-
-        /**
-         * 주관식 답안
-         */
-        SUBJECTIVE
-    }
-
-    /**
-     * 답안 상태 열거형
-     */
-    public enum AnswerStatus {
-        /**
-         * 답안 미제출
-         */
-        UNANSWERED,
-
-        /**
-         * 답안 제출됨
-         */
-        ANSWERED
-    }
 }

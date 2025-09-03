@@ -99,8 +99,8 @@ public class ExamResult {
      * 채점 코멘트
      * 전체 시험에 대한 코멘트나 피드백
      */
-    @Column(name = "grading_comment", columnDefinition = "TEXT")
-    private String gradingComment;
+    @Column(name = "scoring_comment", columnDefinition = "TEXT")
+    private String scoringComment;
 
     /**
      * 재채점 버전
@@ -185,8 +185,8 @@ public class ExamResult {
      * 
      * @param comment 채점 코멘트
      */
-    public void updateGradingComment(String comment) {
-        this.gradingComment = comment;
+    public void updateScoringComment(String comment) {
+        this.scoringComment = comment;
     }
 
     /**

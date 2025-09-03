@@ -114,7 +114,7 @@ public class DashboardServiceOptimized {
             long submittedCount = examSubmissionRepository.countByExamId(exam.getId());
             
             // 전체 학생 수 (시험 등록 시 입력한 학생 수)
-            int totalStudentCount = exam.getStudentCount();
+            int totalStudentCount = (int) submittedCount; // 제출된 답안 수를 기준으로 계산
             int notSubmittedCount = totalStudentCount - (int) submittedCount;
             double submissionRate = totalStudentCount > 0 ? 
                 (double) submittedCount / totalStudentCount * 100 : 0.0;

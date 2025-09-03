@@ -37,7 +37,8 @@ public record ExamAnswerListResponse(
      */
     public static ExamAnswerListResponse from(List<StudentAnswerSheet> studentAnswerSheets, UUID examSubmissionId) {
         List<StudentExamAnswerResponse> answerResponses = studentAnswerSheets.stream()
-                .map(StudentExamAnswerResponse::from)
+                .flatMap(answerSheet -> answerSheet.getProblems().stream()
+                        .map(problem -> StudentExamAnswerResponse.from(problem, answerSheet)))
                 .toList();
 
         int totalCount = answerResponses.size();

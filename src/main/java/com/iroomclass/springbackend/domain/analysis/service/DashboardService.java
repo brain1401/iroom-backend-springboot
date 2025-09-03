@@ -136,11 +136,10 @@ public class DashboardService {
             // 해당 시험의 제출 수 조회
             long submittedCount = examSubmissionRepository.countByExamId(exam.getId());
             
-            // 전체 학생 수 (시험 등록 시 입력한 학생 수)
-            int totalStudentCount = exam.getStudentCount();
-            int notSubmittedCount = totalStudentCount - (int) submittedCount;
-            double submissionRate = totalStudentCount > 0 ? 
-                (double) submittedCount / totalStudentCount * 100 : 0.0;
+            // 전체 학생 수는 제출된 답안 수를 기준으로 계산
+            int totalStudentCount = (int) submittedCount;
+            int notSubmittedCount = 0; // 제출 기준이므로 미제출은 0
+            double submissionRate = 100.0; // 제출된 답안 기준이므로 100%
             
             examSubmissions.add(new GradeSubmissionStatusResponse.ExamSubmissionStatus(
                 exam.getId(),

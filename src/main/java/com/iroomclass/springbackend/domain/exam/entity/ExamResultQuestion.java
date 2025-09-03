@@ -87,12 +87,7 @@ public class ExamResultQuestion {
     @Column
     private Integer score;
 
-    /**
-     * 문제 배점
-     * 해당 문제의 만점 (question.points에서 복사)
-     */
-    @Column(name = "max_score", nullable = false)
-    private Integer maxScore;
+
 
     /**
      * 채점 방식
@@ -101,16 +96,16 @@ public class ExamResultQuestion {
      * AI_ASSISTED: AI 보조 채점 (주관식)
      */
     @Enumerated(EnumType.STRING)
-    @Column(name = "grading_method", nullable = false)
+    @Column(name = "scoring_method", nullable = false)
     @Builder.Default
-    private GradingMethod gradingMethod = GradingMethod.AUTO;
+    private ScoringMethod scoringMethod = ScoringMethod.AUTO;
 
     /**
      * 채점 코멘트
      * 문제별 피드백이나 채점 근거
      */
-    @Column(name = "grading_comment", columnDefinition = "TEXT")
-    private String gradingComment;
+    @Column(name = "scoring_comment", columnDefinition = "TEXT")
+    private String scoringComment;
 
     /**
      * AI 채점 신뢰도
@@ -163,10 +158,10 @@ public class ExamResultQuestion {
      * @param score     획득 점수
      * @param comment   채점 코멘트
      */
-    public void updateGradingResult(Boolean isCorrect, Integer score, String comment) {
+    public void updateScoringResult(Boolean isCorrect, Integer score, String comment) {
         this.isCorrect = isCorrect;
         this.score = score;
-        this.gradingComment = comment;
+        this.scoringComment = comment;
     }
 
     /**
@@ -177,12 +172,12 @@ public class ExamResultQuestion {
      * @param confidence AI 신뢰도
      * @param comment    채점 코멘트
      */
-    public void updateAiGradingResult(Boolean isCorrect, Integer score, BigDecimal confidence, String comment) {
+    public void updateAiScoringResult(Boolean isCorrect, Integer score, BigDecimal confidence, String comment) {
         this.isCorrect = isCorrect;
         this.score = score;
         this.confidenceScore = confidence;
-        this.gradingComment = comment;
-        this.gradingMethod = GradingMethod.AI_ASSISTED;
+        this.scoringComment = comment;
+        this.scoringMethod = ScoringMethod.AI_ASSISTED;
     }
 
     /**
@@ -192,11 +187,11 @@ public class ExamResultQuestion {
      * @param score     획득 점수
      * @param comment   채점 코멘트
      */
-    public void updateManualGradingResult(Boolean isCorrect, Integer score, String comment) {
+    public void updateManualScoringResult(Boolean isCorrect, Integer score, String comment) {
         this.isCorrect = isCorrect;
         this.score = score;
-        this.gradingComment = comment;
-        this.gradingMethod = GradingMethod.MANUAL;
+        this.scoringComment = comment;
+        this.scoringMethod = ScoringMethod.MANUAL;
     }
 
     /**
@@ -204,15 +199,16 @@ public class ExamResultQuestion {
      * 
      * @return 채점 성공 여부
      */
-    public boolean performAutoGrading() {
-        if (!question.isMultipleChoice() || studentAnswerSheet.getSelectedChoice() == null) {
+    public boolean performAutoScoring() {
+        StudentAnswerSheetProblem problem = studentAnswerSheet.getProblemByQuestionId(question.getId());
+        if (!question.isMultipleChoice() || problem == null || problem.getSelectedChoice() == null) {
             return false;
         }
 
-        boolean correct = question.isCorrectChoice(studentAnswerSheet.getSelectedChoice());
+        boolean correct = question.isCorrectChoice(problem.getSelectedChoice());
         this.isCorrect = correct;
-        this.score = correct ? maxScore : 0;
-        this.gradingMethod = GradingMethod.AUTO;
+        this.score = correct ? question.getPoints() : 0;
+        this.scoringMethod = ScoringMethod.AUTO;
         this.confidenceScore = BigDecimal.ONE; // 객관식은 신뢰도 100%
 
         return true;
@@ -232,8 +228,8 @@ public class ExamResultQuestion {
      * 
      * @return 자동 채점이면 true
      */
-    public boolean isAutoGrading() {
-        return gradingMethod == GradingMethod.AUTO;
+    public boolean isAutoScoring() {
+        return scoringMethod == ScoringMethod.AUTO;
     }
 
     /**
@@ -241,8 +237,8 @@ public class ExamResultQuestion {
      * 
      * @return AI 보조 채점이면 true
      */
-    public boolean isAiAssistedGrading() {
-        return gradingMethod == GradingMethod.AI_ASSISTED;
+    public boolean isAiAssistedScoring() {
+        return scoringMethod == ScoringMethod.AI_ASSISTED;
     }
 
     /**
@@ -250,8 +246,8 @@ public class ExamResultQuestion {
      * 
      * @return 수동 채점이면 true
      */
-    public boolean isManualGrading() {
-        return gradingMethod == GradingMethod.MANUAL;
+    public boolean isManualScoring() {
+        return scoringMethod == ScoringMethod.MANUAL;
     }
 
     /**
@@ -260,12 +256,12 @@ public class ExamResultQuestion {
      * @return 부분 점수 비율 (0.0 ~ 1.0)
      */
     public BigDecimal getScoreRatio() {
-        if (score == null || maxScore == null || maxScore == 0) {
+        if (score == null || question == null || question.getPoints() == null || question.getPoints() == 0) {
             return BigDecimal.ZERO;
         }
 
         return BigDecimal.valueOf(score)
-                .divide(BigDecimal.valueOf(maxScore), 2, BigDecimal.ROUND_HALF_UP);
+                .divide(BigDecimal.valueOf(question.getPoints()), 2, BigDecimal.ROUND_HALF_UP);
     }
 
     /**
@@ -284,8 +280,8 @@ public class ExamResultQuestion {
      * @return 재검토가 필요하면 true
      */
     public boolean needsReview() {
-        return (isAiAssistedGrading() && hasLowConfidence()) ||
-                (score != null && score > 0 && score < maxScore);
+        return (isAiAssistedScoring() && hasLowConfidence()) ||
+                (score != null && score > 0 && question != null && score < question.getPoints());
     }
 
     /**
@@ -293,8 +289,8 @@ public class ExamResultQuestion {
      * 
      * @return 채점 성공 여부
      */
-    public boolean processAutoGrading() {
-        return performAutoGrading();
+    public boolean processAutoScoring() {
+        return performAutoScoring();
     }
 
     /**
@@ -304,8 +300,8 @@ public class ExamResultQuestion {
      * @param isCorrect 정답 여부
      * @param feedback  피드백
      */
-    public void processManualGrading(Integer score, Boolean isCorrect, String feedback) {
-        updateManualGradingResult(isCorrect, score, feedback);
+    public void processManualScoring(Integer score, Boolean isCorrect, String feedback) {
+        updateManualScoringResult(isCorrect, score, feedback);
     }
 
     /**
@@ -316,8 +312,8 @@ public class ExamResultQuestion {
      * @param confidence 신뢰도
      * @param aiAnalysis AI 분석 결과
      */
-    public void processAIAssistedGrading(Integer score, Boolean isCorrect, BigDecimal confidence, String aiAnalysis) {
-        updateAiGradingResult(isCorrect, score, confidence, aiAnalysis);
+    public void processAIAssistedScoring(Integer score, Boolean isCorrect, BigDecimal confidence, String aiAnalysis) {
+        updateAiScoringResult(isCorrect, score, confidence, aiAnalysis);
     }
 
     /**
@@ -326,7 +322,7 @@ public class ExamResultQuestion {
      * @return 채점 코멘트
      */
     public String getFeedback() {
-        return gradingComment;
+        return scoringComment;
     }
 
     /**
@@ -335,13 +331,13 @@ public class ExamResultQuestion {
      * @return AI 분석 결과 (현재는 채점 코멘트와 동일)
      */
     public String getAiAnalysis() {
-        return gradingComment;
+        return scoringComment;
     }
 
     /**
      * 채점 방식 열거형
      */
-    public enum GradingMethod {
+    public enum ScoringMethod {
         /**
          * 자동 채점 (주로 객관식)
          */

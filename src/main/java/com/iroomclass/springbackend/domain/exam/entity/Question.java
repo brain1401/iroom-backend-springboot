@@ -96,7 +96,7 @@ public class Question {
      * 문제 정답
      * 문제의 정답을 저장
      */
-    @Column(columnDefinition = "LONGTEXT", nullable = false)
+    @Column(columnDefinition = "LONGTEXT")
     private String answerText;
 
     /**

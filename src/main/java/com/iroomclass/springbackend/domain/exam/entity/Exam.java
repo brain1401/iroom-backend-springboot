@@ -66,13 +66,7 @@ public class Exam {
     @Column(columnDefinition = "TEXT")
     private String content;
     
-    /**
-     * 학생 수
-     * 시험 등록 시 입력받는 전체 학생 수
-     * 필수 입력
-     */
-    @Column(nullable = false)
-    private Integer studentCount;
+
     
     /**
      * QR 코드 URL
@@ -107,11 +101,9 @@ public class Exam {
      * 
      * @param examName 수정할 시험명
      * @param content 수정할 시험 내용
-     * @param studentCount 수정할 학생 수
      */
-    public void updateExamInfo(String examName, String content, Integer studentCount) {
+    public void updateExamInfo(String examName, String content) {
         this.examName = examName;
         this.content = content;
-        this.studentCount = studentCount;
     }
 }

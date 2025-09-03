@@ -6,7 +6,7 @@ import java.util.UUID;
 
 import com.iroomclass.springbackend.common.BaseRecord;
 import com.iroomclass.springbackend.domain.exam.entity.ExamResultQuestion;
-import com.iroomclass.springbackend.domain.exam.entity.ExamResultQuestion.GradingMethod;
+import com.iroomclass.springbackend.domain.exam.entity.ExamResultQuestion.ScoringMethod;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
@@ -18,8 +18,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
  * @param answerInfo      답안 정보
  * @param isCorrect       정답 여부
  * @param score           획득 점수
- * @param maxScore        만점
- * @param gradingMethod   채점 방법
+ * @param scoringMethod   채점 방법
  * @param confidenceScore 신뢰도 점수
  * @param feedback        피드백
  * @param aiAnalysis      AI 분석 결과
@@ -40,9 +39,7 @@ public record QuestionResultResponse(
 
         @Schema(description = "획득 점수", example = "5") Integer score,
 
-        @Schema(description = "만점", example = "5") Integer maxScore,
-
-        @Schema(description = "채점 방법", example = "AUTO") GradingMethod gradingMethod,
+        @Schema(description = "채점 방법", example = "AUTO") ScoringMethod scoringMethod,
 
         @Schema(description = "신뢰도 점수", example = "0.95") BigDecimal confidenceScore,
 
@@ -63,8 +60,7 @@ public record QuestionResultResponse(
         requireNonNull(answerInfo, "answerInfo");
         requireNonNull(isCorrect, "isCorrect");
         requireNonNull(score, "score");
-        requireNonNull(maxScore, "maxScore");
-        requireNonNull(gradingMethod, "gradingMethod");
+        requireNonNull(scoringMethod, "scoringMethod");
         requireNonNull(createdAt, "createdAt");
         requireNonNull(updatedAt, "updatedAt");
     }
@@ -79,11 +75,10 @@ public record QuestionResultResponse(
         return new QuestionResultResponse(
                 entity.getId(),
                 entity.getExamResult().getId(),
-                AnswerInfo.from(entity.getStudentAnswerSheet()),
+                AnswerInfo.from(entity.getStudentAnswerSheet().getProblemByQuestionId(entity.getQuestion().getId())),
                 entity.getIsCorrect(),
                 entity.getScore(),
-                entity.getMaxScore(),
-                entity.getGradingMethod(),
+                entity.getScoringMethod(),
                 entity.getConfidenceScore(),
                 entity.getFeedback(),
                 entity.getAiAnalysis(),
@@ -120,12 +115,20 @@ public record QuestionResultResponse(
          * @return AnswerInfo
          */
         public static AnswerInfo from(
-                com.iroomclass.springbackend.domain.exam.entity.StudentAnswerSheet studentAnswerSheet) {
+                com.iroomclass.springbackend.domain.exam.entity.StudentAnswerSheetProblem problem) {
+            // 답안 타입 결정 로직
+            String answerType = problem.getSelectedChoice() != null ? "MULTIPLE_CHOICE" : 
+                               (problem.getAnswerText() != null || problem.getAnswerImageUrl() != null) ? "SUBJECTIVE" : "UNANSWERED";
+            
+            // 제출된 답안 결정
+            String submittedAnswer = problem.getSelectedChoice() != null ? 
+                                   problem.getSelectedChoice().toString() : problem.getAnswerText();
+            
             return new AnswerInfo(
-                    studentAnswerSheet.getId(),
-                    studentAnswerSheet.getQuestionId(),
-                    studentAnswerSheet.getSubmittedAnswer(),
-                    studentAnswerSheet.getAnswerType().name());
+                    problem.getId(),
+                    problem.getQuestion().getId(),
+                    submittedAnswer,
+                    answerType);
         }
     }
 }

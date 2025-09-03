@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.iroomclass.springbackend.domain.exam.entity.StudentAnswerSheet;
+import com.iroomclass.springbackend.domain.exam.entity.StudentAnswerSheetProblem;
 import com.iroomclass.springbackend.domain.exam.repository.StudentAnswerSheetRepository;
 import com.iroomclass.springbackend.domain.exam.dto.answer.ExamAnswerListResponse;
 import com.iroomclass.springbackend.domain.exam.dto.answer.StudentExamAnswerResponse;
@@ -57,14 +58,21 @@ public class StudentAnswerSheetService {
     public StudentExamAnswerResponse getStudentAnswer(UUID examSubmissionId, UUID questionId) {
         log.info("특정 문제 답안 조회 요청: 시험 제출 ID={}, 문제 ID={}", examSubmissionId, questionId);
 
-        StudentAnswerSheet studentAnswerSheet = studentAnswerSheetRepository
-                .findByExamSubmissionIdAndQuestionId(examSubmissionId, questionId)
-                .orElseThrow(() -> new IllegalArgumentException(
-                        "존재하지 않는 답안입니다: 시험 제출 ID=" + examSubmissionId + ", 문제 ID=" + questionId));
+        List<StudentAnswerSheet> answerSheets = studentAnswerSheetRepository
+                .findByExamSubmissionId(examSubmissionId);
+        if (answerSheets.isEmpty()) {
+            throw new IllegalArgumentException("존재하지 않는 답안지입니다: 시험 제출 ID=" + examSubmissionId);
+        }
+        StudentAnswerSheet studentAnswerSheet = answerSheets.get(0);
+        
+        StudentAnswerSheetProblem problem = studentAnswerSheet.getProblemByQuestionId(questionId);
+        if (problem == null) {
+            throw new IllegalArgumentException("해당 문제의 답안을 찾을 수 없습니다: 문제 ID=" + questionId);
+        }
 
-        log.info("특정 문제 답안 조회 완료: 답안 ID={}", studentAnswerSheet.getId());
+        log.info("특정 문제 답안 조회 완료: 문제 ID={}", questionId);
 
-        return StudentExamAnswerResponse.from(studentAnswerSheet);
+        return StudentExamAnswerResponse.from(problem, studentAnswerSheet);
     }
 
     /**
@@ -77,7 +85,7 @@ public class StudentAnswerSheetService {
         log.info("답안 상태 확인 요청: 시험 제출 ID={}", examSubmissionId);
 
         long totalCount = studentAnswerSheetRepository.countByExamSubmissionId(examSubmissionId);
-        long correctCount = studentAnswerSheetRepository.countByExamSubmissionIdAndIsCorrectTrue(examSubmissionId);
+        long correctCount = studentAnswerSheetRepository.countCorrectAnswersByExamSubmissionId(examSubmissionId);
 
         AnswerStatusSummary summary = AnswerStatusSummary.builder()
                 .totalCount((int) totalCount)

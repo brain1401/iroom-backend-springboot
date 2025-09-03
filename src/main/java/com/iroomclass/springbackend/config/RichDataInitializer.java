@@ -8,6 +8,7 @@ import com.iroomclass.springbackend.domain.curriculum.entity.Unit;
 import com.iroomclass.springbackend.domain.curriculum.repository.UnitRepository;
 import com.iroomclass.springbackend.domain.exam.entity.*;
 import com.iroomclass.springbackend.domain.exam.repository.*;
+import com.iroomclass.springbackend.domain.exam.repository.StudentAnswerSheetProblemRepository;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -60,6 +61,7 @@ public class RichDataInitializer implements CommandLineRunner {
     private final ExamSubmissionRepository examSubmissionRepository;
     private final ExamResultRepository examResultRepository;
     private final StudentAnswerSheetRepository studentAnswerSheetRepository;
+    private final StudentAnswerSheetProblemRepository studentAnswerSheetProblemRepository;
     private final QuestionRepository questionRepository;
     private final QuestionResultRepository questionResultRepository;
     
@@ -406,9 +408,6 @@ public class RichDataInitializer implements CommandLineRunner {
         List<Exam> exams = new ArrayList<>();
         
         for (ExamSheet examSheet : examSheets) {
-            // 각 학년별 학생 수는 40명
-            int studentCount = 40;
-            
             String content = examSheet.getExamName() + " 수학 시험입니다. 15-25문제로 구성되어 있습니다.";
             
             Exam exam = Exam.builder()
@@ -416,7 +415,6 @@ public class RichDataInitializer implements CommandLineRunner {
                 .examName(examSheet.getExamName())
                 .grade(examSheet.getGrade())
                 .content(content)
-                .studentCount(studentCount)
                 .qrCodeUrl("https://example.com/qr/" + UUID.randomUUID())
                 .build();
             
@@ -503,31 +501,36 @@ public class RichDataInitializer implements CommandLineRunner {
         double rawScore = random.nextGaussian() * stdDev + mean;
         int totalScore = Math.max(0, Math.min(100, (int) Math.round(rawScore)));
         
-        String comment = generateGradingComment(totalScore);
+        String comment = generateScoringComment(totalScore);
         
         return ExamResult.builder()
             .examSubmission(submission)
             .examSheet(examSheet)
             .totalScore(totalScore)
             .status(ExamResult.ResultStatus.COMPLETED)
-            .gradingComment(comment)
+            .scoringComment(comment)
             .version(1)
             .build();
     }
     
     /**
-     * 학생 답안지 생성
+     * 학생 답안지 생성 (새로운 구조: 컨테이너 + 개별 문제)
      */
-    private StudentAnswerSheet createAnswerSheet(ExamSubmission submission, Question question) {
-        // 답안 이미지 URL 생성 (실제로는 S3나 다른 스토리지 URL)
-        String answerImageUrl = "https://example.com/answer-sheets/" + 
-                         UUID.randomUUID() + ".jpg";
-        
-        // 객관식/주관식에 따라 답안 생성
-        StudentAnswerSheet.StudentAnswerSheetBuilder builder = StudentAnswerSheet.builder()
+    private StudentAnswerSheet createAnswerSheet(ExamSubmission submission) {
+        return StudentAnswerSheet.builder()
             .examSubmission(submission)
-            .question(question)
-            .answerImageUrl(answerImageUrl);
+            .studentName(submission.getStudent().getName())
+            .build();
+    }
+    
+    /**
+     * 개별 문제 답안 생성
+     */
+    private StudentAnswerSheetProblem createAnswerSheetProblem(StudentAnswerSheet answerSheet, Question question) {
+        // 객관식/주관식에 따라 답안 생성
+        StudentAnswerSheetProblem.StudentAnswerSheetProblemBuilder builder = StudentAnswerSheetProblem.builder()
+            .studentAnswerSheet(answerSheet)
+            .question(question);
         
         // 답안 내용 랜덤 생성
         if (question.isMultipleChoice()) {
@@ -594,7 +597,7 @@ public class RichDataInitializer implements CommandLineRunner {
     /**
      * 점수별 채점 코멘트 생성
      */
-    private String generateGradingComment(int score) {
+    private String generateScoringComment(int score) {
         if (score >= 90) {
             return "매우 우수한 성적입니다. 모든 문제를 정확하게 해결했습니다.";
         } else if (score >= 80) {
@@ -609,7 +612,7 @@ public class RichDataInitializer implements CommandLineRunner {
     }
     
     /**
-     * 문제별 채점 결과 생성 (question_result 테이블)
+     * 문제별 채점 결과 생성 (새로운 구조에 맞춰 수정)
      */
     private void createExamResultQuestions(ExamResult examResult, ExamSheet examSheet) {
         // exam_sheet_question 테이블에서 해당 시험지의 실제 문제들을 조회
@@ -620,17 +623,21 @@ public class RichDataInitializer implements CommandLineRunner {
             return;
         }
         
-        List<ExamResultQuestion> questionResults = new ArrayList<>();
-        List<StudentAnswerSheet> answerSheets = new ArrayList<>();
+        // 1. 먼저 StudentAnswerSheet 컨테이너 생성
+        StudentAnswerSheet answerSheet = createAnswerSheet(examResult.getExamSubmission());
+        StudentAnswerSheet savedAnswerSheet = studentAnswerSheetRepository.save(answerSheet);
         
-        // 시험지의 각 문제에 대해 채점 결과 및 학생 답안지 생성
+        // 2. 각 문제별로 StudentAnswerSheetProblem과 ExamResultQuestion 생성
+        List<ExamResultQuestion> questionResults = new ArrayList<>();
+        List<StudentAnswerSheetProblem> answerSheetProblems = new ArrayList<>();
+        
         for (ExamSheetQuestion examSheetQuestion : examSheetQuestions) {
             Question question = examSheetQuestion.getQuestion();
             
-            // 학생 답안지 생성 및 저장
-            StudentAnswerSheet answerSheet = createAnswerSheet(examResult.getExamSubmission(), question);
-            StudentAnswerSheet savedAnswerSheet = studentAnswerSheetRepository.save(answerSheet);
-            answerSheets.add(savedAnswerSheet);
+            // 개별 문제 답안 생성
+            StudentAnswerSheetProblem answerProblem = createAnswerSheetProblem(savedAnswerSheet, question);
+            StudentAnswerSheetProblem savedAnswerProblem = studentAnswerSheetProblemRepository.save(answerProblem);
+            answerSheetProblems.add(savedAnswerProblem);
             
             // 현실적인 점수 분포 생성
             boolean isCorrect = generateIsCorrect(examResult.getTotalScore());
@@ -638,26 +645,25 @@ public class RichDataInitializer implements CommandLineRunner {
             int questionScore = generateQuestionScore(isCorrect, questionMaxScore);
             
             // 채점 방법 결정 (객관식은 자동, 주관식은 AI 보조)
-            ExamResultQuestion.GradingMethod gradingMethod = 
+            ExamResultQuestion.ScoringMethod scoringMethod = 
                 Question.QuestionType.MULTIPLE_CHOICE.equals(question.getQuestionType()) ? 
-                ExamResultQuestion.GradingMethod.AUTO : 
-                ExamResultQuestion.GradingMethod.AI_ASSISTED;
+                ExamResultQuestion.ScoringMethod.AUTO : 
+                ExamResultQuestion.ScoringMethod.AI_ASSISTED;
             
             // AI 신뢰도 생성 (AI 채점인 경우)
-            BigDecimal confidence = gradingMethod == ExamResultQuestion.GradingMethod.AI_ASSISTED ?
+            BigDecimal confidence = scoringMethod == ExamResultQuestion.ScoringMethod.AI_ASSISTED ?
                 generateAiConfidence() : BigDecimal.ONE;
             
             String comment = generateQuestionComment(isCorrect, questionScore, questionMaxScore);
             
             ExamResultQuestion questionResult = ExamResultQuestion.builder()
                 .examResult(examResult)
-                .question(question)
-                .studentAnswerSheet(savedAnswerSheet)
+                .question(question)  // 문제 참조 추가
+                .studentAnswerSheet(savedAnswerSheet)  // 컨테이너를 참조
                 .isCorrect(isCorrect)
                 .score(questionScore)
-                .maxScore(questionMaxScore)
-                .gradingMethod(gradingMethod)
-                .gradingComment(comment)
+                .scoringMethod(scoringMethod)
+                .scoringComment(comment)
                 .confidenceScore(confidence)
                 .build();
             
@@ -671,7 +677,7 @@ public class RichDataInitializer implements CommandLineRunner {
         examResult.calculateAndUpdateTotalScore();
         examResultRepository.save(examResult);
         
-        log.debug("문제별 채점 결과 {}개 생성 완료", savedResults.size());
+        log.debug("문제별 채점 결과 {}개 생성 완료 (답안지 문제 {}개)", savedResults.size(), answerSheetProblems.size());
     }
     
     /**

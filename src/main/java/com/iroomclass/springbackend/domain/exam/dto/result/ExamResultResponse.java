@@ -18,7 +18,7 @@ import java.util.UUID;
  * @param gradedAt        채점일시
  * @param totalScore      총점
  * @param status          채점 상태
- * @param gradingComment  채점 코멘트
+ * @param scoringComment  채점 코멘트
  * @param version         재채점 버전
  * @param gradingProgress 채점 진행률
  * @param isAutoGrading   AI 자동 채점 여부 (항상 true)
@@ -49,7 +49,7 @@ public record ExamResultResponse(
         ResultStatus status,
 
         @Schema(description = "채점 코멘트", example = "전체적으로 잘 답변했습니다.") 
-        String gradingComment,
+        String scoringComment,
 
         @Schema(description = "재채점 버전", example = "1") 
         Integer version,
@@ -99,7 +99,7 @@ public record ExamResultResponse(
                 entity.getGradedAt(),
                 entity.getTotalScore(),
                 entity.getStatus(),
-                entity.getGradingComment(),
+                entity.getScoringComment(),
                 entity.getVersion(),
                 entity.getGradingProgress(),
                 entity.isAutoGrading(),
@@ -125,7 +125,7 @@ public record ExamResultResponse(
                 entity.getGradedAt(),
                 entity.getTotalScore(),
                 entity.getStatus(),
-                entity.getGradingComment(),
+                entity.getScoringComment(),
                 entity.getVersion(),
                 entity.getGradingProgress(),
                 entity.isAutoGrading(),

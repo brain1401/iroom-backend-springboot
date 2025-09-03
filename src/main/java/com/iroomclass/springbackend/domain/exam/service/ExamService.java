@@ -48,7 +48,7 @@ public class ExamService {
      */
     @Transactional
     public ExamCreateResponse createExam(ExamCreateRequest request) {
-        log.info("시험 등록 요청: 시험지 ID={}, 학생 수={}", request.examSheetId(), request.studentCount());
+        log.info("시험 등록 요청: 시험지 ID={}", request.examSheetId());
 
         // 1단계: 시험지 조회
         ExamSheet examSheet = examSheetRepository.findById(request.examSheetId())
@@ -63,7 +63,6 @@ public class ExamService {
                 .examName(examSheet.getExamName())
                 .grade(examSheet.getGrade())
                 .content(request.content())
-                .studentCount(request.studentCount())
                 .qrCodeUrl(qrCodeUrl)
                 .build();
 
@@ -75,7 +74,7 @@ public class ExamService {
                 exam.getId(),
                 exam.getExamName(),
                 exam.getGrade(),
-                exam.getStudentCount(),
+                0, // studentCount 필드 제거됨 - 동적 계산 필요
                 exam.getQrCodeUrl(),
                 exam.getCreatedAt());
     }
@@ -97,7 +96,7 @@ public class ExamService {
                     exam.getId(),
                     exam.getExamName(),
                     exam.getGrade(),
-                    exam.getStudentCount(),
+                    0, // studentCount 필드 제거됨 - 동적 계산 필요
                     exam.getQrCodeUrl(),
                     exam.getCreatedAt());
             examInfos.add(examInfo);
@@ -127,7 +126,7 @@ public class ExamService {
                     exam.getId(),
                     exam.getExamName(),
                     exam.getGrade(),
-                    exam.getStudentCount(),
+                    0, // studentCount 필드 제거됨 - 동적 계산 필요
                     exam.getQrCodeUrl(),
                     exam.getCreatedAt());
             examInfos.add(examInfo);
@@ -161,7 +160,7 @@ public class ExamService {
                 exam.getExamName(),
                 exam.getGrade(),
                 exam.getContent(),
-                exam.getStudentCount(),
+                0, // studentCount 필드 제거됨 - 동적 계산 필요
                 exam.getQrCodeUrl(),
                 exam.getCreatedAt());
     }
@@ -182,7 +181,7 @@ public class ExamService {
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 시험입니다: " + examId));
 
         // 2단계: 시험 정보 수정
-        exam.updateExamInfo(request.examName(), request.content(), request.studentCount());
+        exam.updateExamInfo(request.examName(), request.content());
 
         exam = examRepository.save(exam);
 

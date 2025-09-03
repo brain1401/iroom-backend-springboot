@@ -169,7 +169,7 @@ public class ExamResultService {
         // 채점 완료 상태로 변경 (재채점인 경우 REGRADED, 아닌 경우 COMPLETED)
         ResultStatus newStatus = examResult.getVersion() > 1 ? ResultStatus.REGRADED : ResultStatus.COMPLETED;
         examResult.updateStatus(newStatus);
-        examResult.updateGradingComment(comment);
+        examResult.updateScoringComment(comment);
         
         examResultRepository.save(examResult);
         log.info("채점 완료: resultId={}, totalScore={}", resultId, examResult.getTotalScore());

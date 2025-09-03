@@ -13,7 +13,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.iroomclass.springbackend.domain.exam.entity.ExamResultQuestion;
-import com.iroomclass.springbackend.domain.exam.entity.ExamResultQuestion.GradingMethod;
+import com.iroomclass.springbackend.domain.exam.entity.ExamResultQuestion.ScoringMethod;
 
 /**
  * 문제별 채점 결과 Repository
@@ -36,7 +36,7 @@ public interface QuestionResultRepository extends JpaRepository<ExamResultQuesti
     @Query("SELECT qr FROM ExamResultQuestion qr " +
             "LEFT JOIN FETCH qr.studentAnswerSheet " +
             "WHERE qr.examResult.id = :examResultId " +
-            "ORDER BY qr.studentAnswerSheet.question.id ASC")
+            "ORDER BY qr.question.id ASC")
     List<ExamResultQuestion> findByExamResultIdOrderByQuestionOrder(@Param("examResultId") UUID examResultId);
 
     /**
@@ -47,19 +47,18 @@ public interface QuestionResultRepository extends JpaRepository<ExamResultQuesti
      * @return 해당 문제의 채점 결과 페이지
      */
     @Query("SELECT qr FROM ExamResultQuestion qr " +
-            "JOIN qr.studentAnswerSheet sas " +
-            "WHERE sas.question.id = :questionId " +
+            "WHERE qr.question.id = :questionId " +
             "ORDER BY qr.createdAt DESC")
     Page<ExamResultQuestion> findByQuestionId(@Param("questionId") UUID questionId, Pageable pageable);
 
     /**
      * 채점 방법별 결과 조회
      * 
-     * @param gradingMethod 채점 방법
+     * @param scoringMethod 채점 방법
      * @param pageable      페이징 정보
      * @return 해당 방법으로 채점된 결과 페이지
      */
-    Page<ExamResultQuestion> findByGradingMethodOrderByCreatedAtDesc(GradingMethod gradingMethod, Pageable pageable);
+    Page<ExamResultQuestion> findByScoringMethodOrderByCreatedAtDesc(ScoringMethod scoringMethod, Pageable pageable);
 
     /**
      * 정답 여부별 결과 조회
@@ -110,14 +109,13 @@ public interface QuestionResultRepository extends JpaRepository<ExamResultQuesti
      */
     @Query("SELECT CAST(COUNT(CASE WHEN qr.isCorrect = true THEN 1 END) AS DOUBLE) / COUNT(*) " +
             "FROM ExamResultQuestion qr " +
-            "JOIN qr.studentAnswerSheet sas " +
-            "WHERE sas.question.id = :questionId")
+            "WHERE qr.question.id = :questionId")
     Double calculateCorrectRateByQuestionId(@Param("questionId") UUID questionId);
 
     /**
      * 채점 방법별 통계 조회
      * 
-     * @param gradingMethod 채점 방법
+     * @param scoringMethod 채점 방법
      * @return 해당 방법의 통계 정보
      */
     @Query("SELECT " +
@@ -126,8 +124,8 @@ public interface QuestionResultRepository extends JpaRepository<ExamResultQuesti
             "AVG(qr.score) as averageScore, " +
             "AVG(qr.confidenceScore) as averageConfidence " +
             "FROM ExamResultQuestion qr " +
-            "WHERE qr.gradingMethod = :gradingMethod")
-    Object[] getStatisticsByGradingMethod(@Param("gradingMethod") GradingMethod gradingMethod);
+            "WHERE qr.scoringMethod = :scoringMethod")
+    Object[] getStatisticsByScoringMethod(@Param("scoringMethod") ScoringMethod scoringMethod);
 
     /**
      * 특정 시험 결과의 채점 완료 여부 확인
@@ -166,7 +164,7 @@ public interface QuestionResultRepository extends JpaRepository<ExamResultQuesti
      * @return 수동 채점 대상 결과 페이지
      */
     @Query("SELECT qr FROM ExamResultQuestion qr " +
-            "WHERE qr.gradingMethod = 'MANUAL' AND qr.score IS NULL " +
+            "WHERE qr.scoringMethod = 'MANUAL' AND qr.score IS NULL " +
             "ORDER BY qr.createdAt ASC")
     Page<ExamResultQuestion> findPendingManualGrading(Pageable pageable);
 
@@ -178,7 +176,7 @@ public interface QuestionResultRepository extends JpaRepository<ExamResultQuesti
      * @return 낮은 신뢰도 결과 페이지
      */
     @Query("SELECT qr FROM ExamResultQuestion qr " +
-            "WHERE qr.gradingMethod = 'AI_ASSISTED' " +
+            "WHERE qr.scoringMethod = 'AI_ASSISTED' " +
             "AND qr.confidenceScore < :confidenceThreshold " +
             "ORDER BY qr.confidenceScore ASC")
     Page<ExamResultQuestion> findLowConfidenceAIResults(
@@ -188,10 +186,10 @@ public interface QuestionResultRepository extends JpaRepository<ExamResultQuesti
     /**
      * 채점 방법별 개수 조회
      * 
-     * @param gradingMethod 채점 방법
+     * @param scoringMethod 채점 방법
      * @return 해당 방법의 채점 결과 개수
      */
-    long countByGradingMethod(GradingMethod gradingMethod);
+    long countByScoringMethod(ScoringMethod scoringMethod);
 
     /**
      * 정답 개수 조회
@@ -215,8 +213,7 @@ public interface QuestionResultRepository extends JpaRepository<ExamResultQuesti
      */
     @Query("SELECT AVG(qr.score) " +
             "FROM ExamResultQuestion qr " +
-            "JOIN qr.studentAnswerSheet sas " +
-            "WHERE sas.question.id = :questionId AND qr.score IS NOT NULL")
+            "WHERE qr.question.id = :questionId AND qr.score IS NOT NULL")
     Double calculateAverageScoreByQuestionId(@Param("questionId") UUID questionId);
 
     /**
