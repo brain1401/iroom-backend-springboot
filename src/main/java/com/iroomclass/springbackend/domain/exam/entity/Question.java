@@ -3,8 +3,8 @@ package com.iroomclass.springbackend.domain.exam.entity;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.iroomclass.springbackend.domain.curriculum.entity.Unit;
 import com.iroomclass.springbackend.common.UUIDv7Generator;
+import com.iroomclass.springbackend.domain.unit.entity.Unit;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

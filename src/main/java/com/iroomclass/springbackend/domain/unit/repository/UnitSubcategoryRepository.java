@@ -1,4 +1,4 @@
-package com.iroomclass.springbackend.domain.curriculum.repository;
+package com.iroomclass.springbackend.domain.unit.repository;
 
 import java.util.List;
 import java.util.UUID;
@@ -6,8 +6,8 @@ import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-import com.iroomclass.springbackend.domain.curriculum.entity.UnitCategory;
-import com.iroomclass.springbackend.domain.curriculum.entity.UnitSubcategory;
+import com.iroomclass.springbackend.domain.unit.entity.UnitCategory;
+import com.iroomclass.springbackend.domain.unit.entity.UnitSubcategory;
 
 /**
  * 단원 중분류 Repository
@@ -30,7 +30,7 @@ public interface UnitSubcategoryRepository extends JpaRepository<UnitSubcategory
      * @return 해당 대분류에 속한 중분류 목록 (표시 순서대로 정렬)
      */
     List<UnitSubcategory> findByCategoryIdOrderByDisplayOrder(UUID categoryId);
-    
+
     /**
      * 대분류 엔티티로 중분류 조회
      * 

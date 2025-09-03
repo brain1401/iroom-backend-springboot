@@ -1,10 +1,8 @@
-package com.iroomclass.springbackend.domain.curriculum.entity;
+package com.iroomclass.springbackend.domain.unit.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
@@ -34,7 +32,7 @@ import com.iroomclass.springbackend.common.UUIDv7Generator;
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Builder
 public class UnitSubcategory {
-    
+
     /**
      * 중분류 고유 ID
      * UUIDv7로 생성되는 기본키
@@ -42,7 +40,7 @@ public class UnitSubcategory {
     @Id
     @Column(columnDefinition = "BINARY(16)")
     private UUID id;
-    
+
     /**
      * 대분류와의 관계
      * ManyToOne: 여러 중분류가 하나의 대분류에 속함
@@ -51,7 +49,7 @@ public class UnitSubcategory {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "category_id", nullable = false)
     private UnitCategory category;
-    
+
     /**
      * 중분류명
      * 예시: "정수와 유리수", "문자와 식", "방정식", "부등식"
@@ -59,7 +57,7 @@ public class UnitSubcategory {
      */
     @Column(nullable = false, length = 100)
     private String subcategoryName;
-    
+
     /**
      * 표시 순서
      * 같은 대분류 내에서의 표시 순서
@@ -67,7 +65,7 @@ public class UnitSubcategory {
      */
     @Column(nullable = false)
     private Integer displayOrder;
-    
+
     /**
      * 중분류 설명
      * 해당 중분류에 대한 상세 설명
@@ -75,7 +73,7 @@ public class UnitSubcategory {
      */
     @Column(length = 200)
     private String description;
-    
+
     /**
      * 엔티티 저장 전 UUID 자동 생성
      */

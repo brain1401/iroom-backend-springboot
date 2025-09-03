@@ -1,4 +1,4 @@
-package com.iroomclass.springbackend.domain.curriculum.repository;
+package com.iroomclass.springbackend.domain.unit.repository;
 
 import java.util.List;
 import java.util.UUID;
@@ -6,8 +6,8 @@ import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-import com.iroomclass.springbackend.domain.curriculum.entity.Unit;
-import com.iroomclass.springbackend.domain.curriculum.entity.UnitSubcategory;
+import com.iroomclass.springbackend.domain.unit.entity.Unit;
+import com.iroomclass.springbackend.domain.unit.entity.UnitSubcategory;
 
 /**
  * 세부단원 Repository
@@ -19,7 +19,7 @@ import com.iroomclass.springbackend.domain.curriculum.entity.UnitSubcategory;
  */
 @Repository
 public interface UnitRepository extends JpaRepository<Unit, UUID> {
-    
+
     /**
      * 학년별 세부단원 조회 (ID 순으로 정렬)
      * 
@@ -30,7 +30,7 @@ public interface UnitRepository extends JpaRepository<Unit, UUID> {
      * @return 해당 학년의 세부단원 목록 (ID 순으로 정렬)
      */
     List<Unit> findByGradeOrderById(Integer grade);
-    
+
     /**
      * 학년별 세부단원 조회 (표시 순서대로 정렬)
      * 
@@ -52,7 +52,7 @@ public interface UnitRepository extends JpaRepository<Unit, UUID> {
      * @return 해당 중분류에 속한 세부단원 목록 (표시 순서대로 정렬)
      */
     List<Unit> findBySubcategoryIdOrderByDisplayOrder(UUID subcategoryId);
-    
+
     /**
      * 중분류 엔티티로 세부단원 조회
      * 

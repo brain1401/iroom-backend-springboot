@@ -1,7 +1,7 @@
 package com.iroomclass.springbackend.domain.exam.entity;
 
-import com.iroomclass.springbackend.domain.curriculum.entity.Unit;
 import com.iroomclass.springbackend.common.UUIDv7Generator;
+import com.iroomclass.springbackend.domain.unit.entity.Unit;
 
 import jakarta.persistence.*;
 import lombok.*;
@@ -50,7 +50,7 @@ public class ExamSheetSelectedUnit {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "unit_id", nullable = false)
     private Unit unit;
-    
+
     /**
      * Entity 저장 전 실행되는 메서드
      * UUID를 자동으로 설정합니다.

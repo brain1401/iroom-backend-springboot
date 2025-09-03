@@ -4,12 +4,13 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.iroomclass.springbackend.common.ApiResponse;
 import com.iroomclass.springbackend.domain.auth.entity.Student;
 import com.iroomclass.springbackend.domain.auth.repository.StudentRepository;
-import com.iroomclass.springbackend.domain.curriculum.entity.Unit;
-import com.iroomclass.springbackend.domain.curriculum.repository.UnitRepository;
 import com.iroomclass.springbackend.domain.exam.entity.*;
 import com.iroomclass.springbackend.domain.exam.repository.*;
 import com.iroomclass.springbackend.domain.student.dto.request.StudentAuthRequest;
 import com.iroomclass.springbackend.domain.student.dto.response.*;
+import com.iroomclass.springbackend.domain.unit.entity.Unit;
+import com.iroomclass.springbackend.domain.unit.repository.UnitRepository;
+
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureWebMvc;
@@ -33,8 +34,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 /**
  * StudentController 통합 테스트
  * 
- * <p>실제 데이터베이스와 Spring Boot 컨텍스트를 사용하여 
- * StudentController의 모든 엔드포인트를 테스트합니다.</p>
+ * <p>
+ * 실제 데이터베이스와 Spring Boot 컨텍스트를 사용하여
+ * StudentController의 모든 엔드포인트를 테스트합니다.
+ * </p>
  */
 @SpringBootTest
 @AutoConfigureWebMvc
@@ -53,28 +56,28 @@ class StudentControllerIntegrationTest {
     // Repositories for test data setup
     @Autowired
     private StudentRepository studentRepository;
-    
+
     @Autowired
     private UnitRepository unitRepository;
-    
+
     @Autowired
     private QuestionRepository questionRepository;
-    
+
     @Autowired
     private ExamSheetRepository examSheetRepository;
-    
+
     @Autowired
     private ExamSheetQuestionRepository examSheetQuestionRepository;
-    
+
     @Autowired
     private ExamRepository examRepository;
-    
+
     @Autowired
     private ExamSubmissionRepository examSubmissionRepository;
-    
+
     @Autowired
     private ExamResultRepository examResultRepository;
-    
+
     @Autowired
     private ExamResultQuestionRepository examResultQuestionRepository;
 
@@ -102,15 +105,13 @@ class StudentControllerIntegrationTest {
         validAuthRequest = new StudentAuthRequest(
                 "홍길동",
                 LocalDate.of(2000, 1, 1),
-                "010-1234-5678"
-        );
+                "010-1234-5678");
 
         // 무효한 인증 요청
         invalidAuthRequest = new StudentAuthRequest(
                 "김철수",
                 LocalDate.of(1999, 12, 31),
-                "010-9999-9999"
-        );
+                "010-9999-9999");
 
         setupExamTestData();
     }
@@ -139,7 +140,7 @@ class StudentControllerIntegrationTest {
                 .points(10)
                 .difficulty(Difficulty.EASY)
                 .build();
-        
+
         Question question2 = Question.builder()
                 .id(UUID.randomUUID())
                 .unit(testUnit)
@@ -149,7 +150,7 @@ class StudentControllerIntegrationTest {
                 .points(15)
                 .difficulty(Difficulty.MEDIUM)
                 .build();
-        
+
         questionRepository.saveAll(List.of(question1, question2));
 
         // ExamSheet 생성
@@ -170,7 +171,7 @@ class StudentControllerIntegrationTest {
                 .questionOrder(1)
                 .points(10)
                 .build();
-        
+
         ExamSheetQuestion esq2 = ExamSheetQuestion.builder()
                 .id(UUID.randomUUID())
                 .examSheet(examSheet)
@@ -178,7 +179,7 @@ class StudentControllerIntegrationTest {
                 .questionOrder(2)
                 .points(15)
                 .build();
-        
+
         examSheetQuestionRepository.saveAll(List.of(esq1, esq2));
 
         // Exam 생성
@@ -227,7 +228,7 @@ class StudentControllerIntegrationTest {
                 .feedback("정답입니다")
                 .isCorrect(true)
                 .build();
-        
+
         ExamResultQuestion erq2 = ExamResultQuestion.builder()
                 .id(UUID.randomUUID())
                 .examResult(testResult)
@@ -237,7 +238,7 @@ class StudentControllerIntegrationTest {
                 .feedback("부분적으로 정답입니다")
                 .isCorrect(false)
                 .build();
-        
+
         examResultQuestionRepository.saveAll(List.of(erq1, erq2));
     }
 
@@ -526,8 +527,7 @@ class StudentControllerIntegrationTest {
             StudentAuthRequest sqlInjectionRequest = new StudentAuthRequest(
                     "'; DROP TABLE student; --",
                     LocalDate.of(2000, 1, 1),
-                    "010-1234-5678"
-            );
+                    "010-1234-5678");
 
             // When & Then
             mockMvc.perform(post("/api/student/login")
@@ -548,8 +548,7 @@ class StudentControllerIntegrationTest {
             StudentAuthRequest xssRequest = new StudentAuthRequest(
                     "<script>alert('XSS')</script>",
                     LocalDate.of(2000, 1, 1),
-                    "010-1234-5678"
-            );
+                    "010-1234-5678");
 
             // When & Then
             mockMvc.perform(post("/api/student/login")
