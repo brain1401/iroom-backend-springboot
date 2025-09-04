@@ -167,18 +167,16 @@ public interface ExamSubmissionRepository extends JpaRepository<ExamSubmission, 
     
     /**
      * 시험별 제출 통계 조회 (시험 메타데이터 포함)
+     * 카르테시안 곱 문제 해결을 위해 서브쿼리로 분리
      * 
      * @param examIds 시험 ID 목록
      * @return 시험별 상세 통계
      */
     @Query("SELECT e.id as examId, e.examName as examName, e.createdAt as createdAt, " +
-           "COUNT(es) as submissionCount, " +
-           "COUNT(DISTINCT esq.id) as questionCount " +
+           "(SELECT COUNT(es2) FROM ExamSubmission es2 WHERE es2.exam.id = e.id) as submissionCount, " +
+           "(SELECT COUNT(esq) FROM ExamSheetQuestion esq WHERE esq.examSheet.id = e.examSheet.id) as questionCount " +
            "FROM Exam e " +
-           "LEFT JOIN ExamSubmission es ON e.id = es.exam.id " +
-           "LEFT JOIN e.examSheet.questions esq " +
-           "WHERE e.id IN :examIds " +
-           "GROUP BY e.id, e.examName, e.createdAt")
+           "WHERE e.id IN :examIds")
     List<ExamDetailStats> findExamDetailStats(@Param("examIds") List<UUID> examIds);
     
     /**
