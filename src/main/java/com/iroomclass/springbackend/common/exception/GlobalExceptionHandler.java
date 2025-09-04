@@ -2,6 +2,7 @@ package com.iroomclass.springbackend.common.exception;
 
 import com.iroomclass.springbackend.common.ApiResponse;
 import com.iroomclass.springbackend.common.ResultStatus;
+import com.iroomclass.springbackend.domain.teacher.exception.TeacherNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
@@ -221,6 +222,17 @@ public class GlobalExceptionHandler {
         
         log.warn("잘못된 요청: {}", ex.getMessage());
         return createErrorResponse(ex.getMessage(), HttpStatus.BAD_REQUEST);
+    }
+
+    /**
+     * 선생님 인증 실패 예외 처리
+     */
+    @ExceptionHandler(TeacherNotFoundException.class)
+    public ResponseEntity<ApiResponse<Void>> handleTeacherNotFound(
+            TeacherNotFoundException ex, HttpServletRequest request) {
+        
+        log.warn("선생님 인증 실패: {}", ex.getMessage());
+        return createErrorResponse(ex.getMessage(), HttpStatus.UNAUTHORIZED);
     }
 
     /**

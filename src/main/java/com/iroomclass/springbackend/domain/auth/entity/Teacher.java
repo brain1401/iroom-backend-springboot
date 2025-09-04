@@ -27,9 +27,9 @@ import java.util.Objects;
 @Entity
 @Table(name = "teacher")
 @Getter
+@Builder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
-@Builder
 @EntityListeners(AuditingEntityListener.class)
 public class Teacher {
 
