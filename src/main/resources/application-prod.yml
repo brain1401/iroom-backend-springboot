@@ -1,0 +1,181 @@
+# 운영 환경 전용 설정
+spring:
+  jpa:
+    # 운영 환경에서는 SQL 로깅 비활성화
+    show-sql: false
+    properties:
+      hibernate:
+        # ========================================
+        # 운영 환경 성능 최적화 설정
+        # ========================================
+        
+        # Hibernate 통계 비활성화 (성능 오버헤드 제거)
+        generate_statistics: false
+        
+        # SQL 로깅 비활성화
+        "[format_sql]": false
+        "[use_sql_comments]": false
+        "[show_sql]": false
+        
+        # 느린 쿼리 임계값 (2초)
+        session:
+          events:
+            log:
+              LOG_QUERIES_SLOWER_THAN_MS: 2000
+        
+        # 배치 처리 최적화 (운영 환경 최대 성능)
+        jdbc:
+          batch_size: 50  # 운영 환경에서는 큰 배치 크기
+          fetch_size: 100 # 대용량 데이터 처리 최적화
+        
+        # ========================================
+        # 운영 환경 안정성 설정
+        # ========================================
+        
+        # 스키마 검증만 수행 (데이터 손실 방지)
+        hbm2ddl:
+          auto: validate
+        
+        # 연결 검증 강화
+        connection:
+          provider_disables_autocommit: true
+          handling_mode: DELAYED_ACQUISITION_AND_RELEASE_AFTER_TRANSACTION
+
+  # 운영 환경 데이터소스 최적화
+  datasource:
+    hikari:
+      # 운영 환경 연결 풀 크기 (CPU 집약적 설정)
+      maximum-pool-size: 30
+      minimum-idle: 10
+      
+      # 타임아웃 설정 강화
+      connection-timeout: 20000    # 연결 타임아웃 20초
+      idle-timeout: 300000         # 유휴 타임아웃 5분
+      max-lifetime: 1200000        # 최대 수명 20분
+      
+      # 연결 검증 및 모니터링
+      validation-timeout: 5000
+      connection-test-query: SELECT 1
+      leak-detection-threshold: 120000  # 연결 누수 감지 2분
+      
+      # 성능 최적화
+      register-mbeans: true  # JMX 모니터링
+      isolate-internal-queries: true
+
+# 운영 환경 로깅 설정 (최소한만)
+logging:
+  level:
+    root: WARN
+    "[com.iroomclass.springbackend]": INFO
+    
+    # 중요한 로그만 활성화
+    "[org.springframework.security]": INFO
+    "[org.springframework.web]": INFO
+    
+    # 에러 및 성능 문제만 로깅
+    "[org.hibernate]": WARN
+    "[com.zaxxer.hikari]": WARN
+    
+    # 애플리케이션 에러는 상세히
+    "[com.iroomclass.springbackend.common.exception]": ERROR
+
+  # 로그 파일 설정
+  file:
+    path: /var/log/spring-backend
+    name: /var/log/spring-backend/application.log
+  
+  # 로그 로테이션
+  logback:
+    rollingpolicy:
+      max-file-size: 100MB
+      max-history: 30
+      total-size-cap: 3GB
+
+# 운영 환경 모니터링
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info, metrics, prometheus
+      base-path: /actuator
+  
+  endpoint:
+    health:
+      show-details: when-authorized
+      roles: ADMIN
+  
+  # 메트릭 설정
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+    tags:
+      application: spring-backend
+      environment: production
+    
+    # Hibernate 메트릭 활성화
+    distribution:
+      percentiles-histogram:
+        "[hibernate.query]": true
+      sla:
+        "[hibernate.query]": 100ms, 500ms, 1s, 2s
+
+# 운영 환경 보안 설정
+security:
+  # 민감한 정보 마스킹
+  headers:
+    content-security-policy: "default-src 'self'"
+    x-content-type-options: nosniff
+    x-frame-options: DENY
+    x-xss-protection: "1; mode=block"
+
+# 운영 환경 성능 모니터링
+performance:
+  monitoring:
+    enabled: true
+    thresholds:
+      query-time-warning: 1000   # 1초
+      query-time-error: 3000     # 3초
+      connection-pool-warning: 0.8  # 80% 사용률
+      connection-pool-error: 0.95   # 95% 사용률
+    
+    alerts:
+      enabled: true
+      slack-webhook: ${SLACK_WEBHOOK_URL:}
+      email-enabled: ${ALERT_EMAIL_ENABLED:false}
+  
+  hibernate:
+    statistics:
+      enabled: false  # 운영에서는 비활성화
+      log-summary: false
+
+# 운영 환경 캐싱 최적화
+cache:
+  redis:
+    # 연결 풀 설정
+    jedis:
+      pool:
+        max-active: 20
+        max-idle: 10
+        min-idle: 5
+        max-wait: -1ms
+    
+    # 타임아웃 설정
+    timeout: 3000ms
+    connect-timeout: 5000ms
+    
+    # 클러스터 설정 (필요시)
+    cluster:
+      max-redirects: 3
+    
+    # 캐시 TTL 설정
+    default-ttl: 3600  # 1시간
+    
+# JVM 최적화 권장사항 (주석)
+# 운영 환경 JVM 옵션:
+# -Xms2g -Xmx4g
+# -XX:+UseG1GC
+# -XX:MaxGCPauseMillis=200
+# -XX:+UseStringDeduplication
+# -XX:+OptimizeStringConcat
+# -server

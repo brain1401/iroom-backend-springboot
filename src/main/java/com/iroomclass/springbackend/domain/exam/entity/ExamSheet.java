@@ -3,6 +3,8 @@ package com.iroomclass.springbackend.domain.exam.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import com.iroomclass.springbackend.common.UUIDv7Generator;
+import com.iroomclass.springbackend.common.ApplicationContextProvider;
+import com.iroomclass.springbackend.domain.exam.repository.ExamSheetQuestionRepository;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -101,39 +103,58 @@ public class ExamSheet {
     }
 
     /**
-     * 총 문제 수 계산 (임시 메서드 - 실제로는 examSheetQuestionRepository를 통해 COUNT 조회)
+     * 총 문제 수 계산
+     * Repository를 통해 COUNT 쿼리로 조회합니다.
      * 
-     * @return 총 문제 수 (임시로 questions.size() 반환)
+     * @return 총 문제 수
      */
     public Integer getTotalQuestions() {
-        if (questions == null) return 0;
-        return questions.size();
+        try {
+            ExamSheetQuestionRepository repository = ApplicationContextProvider.getBean(ExamSheetQuestionRepository.class);
+            return Math.toIntExact(repository.countByExamSheetId(this.id));
+        } catch (Exception e) {
+            // Repository 조회 실패 시 기본 메모리 기반 계산으로 fallback
+            if (questions == null) return 0;
+            return questions.size();
+        }
     }
 
     /**
-     * 객관식 문제 수 계산 (임시 메서드)
-     * TODO: 추후 examSheetQuestionRepository를 통해 객관식 문제 COUNT 조회로 변경
+     * 객관식 문제 수 계산
+     * Repository를 통해 COUNT 쿼리로 조회합니다.
      * 
      * @return 객관식 문제 수
      */
     public Integer getMultipleChoiceCount() {
-        if (questions == null) return 0;
-        return Math.toIntExact(questions.stream()
-                .filter(q -> q.getQuestion() != null && q.getQuestion().getQuestionType() == Question.QuestionType.MULTIPLE_CHOICE)
-                .count());
+        try {
+            ExamSheetQuestionRepository repository = ApplicationContextProvider.getBean(ExamSheetQuestionRepository.class);
+            return Math.toIntExact(repository.countMultipleChoiceByExamSheetId(this.id));
+        } catch (Exception e) {
+            // Repository 조회 실패 시 기본 메모리 기반 계산으로 fallback
+            if (questions == null) return 0;
+            return Math.toIntExact(questions.stream()
+                    .filter(q -> q.getQuestion() != null && q.getQuestion().getQuestionType() == Question.QuestionType.MULTIPLE_CHOICE)
+                    .count());
+        }
     }
 
     /**
-     * 주관식 문제 수 계산 (임시 메서드)
-     * TODO: 추후 examSheetQuestionRepository를 통해 주관식 문제 COUNT 조회로 변경
+     * 주관식 문제 수 계산
+     * Repository를 통해 COUNT 쿼리로 조회합니다.
      * 
      * @return 주관식 문제 수
      */
     public Integer getSubjectiveCount() {
-        if (questions == null) return 0;
-        return Math.toIntExact(questions.stream()
-                .filter(q -> q.getQuestion() != null && q.getQuestion().getQuestionType() == Question.QuestionType.SUBJECTIVE)
-                .count());
+        try {
+            ExamSheetQuestionRepository repository = ApplicationContextProvider.getBean(ExamSheetQuestionRepository.class);
+            return Math.toIntExact(repository.countSubjectiveByExamSheetId(this.id));
+        } catch (Exception e) {
+            // Repository 조회 실패 시 기본 메모리 기반 계산으로 fallback
+            if (questions == null) return 0;
+            return Math.toIntExact(questions.stream()
+                    .filter(q -> q.getQuestion() != null && q.getQuestion().getQuestionType() == Question.QuestionType.SUBJECTIVE)
+                    .count());
+        }
     }
 
     /**

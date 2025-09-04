@@ -1,0 +1,90 @@
+# 테스트 환경 Spring Boot 설정
+spring:
+  # 데이터소스 설정 (테스트용 H2 또는 TestContainers)
+  datasource:
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+  
+  # JPA 설정 (성능 테스트 최적화)
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    properties:
+      hibernate:
+        # 성능 통계 활성화 (필수)
+        generate_statistics: true
+        
+        # 쿼리 로깅 최적화
+        format_sql: true
+        use_sql_comments: true
+        
+        # 배치 최적화
+        jdbc:
+          batch_size: 20
+          batch_versioned_data: true
+        order_inserts: true
+        order_updates: true
+        
+        # 캐시 비활성화 (테스트 정확성)
+        cache:
+          use_second_level_cache: false
+          use_query_cache: false
+        
+        # 연결 풀 최적화
+        connection:
+          provider_disables_autocommit: true
+    
+    show-sql: true
+    open-in-view: false
+
+  # H2 콘솔 활성화 (개발 테스트 시 유용)
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+
+# 로깅 설정 (성능 분석용)
+logging:
+  level:
+    root: INFO
+    "[com.iroomclass.springbackend]": DEBUG
+    "[org.hibernate.SQL]": DEBUG
+    "[org.hibernate.type.descriptor.sql]": TRACE
+    "[org.hibernate.stat]": DEBUG
+    "[org.springframework.orm.jpa]": DEBUG
+
+# 성능 테스트 관련 커스텀 설정
+performance:
+  test:
+    # 응답 시간 임계값 (밀리초)
+    thresholds:
+      single-exam-query: 500
+      batch-exam-query: 1000
+      projection-query: 200
+      unit-stats-query: 300
+    
+    # 쿼리 수 임계값
+    query-limits:
+      single-exam-max-queries: 2
+      batch-exam-queries-per-item: 2
+      projection-max-queries: 1
+    
+    # 테스트 데이터 설정
+    test-data:
+      exam-ids:
+        - "550e8400-e29b-41d4-a716-446655440000"
+        - "550e8400-e29b-41d4-a716-446655440001" 
+        - "550e8400-e29b-41d4-a716-446655440002"
+      grades: [1, 2, 3]
+
+# Actuator 엔드포인트 (성능 모니터링)
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, metrics, info
+  endpoint:
+    health:
+      show-details: always

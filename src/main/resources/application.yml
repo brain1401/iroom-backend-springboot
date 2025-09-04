@@ -9,30 +9,111 @@ spring:
   application:
     name: spring-backend
 
-  # 데이터베이스 연결 설정
+  # 데이터베이스 연결 설정 (성능 최적화)
   # 환경 변수를 사용한 설정: DB_URL, DB_USERNAME, DB_PASSWORD
   datasource:
-    url: ${DB_URL:jdbc:mysql://project-db-campus.smhrd.com:3307/campus_25SW_FS_p3_4}
+    # MySQL JDBC URL 최적화 (배치 성능 향상)
+    url: ${DB_URL:jdbc:mysql://project-db-campus.smhrd.com:3307/campus_25SW_FS_p3_4?rewriteBatchedStatements=true&cachePrepStmts=true&useServerPrepStmts=true&useCompression=true&useLegacyDatetimeCode=false&serverTimezone=Asia/Seoul&allowPublicKeyRetrieval=true&useSSL=false}
     username: ${DB_USERNAME:campus_25SW_FS_p3_4}
     password: ${DB_PASSWORD:}
     driver-class-name: com.mysql.cj.jdbc.Driver
+    
+    # HikariCP 연결 풀 최적화
     hikari:
-      maximum-pool-size: 10
+      # 연결 풀 크기 (CPU 코어 수 * 2 + HDD 수)
+      maximum-pool-size: 20
+      minimum-idle: 5
+      # 연결 타임아웃 (30초)
       connection-timeout: 30000
+      # 유휴 연결 타임아웃 (10분)
       idle-timeout: 600000
+      # 연결 최대 수명 (30분)
       max-lifetime: 1800000
+      # 연결 테스트 쿼리
+      connection-test-query: SELECT 1
+      # 연결 누수 감지 (5분)
+      leak-detection-threshold: 300000
+      # 연결 풀 이름
+      pool-name: SpringBootHikariCP
+      # 자동 커밋 비활성화 (성능 향상)
+      auto-commit: false
 
-  # JPA 설정
+  # JPA 설정 (성능 최적화)
   jpa:
     hibernate:
       ddl-auto: update
     properties:
       hibernate:
+        # 데이터베이스 방언
         dialect: org.hibernate.dialect.MySQLDialect
+        
+        # ========================================
+        # 쿼리 최적화 설정
+        # ========================================
+        
+        # SQL 로깅 및 포맷팅
         "[format_sql]": true
         "[use_sql_comments]": true
+        
+        # 배치 처리 최적화 (중요!)
+        jdbc:
+          # 배치 크기 (INSERT, UPDATE, DELETE 배치 처리)
+          batch_size: 20
+          # 버전 관리 엔티티 배치 처리 포함
+          batch_versioned_data: true
+          # fetch size (한 번에 가져올 레코드 수)
+          fetch_size: 50
+        
+        # INSERT/UPDATE 순서 최적화
+        order_inserts: true
+        order_updates: true
+        
+        # ========================================
+        # 캐시 설정
+        # ========================================
+        
+        cache:
+          # 2차 캐시 비활성화 (Redis 사용)
+          use_second_level_cache: false
+          # 쿼리 캐시 비활성화 
+          use_query_cache: false
+          # 컬렉션 캐시 비활성화
+          use_structured_cache: false
+        
+        # ========================================
+        # 연결 및 성능 설정
+        # ========================================
+        
+        # 자동 커밋 비활성화 알림
+        connection:
+          provider_disables_autocommit: true
+        
+        # ID 생성 전략 최적화
+        id:
+          new_generator_mappings: true
+        
+        # 지연 로딩 최적화
+        enable_lazy_load_no_trans: false
+        
+        # ========================================
+        # 통계 및 모니터링
+        # ========================================
+        
+        # Hibernate 통계 (개발/스테이징에서만 활성화)
+        generate_statistics: false
+        
+        # 느린 쿼리 로깅 (1초 이상)
+        session:
+          events:
+            log:
+              LOG_QUERIES_SLOWER_THAN_MS: 1000
 
+    # JPA 설정
     open-in-view: false
+    show-sql: false
+    
+    # 데이터베이스 플랫폼 설정
+    database-platform: org.hibernate.dialect.MySQLDialect
 
   # Redis 설정 (캐싱용)
   data:

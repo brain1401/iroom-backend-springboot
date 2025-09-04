@@ -2,19 +2,20 @@ package com.iroomclass.springbackend.domain.exam.controller;
 
 import com.iroomclass.springbackend.common.ApiResponse;
 import com.iroomclass.springbackend.domain.exam.dto.ExamDto;
+import com.iroomclass.springbackend.domain.exam.dto.ExamFilterRequest;
 import com.iroomclass.springbackend.domain.exam.dto.ExamSubmissionStatusDto;
+import com.iroomclass.springbackend.domain.exam.dto.ExamWithUnitsDto;
+import com.iroomclass.springbackend.domain.exam.dto.UnitSummaryDto;
 import com.iroomclass.springbackend.domain.exam.repository.ExamRepository;
 import com.iroomclass.springbackend.domain.exam.service.ExamService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
-
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
@@ -22,30 +23,30 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
 import java.util.UUID;
 
 /**
- * 시험 관리 REST API 컨트롤러
+ * 시험 관리 REST API 컨트롤러 (개선된 버전)
  * 
  * <p>
- * 시험 조회, 시험 제출 현황 통계, 시험 목록 관리 API를 제공합니다.
+ * 통합 필터링과 쿼리 파라미터를 통한 시험 관리 API를 제공합니다.
+ * 기존의 중복된 엔드포인트들을 하나로 통합하여 일관성 있는 API를 제공합니다.
  * </p>
  */
 @RestController
-@RequestMapping("/api/exams")
+@RequestMapping("/exams")
 @RequiredArgsConstructor
 @Tag(name = "시험 관리 API", description = """
-        시험 관리 관련 API입니다.
+        시험 관리 관련 통합 API입니다.
 
         주요 기능:
         - 시험 상세 정보 조회
         - 시험 제출 현황 통계 조회
-        - 학년별 시험 목록 조회
-        - 시험명 검색 및 필터링
+        - 통합 필터링을 통한 시험 목록 조회
+        - 학년별, 검색어, 최근 시험 등 다양한 필터링 지원
+        - 시험 통계 조회
         """)
 @Slf4j
 public class ExamController {
@@ -63,20 +64,41 @@ public class ExamController {
             - 기본 시험 정보 (시험명, 학년, 설명)
             - 연관된 시험지 정보 (문제 수, 총 배점)
             - 생성/수정 시간
+            - 선택적으로 단원 정보 포함 (includeUnits=true 시)
+
+            **단원 정보 포함 옵션:**
+            - `includeUnits=true`: 시험에 포함된 모든 단원 정보와 통계 포함
+            - 기본값: `false` (기본 시험 정보만 반환)
+
+            **사용 예시:**
+            - 기본 정보만: `/api/exams/{examId}`
+            - 단원 정보 포함: `/api/exams/{examId}?includeUnits=true`
             """, responses = {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "조회 성공", content = @Content(schema = @Schema(implementation = ExamDto.class))),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "시험을 찾을 수 없음", content = @Content(schema = @Schema(implementation = ApiResponse.class)))
     })
     @GetMapping("/{examId}")
-    public ResponseEntity<ApiResponse<ExamDto>> getExam(
-            @Parameter(description = "시험 고유 식별자", required = true) @PathVariable UUID examId) {
-        log.info("시험 상세 조회 요청: examId={}", examId);
+    public ResponseEntity<ApiResponse<?>> getExam(
+            @Parameter(description = "시험 고유 식별자", required = true) 
+            @PathVariable UUID examId,
+            
+            @Parameter(description = "단원 정보 포함 여부", example = "false") 
+            @RequestParam(required = false, defaultValue = "false") Boolean includeUnits) {
+        
+        log.info("시험 상세 조회 요청: examId={}, includeUnits={}", examId, includeUnits);
 
         try {
-            ExamDto exam = examService.findById(examId);
-            return ResponseEntity.ok(ApiResponse.success("시험 정보 조회 성공", exam));
+            if (includeUnits != null && includeUnits) {
+                // 단원 정보 포함한 상세 조회
+                ExamWithUnitsDto examWithUnits = examService.findByIdWithUnits(examId);
+                return ResponseEntity.ok(ApiResponse.success("단원 정보 포함 시험 조회 성공", examWithUnits));
+            } else {
+                // 기본 시험 정보만 조회
+                ExamDto exam = examService.findById(examId);
+                return ResponseEntity.ok(ApiResponse.success("시험 정보 조회 성공", exam));
+            }
         } catch (RuntimeException e) {
-            log.warn("시험 조회 실패: examId={}, error={}", examId, e.getMessage());
+            log.warn("시험 조회 실패: examId={}, includeUnits={}, error={}", examId, includeUnits, e.getMessage());
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(ApiResponse.errorWithType("시험을 찾을 수 없습니다"));
         }
@@ -112,201 +134,384 @@ public class ExamController {
     }
 
     /**
-     * 학년별 시험 목록 조회
+     * 시험 목록 조회 (통합 필터링)
+     * 
+     * <p>
+     * 다양한 필터링 조건을 조합하여 시험 목록을 조회합니다.
+     * </p>
+     * 
+     * <h3>지원되는 필터링 조건:</h3>
+     * <ul>
+     * <li>학년별 필터: ?grade=1</li>
+     * <li>시험명 검색: ?search=중간고사</li>
+     * <li>최근 시험: ?recent=true</li>
+     * <li>복합 필터: ?grade=1&search=중간고사</li>
+     * </ul>
+     * 
+     * <h3>페이징 및 정렬:</h3>
+     * <ul>
+     * <li>페이징: ?page=0&size=20</li>
+     * <li>정렬: ?sort=createdAt,desc&sort=examName,asc</li>
+     * </ul>
      */
-    @Operation(summary = "학년별 시험 목록 조회", description = """
-            특정 학년의 시험 목록을 페이징으로 조회합니다.
+    @Operation(summary = "시험 목록 조회 (통합 필터링)", description = """
+            다양한 필터링 조건을 조합하여 시험 목록을 조회합니다.
 
-            기본 정렬: 최신 생성순 (createdAt DESC)
-            지원하는 정렬 기준: id, examName, grade, createdAt
+            **지원되는 필터링:**
+            - 학년별: `grade=1,2,3`
+            - 시험명 검색: `search=중간고사` (부분 일치, 대소문자 무관)
+            - 최근 시험: `recent=true` (최근 생성된 시험만)
+            - 복합 필터: 여러 조건 동시 적용 가능
+
+            **기본 정렬:** 최신 생성순 (createdAt DESC)
+            **지원 정렬:** id, examName, grade, createdAt
+
+            **사용 예시:**
+            - 전체 조회: `/api/exams`
+            - 1학년 시험: `/api/exams?grade=1`
+            - 검색: `/api/exams?search=중간고사`
+            - 최근 시험: `/api/exams?recent=true`
+            - 복합: `/api/exams?grade=2&search=수학&recent=true&page=0&size=10`
+
+            **기존 엔드포인트 통합:**
+            - `/api/exams/all` → `/api/exams` (파라미터 없이)
+            - `/api/exams/recent` → `/api/exams?recent=true`
+            - `/api/exams/search` → `/api/exams?search={keyword}`
             """, responses = {
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "조회 성공", content = @Content(schema = @Schema(implementation = Page.class)))
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "조회 성공", content = @Content(schema = @Schema(implementation = Page.class))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "잘못된 요청 파라미터", content = @Content(schema = @Schema(implementation = ApiResponse.class)))
     })
     @GetMapping
-    public ResponseEntity<ApiResponse<Page<ExamDto>>> getExamsByGrade(
-            @Parameter(description = "학년 (1, 2, 3)", example = "1") @RequestParam(required = false) Integer grade,
+    public ResponseEntity<ApiResponse<Page<ExamDto>>> getExams(
+            @Parameter(description = "학년 필터 (1, 2, 3)", example = "1") @RequestParam(required = false) Integer grade,
 
-            @Parameter(description = "검색할 시험명 (부분 일치)", example = "중간고사") @RequestParam(required = false) String examName,
+            @Parameter(description = "시험명 검색어 (부분 일치)", example = "중간고사") @RequestParam(required = false) String search,
 
-            @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) @Parameter(hidden = true) Pageable pageable) {
-        log.info("시험 목록 조회 요청: grade={}, examName={}, page={}, size={}",
-                grade, examName, pageable.getPageNumber(), pageable.getPageSize());
-
-        Page<ExamDto> examPage;
-
-        if (grade != null && examName != null && !examName.trim().isEmpty()) {
-            // 학년 + 시험명 복합 검색
-            examPage = examService.searchByGradeAndExamName(grade, examName.trim(), pageable);
-        } else if (grade != null) {
-            // 학년별 조회
-            examPage = examService.findByGrade(grade, pageable);
-        } else if (examName != null && !examName.trim().isEmpty()) {
-            // 시험명 검색
-            examPage = examService.searchByExamName(examName.trim(), pageable);
-        } else {
-            // 전체 조회
-            examPage = examService.findAll(pageable);
-        }
-
-        log.info("시험 목록 조회 완료: totalElements={}, totalPages={}",
-                examPage.getTotalElements(), examPage.getTotalPages());
-
-        return ResponseEntity.ok(ApiResponse.success("시험 목록 조회 성공", examPage));
-    }
-
-    /**
-     * 전체 시험 목록 조회 (관리자용)
-     */
-    @Operation(summary = "전체 시험 목록 조회", description = """
-            모든 시험 목록을 페이징으로 조회합니다. (관리자용)
-
-            기본 정렬: 최신 생성순 (createdAt DESC)
-            지원하는 정렬 기준: id, examName, grade, createdAt
-            """, responses = {
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "조회 성공", content = @Content(schema = @Schema(implementation = Page.class)))
-    })
-    @GetMapping("/all")
-    public ResponseEntity<ApiResponse<Page<ExamDto>>> getAllExams(
-            @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) @Parameter(hidden = true) Pageable pageable) {
-        log.info("전체 시험 목록 조회 요청: page={}, size={}",
-                pageable.getPageNumber(), pageable.getPageSize());
-
-        Page<ExamDto> examPage = examService.findAll(pageable);
-
-        log.info("전체 시험 목록 조회 완료: totalElements={}, totalPages={}",
-                examPage.getTotalElements(), examPage.getTotalPages());
-
-        return ResponseEntity.ok(ApiResponse.success("전체 시험 목록 조회 성공", examPage));
-    }
-
-    /**
-     * 시험명 검색
-     */
-    @Operation(summary = "시험명으로 검색", description = """
-            시험명으로 부분 일치 검색을 수행합니다.
-
-            검색 특징:
-            - 대소문자 무시 (case insensitive)
-            - 부분 일치 (LIKE %검색어%)
-            - 기본 정렬: 최신 생성순
-            """, responses = {
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "검색 성공", content = @Content(schema = @Schema(implementation = Page.class))),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "검색어가 비어있음", content = @Content(schema = @Schema(implementation = ApiResponse.class)))
-    })
-    @GetMapping("/search")
-    public ResponseEntity<ApiResponse<Page<ExamDto>>> searchExams(
-            @Parameter(description = "검색할 시험명", required = true, example = "중간고사") @RequestParam String examName,
-
-            @Parameter(description = "학년 필터 (선택사항)", example = "1") @RequestParam(required = false) Integer grade,
+            @Parameter(description = "최근 생성된 시험만 조회", example = "true") @RequestParam(required = false) Boolean recent,
 
             @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) @Parameter(hidden = true) Pageable pageable) {
-        if (examName == null || examName.trim().isEmpty()) {
-            log.warn("시험명 검색 요청에서 검색어가 비어있음");
+
+        // 필터 객체 생성
+        ExamFilterRequest filter = new ExamFilterRequest(grade, search, recent, null);
+
+        log.info("시험 목록 조회 요청: {}, page={}, size={}",
+                filter.getFilterDescription(), pageable.getPageNumber(), pageable.getPageSize());
+
+        // 입력 검증
+        if (filter.hasGradeFilter() && (filter.grade() < 1 || filter.grade() > 3)) {
             return ResponseEntity.badRequest()
-                    .body(ApiResponse.errorWithType("검색어를 입력해주세요"));
+                    .body(ApiResponse.errorWithType("학년은 1, 2, 3 중 하나여야 합니다"));
         }
 
-        log.info("시험명 검색 요청: examName={}, grade={}, page={}, size={}",
-                examName, grade, pageable.getPageNumber(), pageable.getPageSize());
-
-        Page<ExamDto> examPage;
-
-        if (grade != null) {
-            examPage = examService.searchByGradeAndExamName(grade, examName.trim(), pageable);
-        } else {
-            examPage = examService.searchByExamName(examName.trim(), pageable);
+        if (filter.hasSearchFilter() && filter.search().length() > 100) {
+            return ResponseEntity.badRequest()
+                    .body(ApiResponse.errorWithType("검색어는 100자 이하여야 합니다"));
         }
-
-        log.info("시험명 검색 완료: examName={}, grade={}, totalElements={}",
-                examName, grade, examPage.getTotalElements());
-
-        return ResponseEntity.ok(ApiResponse.success("시험 검색 성공", examPage));
-    }
-
-    /**
-     * 학년별 시험 통계 조회
-     */
-    @Operation(summary = "학년별 시험 통계 조회", description = """
-            각 학년별 시험 개수 통계를 조회합니다.
-
-            제공되는 정보:
-            - 학년별 시험 개수
-            - 전체 시험 개수
-            - 각 학년의 비율
-            """, responses = {
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "조회 성공")
-    })
-    @GetMapping("/statistics/by-grade")
-    public ResponseEntity<ApiResponse<Map<String, Object>>> getExamStatisticsByGrade() {
-        log.info("학년별 시험 통계 조회 요청");
 
         try {
-            // 학년별 시험 개수 조회
-            long grade1Count = examRepository.countByGrade(1);
-            long grade2Count = examRepository.countByGrade(2);
-            long grade3Count = examRepository.countByGrade(3);
-            long totalCount = grade1Count + grade2Count + grade3Count;
+            Page<ExamDto> examPage = examService.findExamsWithFilter(filter, pageable);
 
-            Map<String, Object> statistics = new HashMap<>();
-            statistics.put("grade1", grade1Count);
-            statistics.put("grade2", grade2Count);
-            statistics.put("grade3", grade3Count);
-            statistics.put("total", totalCount);
+            log.info("시험 목록 조회 완료: {}, totalElements={}, totalPages={}",
+                    filter.getFilterDescription(), examPage.getTotalElements(), examPage.getTotalPages());
 
-            // 비율 계산 (전체가 0이 아닐 때만)
-            if (totalCount > 0) {
-                Map<String, Double> percentages = new HashMap<>();
-                percentages.put("grade1Percentage",
-                        Math.round((double) grade1Count / totalCount * 100 * 100.0) / 100.0);
-                percentages.put("grade2Percentage",
-                        Math.round((double) grade2Count / totalCount * 100 * 100.0) / 100.0);
-                percentages.put("grade3Percentage",
-                        Math.round((double) grade3Count / totalCount * 100 * 100.0) / 100.0);
-                statistics.put("percentages", percentages);
-            }
+            return ResponseEntity.ok(ApiResponse.success("시험 목록 조회 성공", examPage));
 
-            log.info("학년별 시험 통계 조회 완료: 1학년={}, 2학년={}, 3학년={}, 전체={}",
-                    grade1Count, grade2Count, grade3Count, totalCount);
-
-            return ResponseEntity.ok(ApiResponse.success("학년별 시험 통계 조회 성공", statistics));
         } catch (Exception e) {
-            log.error("학년별 시험 통계 조회 실패: error={}", e.getMessage(), e);
+            log.error("시험 목록 조회 실패: {}, error={}", filter.getFilterDescription(), e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.errorWithType("시험 목록 조회 중 오류가 발생했습니다"));
+        }
+    }
+
+    /**
+     * 시험 통계 조회 (통합)
+     * 
+     * <p>
+     * 다양한 시험 통계를 조회합니다.
+     * </p>
+     */
+    @Operation(summary = "시험 통계 조회", description = """
+            다양한 시험 통계를 조회합니다.
+
+            **지원되는 통계 타입:**
+            - `by-grade`: 학년별 시험 개수 통계
+
+            **사용 예시:**
+            - 학년별 통계: `/api/exams/statistics?type=by-grade`
+
+            **기존 엔드포인트 통합:**
+            - `/api/exams/statistics/by-grade` → `/api/exams/statistics?type=by-grade`
+            """, responses = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "조회 성공"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "지원하지 않는 통계 타입", content = @Content(schema = @Schema(implementation = ApiResponse.class)))
+    })
+    @GetMapping("/statistics")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> getExamStatistics(
+            @Parameter(description = "통계 타입 (by-grade)", example = "by-grade", required = true) @RequestParam String type) {
+
+        log.info("시험 통계 조회 요청: type={}", type);
+
+        if (type == null || type.trim().isEmpty()) {
+            return ResponseEntity.badRequest()
+                    .body(ApiResponse.errorWithType("통계 타입을 지정해주세요"));
+        }
+
+        try {
+            Map<String, Object> statistics = examService.getExamStatistics(type.trim());
+
+            log.info("시험 통계 조회 완료: type={}, resultKeys={}", type, statistics.keySet());
+
+            return ResponseEntity.ok(ApiResponse.success("시험 통계 조회 성공", statistics));
+
+        } catch (IllegalArgumentException e) {
+            log.warn("지원하지 않는 통계 타입: type={}", type);
+            return ResponseEntity.badRequest()
+                    .body(ApiResponse.errorWithType(e.getMessage()));
+
+        } catch (Exception e) {
+            log.error("시험 통계 조회 실패: type={}, error={}", type, e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(ApiResponse.errorWithType("통계 조회 중 오류가 발생했습니다"));
         }
     }
 
-    /**
-     * 최근 생성된 시험 목록 (대시보드용)
-     */
-    @Operation(summary = "최근 생성된 시험 목록", description = """
-            최근에 생성된 시험 목록을 조회합니다. (대시보드용)
+    // ========================================
+    // 단원 정보 관련 엔드포인트
+    // ========================================
 
-            기본적으로 최근 10개의 시험을 반환하며,
-            생성일시 기준 내림차순으로 정렬됩니다.
+    /**
+     * 특정 시험의 단원 정보 목록 조회
+     */
+    @Operation(summary = "시험별 단원 정보 목록 조회", description = """
+            특정 시험에 포함된 모든 단원의 상세 정보를 조회합니다.
+
+            **제공되는 정보:**
+            - 단원 기본 정보 (단원명, 코드, 학년)
+            - 계층 구조 정보 (대분류 > 중분류 > 단원)
+            - 표시 순서 정보
+
+            **정렬 순서:**
+            - 대분류 표시 순서 → 중분류 표시 순서 → 단원 표시 순서
+
+            **사용 예시:**
+            - `/api/exams/{examId}/units`
+
+            **성능 최적화:**
+            - Projection 인터페이스를 사용하여 필요한 정보만 조회
+            - N+1 쿼리 문제 방지
             """, responses = {
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "조회 성공")
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "조회 성공"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "시험을 찾을 수 없음")
     })
-    @GetMapping("/recent")
-    public ResponseEntity<ApiResponse<List<ExamDto>>> getRecentExams(
-            @Parameter(description = "조회할 개수", example = "10") @RequestParam(defaultValue = "10") int limit) {
-        log.info("최근 시험 목록 조회 요청: limit={}", limit);
+    @GetMapping("/{examId}/units")
+    public ResponseEntity<ApiResponse<List<UnitSummaryDto>>> getExamUnits(
+            @Parameter(description = "시험 고유 식별자", required = true) 
+            @PathVariable UUID examId) {
+        
+        log.info("시험별 단원 정보 조회 요청: examId={}", examId);
 
         try {
-            // limit을 페이지 사이즈로 사용하여 최근 시험 조회
-            Pageable pageable = PageRequest.of(0, Math.min(limit, 50),
-                    Sort.by(Sort.Direction.DESC, "createdAt"));
+            // 시험 존재 여부 확인을 위해 기본 정보 조회
+            examService.findById(examId);
+            
+            // 단원 정보 조회
+            List<UnitSummaryDto> units = examService.findUnitsByExamId(examId);
+            
+            log.info("시험별 단원 정보 조회 완료: examId={}, unitCount={}", examId, units.size());
+            
+            return ResponseEntity.ok(ApiResponse.success("시험별 단원 정보 조회 성공", units));
+            
+        } catch (RuntimeException e) {
+            log.warn("시험별 단원 정보 조회 실패: examId={}, error={}", examId, e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(ApiResponse.errorWithType("시험을 찾을 수 없습니다"));
+        }
+    }
 
-            Page<ExamDto> recentExamsPage = examService.findAll(pageable);
-            List<ExamDto> recentExams = recentExamsPage.getContent();
+    /**
+     * 특정 시험의 단원별 문제 수 통계 조회
+     */
+    @Operation(summary = "시험별 단원 문제 수 통계 조회", description = """
+            특정 시험의 각 단원별 문제 수와 배점 통계를 조회합니다.
 
-            log.info("최근 시험 목록 조회 완료: count={}", recentExams.size());
+            **제공되는 정보:**
+            - 단원별 문제 개수
+            - 단원별 총 배점
+            - 단원명 및 식별자
 
-            return ResponseEntity.ok(ApiResponse.success("최근 시험 목록 조회 성공", recentExams));
+            **사용 예시:**
+            - `/api/exams/{examId}/unit-stats`
+
+            **활용 목적:**
+            - 시험 분석 및 리포트 생성
+            - 단원별 출제 비중 파악
+            - 교육과정 분석
+            """, responses = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "조회 성공"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "시험을 찾을 수 없음")
+    })
+    @GetMapping("/{examId}/unit-stats")
+    public ResponseEntity<ApiResponse<List<ExamWithUnitsDto.UnitQuestionCount>>> getExamUnitStats(
+            @Parameter(description = "시험 고유 식별자", required = true) 
+            @PathVariable UUID examId) {
+        
+        log.info("시험별 단원 통계 조회 요청: examId={}", examId);
+
+        try {
+            List<ExamWithUnitsDto.UnitQuestionCount> unitStats = examService.getUnitQuestionCounts(examId);
+            
+            log.info("시험별 단원 통계 조회 완료: examId={}, statCount={}", examId, unitStats.size());
+            
+            return ResponseEntity.ok(ApiResponse.success("시험별 단원 통계 조회 성공", unitStats));
+            
         } catch (Exception e) {
-            log.error("최근 시험 목록 조회 실패: error={}", e.getMessage(), e);
+            log.error("시험별 단원 통계 조회 실패: examId={}, error={}", examId, e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ApiResponse.errorWithType("최근 시험 목록 조회 중 오류가 발생했습니다"));
+                    .body(ApiResponse.errorWithType("단원 통계 조회 중 오류가 발생했습니다"));
+        }
+    }
+
+    /**
+     * 여러 시험의 단원 정보 배치 조회
+     */
+    @Operation(summary = "다중 시험 단원 정보 배치 조회", description = """
+            여러 시험의 단원 정보를 한 번에 효율적으로 조회합니다.
+
+            **사용 시나리오:**
+            - 대시보드에서 여러 시험의 단원 정보 표시
+            - 시험 비교 분석
+            - 배치 처리 작업
+
+            **성능 최적화:**
+            - 단일 쿼리로 여러 시험 정보 조회
+            - N+1 쿼리 문제 방지
+            - @EntityGraph 활용
+
+            **요청 본문 예시:**
+            ```json
+            {
+              "examIds": [
+                "550e8400-e29b-41d4-a716-446655440000",
+                "550e8400-e29b-41d4-a716-446655440001"
+              ]
+            }
+            ```
+
+            **제한사항:**
+            - 최대 50개 시험까지 동시 조회 가능
+            - 대용량 데이터 조회 시 타임아웃 가능성
+            """, responses = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "조회 성공"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "잘못된 요청")
+    })
+    @PostMapping("/batch/units")
+    public ResponseEntity<ApiResponse<List<ExamWithUnitsDto>>> getExamsBatchWithUnits(
+            @Parameter(description = "조회할 시험 ID 목록", required = true)
+            @RequestBody BatchExamRequest request) {
+        
+        log.info("다중 시험 단원 정보 배치 조회 요청: examCount={}", 
+                request != null ? request.examIds().size() : 0);
+
+        // 입력 검증
+        if (request == null || request.examIds() == null || request.examIds().isEmpty()) {
+            return ResponseEntity.badRequest()
+                    .body(ApiResponse.errorWithType("시험 ID 목록이 필요합니다"));
+        }
+
+        if (request.examIds().size() > 50) {
+            return ResponseEntity.badRequest()
+                    .body(ApiResponse.errorWithType("한 번에 최대 50개 시험까지 조회 가능합니다"));
+        }
+
+        try {
+            List<ExamWithUnitsDto> results = examService.findByIdsWithUnits(request.examIds());
+            
+            log.info("다중 시험 단원 정보 배치 조회 완료: requestCount={}, resultCount={}", 
+                    request.examIds().size(), results.size());
+            
+            return ResponseEntity.ok(ApiResponse.success(
+                "다중 시험 단원 정보 배치 조회 성공", results));
+            
+        } catch (Exception e) {
+            log.error("다중 시험 단원 정보 배치 조회 실패: examCount={}, error={}", 
+                    request.examIds().size(), e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.errorWithType("배치 조회 중 오류가 발생했습니다"));
+        }
+    }
+
+    /**
+     * 학년별 사용된 단원 목록 조회
+     */
+    @Operation(summary = "학년별 사용된 단원 목록 조회", description = """
+            특정 학년의 모든 시험에서 사용된 단원 목록을 중복 제거하여 조회합니다.
+
+            **활용 목적:**
+            - 학년별 커리큘럼 분석
+            - 단원별 출제 빈도 분석
+            - 교육과정 완성도 평가
+
+            **제공되는 정보:**
+            - 해당 학년 시험에 실제로 출제된 단원만
+            - 중복 제거된 유니크 단원 목록
+            - 단원별 기본 정보
+
+            **사용 예시:**
+            - 1학년 사용 단원: `/api/exams/units/by-grade?grade=1`
+            - 2학년 사용 단원: `/api/exams/units/by-grade?grade=2`
+            """, responses = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "조회 성공"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "잘못된 학년")
+    })
+    @GetMapping("/units/by-grade")
+    public ResponseEntity<ApiResponse<List<UnitSummaryDto>>> getUnitsByGrade(
+            @Parameter(description = "학년 (1, 2, 3)", required = true, example = "1") 
+            @RequestParam Integer grade) {
+        
+        log.info("학년별 사용된 단원 목록 조회 요청: grade={}", grade);
+
+        // 입력 검증
+        if (grade == null || grade < 1 || grade > 3) {
+            return ResponseEntity.badRequest()
+                    .body(ApiResponse.errorWithType("학년은 1, 2, 3 중 하나여야 합니다"));
+        }
+
+        try {
+            List<UnitSummaryDto> units = examService.getDistinctUnitsByGrade(grade);
+            
+            log.info("학년별 사용된 단원 목록 조회 완료: grade={}, unitCount={}", grade, units.size());
+            
+            return ResponseEntity.ok(ApiResponse.success(
+                grade + "학년 사용 단원 목록 조회 성공", units));
+            
+        } catch (Exception e) {
+            log.error("학년별 사용된 단원 목록 조회 실패: grade={}, error={}", grade, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.errorWithType("단원 목록 조회 중 오류가 발생했습니다"));
+        }
+    }
+
+    // ========================================
+    // 요청/응답 DTO
+    // ========================================
+
+    /**
+     * 배치 시험 조회 요청 DTO
+     */
+    @Schema(description = "배치 시험 조회 요청 DTO")
+    public record BatchExamRequest(
+            @Parameter(description = "조회할 시험 ID 목록", required = true)
+            @Schema(description = "시험 ID 목록 (최대 50개)", 
+                    example = "[\"550e8400-e29b-41d4-a716-446655440000\", \"550e8400-e29b-41d4-a716-446655440001\"]")
+            List<UUID> examIds
+    ) {
+        /**
+         * Compact Constructor - 입력 검증
+         */
+        public BatchExamRequest {
+            if (examIds != null && examIds.size() > 50) {
+                throw new IllegalArgumentException("시험 ID는 최대 50개까지 지원합니다");
+            }
         }
     }
 }
