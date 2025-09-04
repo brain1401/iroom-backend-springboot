@@ -198,11 +198,20 @@ public interface ExamResultRepository extends JpaRepository<ExamResult, UUID> {
         SELECT 
             COUNT(CASE WHEN er.status = 'COMPLETED' THEN 1 END) as completed,
             COUNT(CASE WHEN er.status != 'COMPLETED' THEN 1 END) as pending,
-            AVG(CASE WHEN er.status = 'COMPLETED' THEN er.totalScore END) as averageScore,
-            MAX(CASE WHEN er.status = 'COMPLETED' THEN er.totalScore END) as maxScore,
-            MIN(CASE WHEN er.status = 'COMPLETED' THEN er.totalScore END) as minScore
+            AVG(CASE WHEN er.status = 'COMPLETED' THEN erScores.calculatedScore END) as averageScore,
+            MAX(CASE WHEN er.status = 'COMPLETED' THEN erScores.calculatedScore END) as maxScore,
+            MIN(CASE WHEN er.status = 'COMPLETED' THEN erScores.calculatedScore END) as minScore
         FROM ExamResult er 
         JOIN er.examSubmission es 
+        LEFT JOIN (
+            SELECT 
+                er_inner.id as examResultId,
+                SUM(erq.score) as calculatedScore
+            FROM ExamResult er_inner
+            JOIN er_inner.questionResults erq
+            WHERE er_inner.status = 'COMPLETED'
+            GROUP BY er_inner.id
+        ) erScores ON er.id = erScores.examResultId
         WHERE es.exam.id = :examId 
         AND er.version = (
             SELECT MAX(er2.version) 
@@ -215,70 +224,82 @@ public interface ExamResultRepository extends JpaRepository<ExamResult, UUID> {
 
     /**
      * 학년별 학생 평균 점수 조회 (성적 분포도용)
-     * 각 학생의 모든 시험 평균 점수를 계산
+     * 각 학생의 모든 시험 평균 점수를 계산 - ExamResultQuestion 테이블에서 점수 직접 합산
      * 
      * @param grade 학년
      * @return 학생별 평균 점수 목록
      */
-    @Query("""
-        SELECT AVG(er.totalScore) as averageScore
-        FROM ExamResult er 
-        JOIN er.examSubmission es 
-        JOIN es.student s
-        JOIN es.exam e
-        WHERE e.grade = :grade 
-        AND er.status = 'COMPLETED'
-        AND er.version = (
-            SELECT MAX(er2.version) 
-            FROM ExamResult er2 
-            WHERE er2.examSubmission = er.examSubmission
-        )
-        GROUP BY s.id
-        ORDER BY averageScore DESC
-        """)
-    List<Double> findStudentAverageScoresByGrade(@Param("grade") Integer grade);
-
-    /**
-     * 학년별 성적 분포 통계 조회
-     * 
-     * @param grade 학년
-     * @return 성적 분포 통계
-     */
-    @Query("""
-        SELECT 
-            CASE 
-                WHEN subquery.avgScore < 40 THEN '0-39'
-                WHEN subquery.avgScore < 60 THEN '40-59'
-                WHEN subquery.avgScore < 70 THEN '60-69'
-                WHEN subquery.avgScore < 80 THEN '70-79'
-                WHEN subquery.avgScore < 90 THEN '80-89'
-                ELSE '90-100'
-            END as scoreRange,
-            COUNT(subquery.studentId) as studentCount
+    @Query(nativeQuery = true, value = """
+        SELECT AVG(student_totals.total_score) as student_average
         FROM (
             SELECT 
-                s.id as studentId,
-                AVG(er.totalScore) as avgScore
-            FROM ExamResult er 
-            JOIN er.examSubmission es 
-            JOIN es.student s
-            JOIN es.exam e
+                es.student_id,
+                SUM(erq.score) as total_score
+            FROM exam_submission es
+            JOIN exam_result er ON er.submission_id = es.id
+            JOIN exam e ON e.id = es.exam_id
+            JOIN exam_result_question erq ON erq.exam_result_id = er.id
             WHERE e.grade = :grade 
             AND er.status = 'COMPLETED'
             AND er.version = (
                 SELECT MAX(er2.version) 
-                FROM ExamResult er2 
-                WHERE er2.examSubmission = er.examSubmission
+                FROM exam_result er2 
+                WHERE er2.submission_id = er.submission_id
             )
-            GROUP BY s.id
+            GROUP BY es.student_id, er.id
+        ) student_totals
+        GROUP BY student_totals.student_id
+        """)
+    List<Double> findStudentAverageScoresByGrade(@Param("grade") Integer grade);
+
+    /**
+     * 학년별 성적 분포 통계 조회 - ExamResultQuestion 테이블에서 점수 직접 합산
+     * 
+     * @param grade 학년
+     * @return 성적 분포 통계
+     */
+    @Query(nativeQuery = true, value = """
+        SELECT 
+            CASE 
+                WHEN subquery.avg_score < 40 THEN '0-39'
+                WHEN subquery.avg_score < 60 THEN '40-59'
+                WHEN subquery.avg_score < 70 THEN '60-69'
+                WHEN subquery.avg_score < 80 THEN '70-79'
+                WHEN subquery.avg_score < 90 THEN '80-89'
+                ELSE '90-100'
+            END as scoreRange,
+            COUNT(subquery.student_id) as studentCount
+        FROM (
+            SELECT 
+                student_avgs.student_id,
+                AVG(student_avgs.total_score) as avg_score
+            FROM (
+                SELECT 
+                    es.student_id,
+                    er.id as exam_result_id,
+                    SUM(erq.score) as total_score
+                FROM exam_submission es
+                JOIN exam_result er ON er.submission_id = es.id
+                JOIN exam e ON e.id = es.exam_id
+                JOIN exam_result_question erq ON erq.exam_result_id = er.id
+                WHERE e.grade = :grade 
+                AND er.status = 'COMPLETED'
+                AND er.version = (
+                    SELECT MAX(er2.version) 
+                    FROM exam_result er2 
+                    WHERE er2.submission_id = er.submission_id
+                )
+                GROUP BY es.student_id, er.id
+            ) student_avgs
+            GROUP BY student_avgs.student_id
         ) subquery
         GROUP BY 
             CASE 
-                WHEN subquery.avgScore < 40 THEN '0-39'
-                WHEN subquery.avgScore < 60 THEN '40-59'
-                WHEN subquery.avgScore < 70 THEN '60-69'
-                WHEN subquery.avgScore < 80 THEN '70-79'
-                WHEN subquery.avgScore < 90 THEN '80-89'
+                WHEN subquery.avg_score < 40 THEN '0-39'
+                WHEN subquery.avg_score < 60 THEN '40-59'
+                WHEN subquery.avg_score < 70 THEN '60-69'
+                WHEN subquery.avg_score < 80 THEN '70-79'
+                WHEN subquery.avg_score < 90 THEN '80-89'
                 ELSE '90-100'
             END
         """)
@@ -298,20 +319,27 @@ public interface ExamResultRepository extends JpaRepository<ExamResult, UUID> {
             MIN(subquery.avg_score) as minScore
         FROM (
             SELECT 
-                s.id as student_id,
-                AVG(er.total_score) as avg_score
-            FROM exam_result er 
-            JOIN exam_submission es ON er.submission_id = es.id
-            JOIN student s ON es.student_id = s.id
-            JOIN exam e ON es.exam_id = e.id
-            WHERE e.grade = :grade 
-            AND er.status = 'COMPLETED'
-            AND er.version = (
-                SELECT MAX(er2.version) 
-                FROM exam_result er2 
-                WHERE er2.submission_id = er.submission_id
-            )
-            GROUP BY s.id
+                student_avgs.student_id,
+                AVG(student_avgs.total_score) as avg_score
+            FROM (
+                SELECT 
+                    es.student_id,
+                    er.id as exam_result_id,
+                    SUM(erq.score) as total_score
+                FROM exam_submission es
+                JOIN exam_result er ON er.submission_id = es.id
+                JOIN exam e ON e.id = es.exam_id
+                JOIN exam_result_question erq ON erq.exam_result_id = er.id
+                WHERE e.grade = :grade 
+                AND er.status = 'COMPLETED'
+                AND er.version = (
+                    SELECT MAX(er2.version) 
+                    FROM exam_result er2 
+                    WHERE er2.submission_id = er.submission_id
+                )
+                GROUP BY es.student_id, er.id
+            ) student_avgs
+            GROUP BY student_avgs.student_id
         ) subquery
         """, nativeQuery = true)
     ScoreStatistics findScoreStatisticsByGrade(@Param("grade") Integer grade);
@@ -322,20 +350,20 @@ public interface ExamResultRepository extends JpaRepository<ExamResult, UUID> {
      * @param grade 학년
      * @return 결과 개수
      */
-    @Query("""
+    @Query(value = """
         SELECT COUNT(DISTINCT s.id)
-        FROM ExamResult er 
-        JOIN er.examSubmission es 
-        JOIN es.student s
-        JOIN es.exam e
+        FROM exam_submission es
+        JOIN exam_result er ON er.submission_id = es.id
+        JOIN exam e ON e.id = es.exam_id
+        JOIN student s ON s.id = es.student_id
         WHERE e.grade = :grade 
         AND er.status = 'COMPLETED'
         AND er.version = (
             SELECT MAX(er2.version) 
-            FROM ExamResult er2 
-            WHERE er2.examSubmission = er.examSubmission
+            FROM exam_result er2 
+            WHERE er2.submission_id = er.submission_id
         )
-        """)
+        """, nativeQuery = true)
     Long countStudentsWithResultsByGrade(@Param("grade") Integer grade);
 
     /**
@@ -373,28 +401,38 @@ public interface ExamResultRepository extends JpaRepository<ExamResult, UUID> {
      * @param grade 학년
      * @return 시험별 평균 점수 통계
      */
-    @Query("""
+    @Query(value = """
         SELECT 
             e.id as examId,
-            e.examName as examName,
-            e.createdAt as createdAt,
-            COUNT(DISTINCT er.examSubmission.student.id) as participantCount,
-            AVG(er.totalScore) as averageScore,
-            MAX(er.totalScore) as maxScore,
-            MIN(er.totalScore) as minScore
-        FROM ExamResult er 
-        JOIN er.examSubmission es 
-        JOIN es.exam e
-        WHERE e.grade = :grade 
-        AND er.status = 'COMPLETED'
-        AND er.version = (
-            SELECT MAX(er2.version) 
-            FROM ExamResult er2 
-            WHERE er2.examSubmission = er.examSubmission
-        )
-        GROUP BY e.id, e.examName, e.createdAt
-        ORDER BY e.createdAt DESC
-        """)
+            e.exam_name as examName,
+            e.created_at as createdAt,
+            COUNT(DISTINCT es.student_id) as participantCount,
+            AVG(erScores.total_score) as averageScore,
+            MAX(erScores.total_score) as maxScore,
+            MIN(erScores.total_score) as minScore
+        FROM (
+            SELECT 
+                es.exam_id,
+                es.student_id,
+                SUM(erq.score) as total_score
+            FROM exam_submission es
+            JOIN exam_result er ON er.submission_id = es.id
+            JOIN exam_result_question erq ON erq.exam_result_id = er.id
+            JOIN exam e2 ON e2.id = es.exam_id
+            WHERE e2.grade = :grade 
+            AND er.status = 'COMPLETED'
+            AND er.version = (
+                SELECT MAX(er2.version) 
+                FROM exam_result er2 
+                WHERE er2.submission_id = er.submission_id
+            )
+            GROUP BY es.exam_id, es.student_id
+        ) erScores
+        JOIN exam e ON e.id = erScores.exam_id
+        JOIN exam_submission es ON es.exam_id = e.id
+        GROUP BY e.id, e.exam_name, e.created_at
+        ORDER BY e.created_at DESC
+        """, nativeQuery = true)
     List<ExamAverageStatistics> findExamAverageStatisticsByGrade(@Param("grade") Integer grade);
 
     /**
