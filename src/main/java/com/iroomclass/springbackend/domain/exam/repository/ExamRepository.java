@@ -3,6 +3,7 @@ package com.iroomclass.springbackend.domain.exam.repository;
 import com.iroomclass.springbackend.domain.exam.entity.Exam;
 import com.iroomclass.springbackend.domain.exam.repository.projection.UnitProjection;
 import com.iroomclass.springbackend.domain.exam.repository.projection.UnitBasicProjection;
+import com.iroomclass.springbackend.domain.exam.repository.projection.UnitNameProjection;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
@@ -261,6 +262,27 @@ public interface ExamRepository extends JpaRepository<Exam, UUID> {
         ORDER BY u.displayOrder
         """)
     List<UnitBasicProjection> findBasicUnitsByExamId(@Param("examId") UUID examId);
+
+    /**
+     * 특정 시험에 포함된 단원 이름만 조회 (간소화된 버전)
+     * 
+     * <p>단원의 기본 정보(ID, 이름)만 조회하여 최고 성능을 제공합니다.
+     * 단순한 단원 목록 표시에 사용합니다.</p>
+     * 
+     * @param examId 시험 ID
+     * @return 단원 이름 정보 Projection 목록
+     */
+    @Query("""
+        SELECT DISTINCT u.id AS id, u.unitName AS unitName
+        FROM Exam e 
+        JOIN e.examSheet es 
+        JOIN es.questions eq 
+        JOIN eq.question q 
+        JOIN q.unit u
+        WHERE e.id = :examId
+        ORDER BY u.unitName
+        """)
+    List<UnitNameProjection> findUnitNamesByExamId(@Param("examId") UUID examId);
 
     /**
      * 특정 시험의 단원별 문제 수를 조회

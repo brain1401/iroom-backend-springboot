@@ -94,15 +94,9 @@ public record ExamDto(
         LocalDateTime createdAt
     ) {
         public static ExamSheetInfo from(com.iroomclass.springbackend.domain.exam.entity.ExamSheet examSheet) {
-            Integer totalQuestions = 0;
-            Integer totalPoints = 0;
-            
-            if (examSheet.getQuestions() != null) {
-                totalQuestions = examSheet.getQuestions().size();
-                totalPoints = examSheet.getQuestions().stream()
-                        .mapToInt(esq -> esq.getPoints())
-                        .sum();
-            }
+            // Repository 기반 정확한 데이터 사용 (카르테시안 곱 문제 해결)
+            Integer totalQuestions = examSheet.getTotalQuestions();
+            Integer totalPoints = examSheet.getTotalPoints();
             
             return new ExamSheetInfo(
                     examSheet.getId(),

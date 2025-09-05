@@ -158,6 +158,25 @@ public class ExamSheet {
     }
 
     /**
+     * 총 배점 계산
+     * Repository를 통해 SUM 쿼리로 조회합니다.
+     * 
+     * @return 총 배점
+     */
+    public Integer getTotalPoints() {
+        try {
+            ExamSheetQuestionRepository repository = ApplicationContextProvider.getBean(ExamSheetQuestionRepository.class);
+            return repository.sumPointsByExamSheetId(this.id);
+        } catch (Exception e) {
+            // Repository 조회 실패 시 기본 메모리 기반 계산으로 fallback
+            if (questions == null) return 0;
+            return questions.stream()
+                    .mapToInt(esq -> esq.getPoints())
+                    .sum();
+        }
+    }
+
+    /**
      * 문제 개수 업데이트 (임시 메서드)
      * 
      * @param totalQuestions 총 문제 수

@@ -5,21 +5,26 @@ import com.iroomclass.springbackend.domain.exam.dto.ExamFilterRequest;
 import com.iroomclass.springbackend.domain.exam.dto.ExamSubmissionStatusDto;
 import com.iroomclass.springbackend.domain.exam.dto.ExamWithUnitsDto;
 import com.iroomclass.springbackend.domain.exam.dto.UnitSummaryDto;
+import com.iroomclass.springbackend.domain.exam.dto.UnitNameDto;
+import com.iroomclass.springbackend.domain.exam.repository.projection.UnitNameProjection;
 import com.iroomclass.springbackend.domain.exam.entity.Exam;
 import com.iroomclass.springbackend.domain.exam.repository.ExamRepository;
 import com.iroomclass.springbackend.domain.exam.repository.ExamSubmissionRepository;
 import com.iroomclass.springbackend.domain.exam.repository.ExamSubmissionRepository.ExamSubmissionStats;
+import com.iroomclass.springbackend.domain.exam.repository.ExamSheetQuestionRepository;
 import com.iroomclass.springbackend.domain.exam.repository.projection.UnitProjection;
 import com.iroomclass.springbackend.domain.exam.repository.projection.UnitBasicProjection;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -36,6 +41,7 @@ public class ExamService {
     
     private final ExamRepository examRepository;
     private final ExamSubmissionRepository examSubmissionRepository;
+    private final ExamSheetQuestionRepository examSheetQuestionRepository;
     
     /**
      * 시험 ID로 상세 정보 조회
@@ -238,6 +244,60 @@ public class ExamService {
     }
     
     /**
+     * 통합 필터링 시험 목록 조회 (단원 정보 포함)
+     * 
+     * <p>다양한 필터링 조건을 적용하여 시험 목록을 조회하고, 각 시험에 포함된 단원 정보를 함께 제공합니다.</p>
+     * 
+     * @param filter 필터 조건 (학년, 검색어, 최신 여부)
+     * @param pageable 페이징 정보
+     * @return 단원 정보가 포함된 시험 목록 페이지
+     */
+    public Page<ExamWithUnitsDto> findExamsWithFilterAndUnits(ExamFilterRequest filter, Pageable pageable) {
+        log.info("단원 정보 포함 통합 필터링 시험 조회: {}, page={}, size={}", 
+                filter.getFilterDescription(), pageable.getPageNumber(), pageable.getPageSize());
+        
+        // 1. 먼저 필터링된 시험 목록을 조회
+        Page<ExamDto> examPage = findExamsWithFilter(filter, pageable);
+        
+        if (examPage.isEmpty()) {
+            log.info("필터링 결과가 없습니다: {}", filter.getFilterDescription());
+            return Page.empty(pageable);
+        }
+        
+        // 2. 시험 ID 목록 추출
+        List<UUID> examIds = examPage.getContent().stream()
+                .map(ExamDto::id)
+                .collect(Collectors.toList());
+        
+        log.info("단원 정보 배치 조회 시작: examCount={}", examIds.size());
+        
+        // 3. 배치로 단원 정보가 포함된 시험 데이터 조회
+        List<ExamWithUnitsDto> examsWithUnits = findByIdsWithUnits(examIds);
+        
+        // 4. 원본 페이지의 순서를 유지하면서 ExamWithUnitsDto로 변환
+        Map<UUID, ExamWithUnitsDto> examUnitsMap = examsWithUnits.stream()
+                .collect(Collectors.toMap(ExamWithUnitsDto::id, exam -> exam));
+        
+        List<ExamWithUnitsDto> orderedExamsWithUnits = examPage.getContent().stream()
+                .map(examDto -> examUnitsMap.get(examDto.id()))
+                .filter(Objects::nonNull) // null 체크 (만약 데이터 불일치가 있는 경우)
+                .collect(Collectors.toList());
+        
+        // 5. 새로운 Page 객체 생성 (페이징 정보 유지)
+        Page<ExamWithUnitsDto> result = new PageImpl<>(
+                orderedExamsWithUnits, 
+                pageable, 
+                examPage.getTotalElements()
+        );
+        
+        log.info("단원 정보 포함 통합 필터링 시험 조회 완료: {}, totalElements={}, unitsIncluded={}", 
+                filter.getFilterDescription(), result.getTotalElements(), 
+                orderedExamsWithUnits.stream().mapToInt(ExamWithUnitsDto::getUnitCount).sum());
+        
+        return result;
+    }
+    
+    /**
      * 시험 통계 조회 (통합)
      * 
      * @param statisticsType 통계 타입 ("by-grade" 등)
@@ -298,16 +358,27 @@ public class ExamService {
         Exam exam = examRepository.findByIdWithUnits(examId)
             .orElseThrow(() -> new RuntimeException("시험을 찾을 수 없습니다: " + examId));
         
-        // 기본 시험 DTO 생성
+        // 기본 시험 DTO 생성 및 실제 총점 계산
         ExamDto examDto = ExamDto.fromWithExamSheet(exam);
         
+        // 실제 총점 계산 (ExamSheetQuestion.points 합계)
+        Integer actualTotalPoints = examSheetQuestionRepository.sumPointsByExamSheetId(exam.getExamSheet().getId());
+        ExamDto correctedExamDto = createExamDtoWithCorrectPoints(examDto, actualTotalPoints);
+        
+        // 응시 현황 정보 계산
+        Long actualAttendees = examSubmissionRepository.countByExamId(examId);
+        Long totalAssigned = examSubmissionRepository.countStudentsByGrade(exam.getGrade());
+        ExamWithUnitsDto.ExamAttendanceInfo attendanceInfo = 
+            ExamWithUnitsDto.ExamAttendanceInfo.of(actualAttendees.intValue(), totalAssigned.intValue());
+        
         // 단원 정보 추출 및 변환
-        List<UnitSummaryDto> units = extractUnitsFromExam(exam);
+        List<UnitNameDto> units = extractUnitsFromExam(exam);
         List<ExamWithUnitsDto.UnitQuestionCount> unitQuestionCounts = calculateUnitQuestionCounts(exam);
         
-        log.info("단원 정보 포함 시험 조회 완료: examId={}, unitCount={}", examId, units.size());
+        log.info("단원 정보 포함 시험 조회 완료: examId={}, unitCount={}, attendanceRate={}%", 
+                examId, units.size(), attendanceInfo.attendanceRate());
         
-        return ExamWithUnitsDto.from(examDto, units, unitQuestionCounts);
+        return ExamWithUnitsDto.from(correctedExamDto, attendanceInfo, units, unitQuestionCounts);
     }
 
     /**
@@ -326,20 +397,47 @@ public class ExamService {
             return List.of();
         }
         
-        // 배치 조회 (최적화된 쿼리)
+        // 1. 배치 조회 (최적화된 쿼리)
         List<Exam> exams = examRepository.findByIdInWithUnits(examIds);
         
-        // 각 시험별로 DTO 변환
+        // 2. 배치로 제출 통계 조회 (성능 최적화)
+        Map<UUID, Long> submissionCounts = examSubmissionRepository.countByExamIds(examIds).stream()
+            .collect(Collectors.toMap(
+                stat -> stat.getExamId(),
+                stat -> stat.getSubmissionCount()
+            ));
+        
+        // 3. 학년별 총 학생 수 조회 (중복 제거)
+        Map<Integer, Long> totalStudentsByGrade = exams.stream()
+            .map(Exam::getGrade)
+            .distinct()
+            .collect(Collectors.toMap(
+                grade -> grade,
+                grade -> examSubmissionRepository.countStudentsByGrade(grade)
+            ));
+        
+        // 4. 각 시험별로 DTO 변환
         List<ExamWithUnitsDto> result = exams.stream()
-            .map(exam -> {
+            .map((Exam exam) -> {
                 ExamDto examDto = ExamDto.fromWithExamSheet(exam);
-                List<UnitSummaryDto> units = extractUnitsFromExam(exam);
+                
+                // 응시 현황 정보 계산
+                Long actualAttendees = submissionCounts.getOrDefault(exam.getId(), 0L);
+                Long totalAssigned = totalStudentsByGrade.getOrDefault(exam.getGrade(), 0L);
+                ExamWithUnitsDto.ExamAttendanceInfo attendanceInfo = 
+                    ExamWithUnitsDto.ExamAttendanceInfo.of(actualAttendees.intValue(), totalAssigned.intValue());
+                
+                // 단원 정보 추출
+                List<UnitNameDto> units = extractUnitsFromExam(exam);
                 List<ExamWithUnitsDto.UnitQuestionCount> unitQuestionCounts = calculateUnitQuestionCounts(exam);
-                return ExamWithUnitsDto.from(examDto, units, unitQuestionCounts);
+                
+                return ExamWithUnitsDto.from(examDto, attendanceInfo, units, unitQuestionCounts);
             })
             .collect(Collectors.toList());
         
-        log.info("다중 시험 단원 정보 배치 조회 완료: examCount={}, resultCount={}", examIds.size(), result.size());
+        log.info("다중 시험 단원 정보 배치 조회 완료: examCount={}, resultCount={}, avgAttendanceRate={}%", 
+                examIds.size(), result.size(), 
+                result.stream().mapToDouble(dto -> dto.attendanceInfo().attendanceRate()).average().orElse(0.0));
         return result;
     }
 
@@ -352,6 +450,28 @@ public class ExamService {
      * @param examId 시험 식별자
      * @return 단원 정보 Projection 목록
      */
+    /**
+     * 시험별 단원 이름 정보 조회 (간소화된 버전)
+     * 
+     * <p>단일 시험에 포함된 단원의 이름 정보만 조회합니다.
+     * 복잡한 계층 구조 정보 없이 최고 성능을 제공합니다.</p>
+     * 
+     * @param examId 시험 고유 식별자
+     * @return 단원 이름 정보 목록
+     */
+    public List<UnitNameDto> findUnitNamesByExamId(UUID examId) {
+        log.info("시험별 단원 이름 정보 조회 시작: examId={}", examId);
+        
+        List<UnitNameProjection> nameProjections = examRepository.findUnitNamesByExamId(examId);
+        
+        List<UnitNameDto> units = nameProjections.stream()
+            .map(this::convertProjectionToNameDto)
+            .collect(Collectors.toList());
+        
+        log.info("시험별 단원 이름 정보 조회 완료: examId={}, unitCount={}", examId, units.size());
+        return units;
+    }
+
     public List<UnitSummaryDto> findUnitsByExamId(UUID examId) {
         log.info("시험별 단원 정보 Projection 조회 시작: examId={}", examId);
         
@@ -453,21 +573,12 @@ public class ExamService {
     /**
      * 시험 엔티티에서 단원 정보를 추출하여 DTO로 변환
      */
-    private List<UnitSummaryDto> extractUnitsFromExam(Exam exam) {
+    private List<UnitNameDto> extractUnitsFromExam(Exam exam) {
         return exam.getExamSheet().getQuestions().stream()
             .map(esq -> esq.getQuestion().getUnit())
             .distinct()
-            .map(this::convertUnitToDto)
-            .sorted((u1, u2) -> {
-                // 대분류 > 중분류 > 단원 순서로 정렬
-                int categoryCompare = u1.category().displayOrder().compareTo(u2.category().displayOrder());
-                if (categoryCompare != 0) return categoryCompare;
-                
-                int subcategoryCompare = u1.subcategory().displayOrder().compareTo(u2.subcategory().displayOrder());
-                if (subcategoryCompare != 0) return subcategoryCompare;
-                
-                return u1.displayOrder().compareTo(u2.displayOrder());
-            })
+            .map(this::convertUnitToNameDto)
+            .sorted((u1, u2) -> u1.unitName().compareTo(u2.unitName()))
             .collect(Collectors.toList());
     }
 
@@ -497,6 +608,26 @@ public class ExamService {
                 totalPointsByUnit.get(unit.getId())
             ))
             .collect(Collectors.toList());
+    }
+
+    /**
+     * Unit 엔티티를 UnitNameDto로 변환 (간소화된 버전)
+     */
+    private UnitNameDto convertUnitToNameDto(com.iroomclass.springbackend.domain.unit.entity.Unit unit) {
+        return new UnitNameDto(
+            unit.getId(),
+            unit.getUnitName()
+        );
+    }
+
+    /**
+     * UnitNameProjection을 UnitNameDto로 변환 (간소화된 버전)
+     */
+    private UnitNameDto convertProjectionToNameDto(UnitNameProjection projection) {
+        return new UnitNameDto(
+            projection.getId(),
+            projection.getUnitName()
+        );
     }
 
     /**
@@ -582,6 +713,35 @@ public class ExamService {
             projection.getDisplayOrder(),
             subcategory,
             category
+        );
+    }
+    
+    /**
+     * ExamDto의 totalPoints를 실제 계산된 값으로 수정하여 새 DTO 생성
+     */
+    private ExamDto createExamDtoWithCorrectPoints(ExamDto originalDto, Integer actualTotalPoints) {
+        if (originalDto.examSheetInfo() == null) {
+            return originalDto;
+        }
+        
+        // 수정된 ExamSheetInfo 생성
+        ExamDto.ExamSheetInfo correctedExamSheetInfo = new ExamDto.ExamSheetInfo(
+            originalDto.examSheetInfo().id(),
+            originalDto.examSheetInfo().examName(),
+            originalDto.examSheetInfo().totalQuestions(),
+            actualTotalPoints != null ? actualTotalPoints : 0,
+            originalDto.examSheetInfo().createdAt()
+        );
+        
+        // 수정된 ExamDto 생성
+        return new ExamDto(
+            originalDto.id(),
+            originalDto.examName(),
+            originalDto.grade(),
+            originalDto.content(),
+            originalDto.qrCodeUrl(),
+            originalDto.createdAt(),
+            correctedExamSheetInfo
         );
     }
 }

@@ -106,4 +106,24 @@ public interface ExamSheetQuestionRepository extends JpaRepository<ExamSheetQues
      * @return 해당 순번의 문제
      */
     ExamSheetQuestion findByExamSheetIdAndSeqNo(UUID examSheetId, Integer seqNo);
+
+    /**
+     * 여러 시험지의 총점 배치 조회
+     * 
+     * @param examSheetIds 시험지 ID 목록
+     * @return 시험지별 총점 정보
+     */
+    @Query("SELECT esq.examSheet.id as examSheetId, COALESCE(SUM(esq.points), 0) as totalPoints " +
+           "FROM ExamSheetQuestion esq " +
+           "WHERE esq.examSheet.id IN :examSheetIds " +
+           "GROUP BY esq.examSheet.id")
+    List<ExamSheetPointsStats> sumPointsByExamSheetIds(@Param("examSheetIds") List<UUID> examSheetIds);
+
+    /**
+     * 시험지별 총점 통계를 위한 Projection 인터페이스
+     */
+    interface ExamSheetPointsStats {
+        UUID getExamSheetId();
+        Integer getTotalPoints();
+    }
 }

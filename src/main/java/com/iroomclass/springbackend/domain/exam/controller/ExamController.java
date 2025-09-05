@@ -6,6 +6,7 @@ import com.iroomclass.springbackend.domain.exam.dto.ExamFilterRequest;
 import com.iroomclass.springbackend.domain.exam.dto.ExamSubmissionStatusDto;
 import com.iroomclass.springbackend.domain.exam.dto.ExamWithUnitsDto;
 import com.iroomclass.springbackend.domain.exam.dto.UnitSummaryDto;
+import com.iroomclass.springbackend.domain.exam.dto.UnitNameDto;
 import com.iroomclass.springbackend.domain.exam.repository.ExamRepository;
 import com.iroomclass.springbackend.domain.exam.service.ExamService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -161,6 +162,7 @@ public class ExamController {
             - 학년별: `grade=1,2,3`
             - 시험명 검색: `search=중간고사` (부분 일치, 대소문자 무관)
             - 최근 시험: `recent=true` (최근 생성된 시험만)
+            - 단원 정보 포함: `includeUnits=true` (각 시험의 단원 정보 포함)
             - 복합 필터: 여러 조건 동시 적용 가능
 
             **기본 정렬:** 최신 생성순 (createdAt DESC)
@@ -171,7 +173,8 @@ public class ExamController {
             - 1학년 시험: `/api/exams?grade=1`
             - 검색: `/api/exams?search=중간고사`
             - 최근 시험: `/api/exams?recent=true`
-            - 복합: `/api/exams?grade=2&search=수학&recent=true&page=0&size=10`
+            - 단원 정보 포함: `/api/exams?includeUnits=true`
+            - 복합: `/api/exams?grade=2&search=수학&includeUnits=true&page=0&size=10`
 
             **기존 엔드포인트 통합:**
             - `/api/exams/all` → `/api/exams` (파라미터 없이)
@@ -182,14 +185,16 @@ public class ExamController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "잘못된 요청 파라미터", content = @Content(schema = @Schema(implementation = ApiResponse.class)))
     })
     @GetMapping
-    public ResponseEntity<ApiResponse<Page<ExamDto>>> getExams(
+    public ResponseEntity<ApiResponse<?>> getExams(
             @Parameter(description = "학년 필터 (1, 2, 3)", example = "1") @RequestParam(required = false) Integer grade,
 
             @Parameter(description = "시험명 검색어 (부분 일치)", example = "중간고사") @RequestParam(required = false) String search,
 
             @Parameter(description = "최근 생성된 시험만 조회", example = "true") @RequestParam(required = false) Boolean recent,
+            
+            @Parameter(description = "단원 정보 포함 여부", example = "false") @RequestParam(required = false, defaultValue = "false") Boolean includeUnits,
 
-            @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) @Parameter(hidden = true) Pageable pageable) {
+            @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) @Parameter(hidden = true) Pageable pageable) {
 
         // 필터 객체 생성
         ExamFilterRequest filter = new ExamFilterRequest(grade, search, recent, null);
@@ -209,12 +214,23 @@ public class ExamController {
         }
 
         try {
-            Page<ExamDto> examPage = examService.findExamsWithFilter(filter, pageable);
+            if (includeUnits != null && includeUnits) {
+                // 단원 정보 포함 조회
+                Page<ExamWithUnitsDto> examPage = examService.findExamsWithFilterAndUnits(filter, pageable);
+                
+                log.info("단원 정보 포함 시험 목록 조회 완료: {}, totalElements={}, totalPages={}",
+                        filter.getFilterDescription(), examPage.getTotalElements(), examPage.getTotalPages());
+                
+                return ResponseEntity.ok(ApiResponse.success("단원 정보 포함 시험 목록 조회 성공", examPage));
+            } else {
+                // 기본 시험 정보만 조회
+                Page<ExamDto> examPage = examService.findExamsWithFilter(filter, pageable);
 
-            log.info("시험 목록 조회 완료: {}, totalElements={}, totalPages={}",
-                    filter.getFilterDescription(), examPage.getTotalElements(), examPage.getTotalPages());
+                log.info("시험 목록 조회 완료: {}, totalElements={}, totalPages={}",
+                        filter.getFilterDescription(), examPage.getTotalElements(), examPage.getTotalPages());
 
-            return ResponseEntity.ok(ApiResponse.success("시험 목록 조회 성공", examPage));
+                return ResponseEntity.ok(ApiResponse.success("시험 목록 조회 성공", examPage));
+            }
 
         } catch (Exception e) {
             log.error("시험 목록 조회 실패: {}, error={}", filter.getFilterDescription(), e.getMessage(), e);
@@ -304,22 +320,22 @@ public class ExamController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "시험을 찾을 수 없음")
     })
     @GetMapping("/{examId}/units")
-    public ResponseEntity<ApiResponse<List<UnitSummaryDto>>> getExamUnits(
+    public ResponseEntity<ApiResponse<List<UnitNameDto>>> getExamUnits(
             @Parameter(description = "시험 고유 식별자", required = true) 
             @PathVariable UUID examId) {
         
-        log.info("시험별 단원 정보 조회 요청: examId={}", examId);
+        log.info("시험별 단원 이름 조회 요청: examId={}", examId);
 
         try {
             // 시험 존재 여부 확인을 위해 기본 정보 조회
             examService.findById(examId);
             
-            // 단원 정보 조회
-            List<UnitSummaryDto> units = examService.findUnitsByExamId(examId);
+            // 단원 이름 정보 조회 (간소화된 버전)
+            List<UnitNameDto> units = examService.findUnitNamesByExamId(examId);
             
-            log.info("시험별 단원 정보 조회 완료: examId={}, unitCount={}", examId, units.size());
+            log.info("시험별 단원 이름 조회 완료: examId={}, unitCount={}", examId, units.size());
             
-            return ResponseEntity.ok(ApiResponse.success("시험별 단원 정보 조회 성공", units));
+            return ResponseEntity.ok(ApiResponse.success("시험별 단원 이름 조회 성공", units));
             
         } catch (RuntimeException e) {
             log.warn("시험별 단원 정보 조회 실패: examId={}, error={}", examId, e.getMessage());

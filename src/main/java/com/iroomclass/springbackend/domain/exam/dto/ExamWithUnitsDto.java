@@ -38,8 +38,11 @@ public record ExamWithUnitsDto(
     @Schema(description = "시험지 정보")
     ExamSheetInfo examSheetInfo,
     
-    @Schema(description = "시험에 포함된 모든 단원 정보")
-    List<UnitSummaryDto> units,
+    @Schema(description = "시험 응시 현황 정보")
+    ExamAttendanceInfo attendanceInfo,
+    
+    @Schema(description = "시험에 포함된 단원 이름 목록")
+    List<UnitNameDto> units,
     
     @Schema(description = "단원별 문제 수 통계")
     List<UnitQuestionCount> unitQuestionCounts
@@ -82,9 +85,45 @@ public record ExamWithUnitsDto(
     ) implements Serializable {}
 
     /**
-     * 기존 ExamDto에서 단원 정보를 추가하여 생성
+     * 시험 응시 현황 정보
      */
-    public static ExamWithUnitsDto from(ExamDto examDto, List<UnitSummaryDto> units, List<UnitQuestionCount> unitQuestionCounts) {
+    @Schema(description = "시험 응시 현황 정보")
+    public record ExamAttendanceInfo(
+        @Schema(description = "실제 응시한 학생 수", example = "23")
+        Integer actualAttendees,
+        
+        @Schema(description = "배정된 총 학생 수", example = "40")
+        Integer totalAssigned,
+        
+        @Schema(description = "응시율 (백분율)", example = "57.5")
+        Double attendanceRate,
+        
+        @Schema(description = "응시 현황 표시 문자열", example = "23/40")
+        String displayText
+    ) implements Serializable {
+        
+        /**
+         * 응시 현황 정보 생성
+         * 
+         * @param actualAttendees 실제 응시 학생 수
+         * @param totalAssigned 배정된 총 학생 수
+         * @return 응시 현황 정보
+         */
+        public static ExamAttendanceInfo of(Integer actualAttendees, Integer totalAssigned) {
+            if (actualAttendees == null) actualAttendees = 0;
+            if (totalAssigned == null || totalAssigned == 0) totalAssigned = 0;
+            
+            double rate = totalAssigned > 0 ? (double) actualAttendees / totalAssigned * 100 : 0.0;
+            String displayText = actualAttendees + "/" + totalAssigned;
+            
+            return new ExamAttendanceInfo(actualAttendees, totalAssigned, rate, displayText);
+        }
+    }
+
+    /**
+     * 기존 ExamDto에서 단원 정보 및 응시 현황을 추가하여 생성
+     */
+    public static ExamWithUnitsDto from(ExamDto examDto, ExamAttendanceInfo attendanceInfo, List<UnitNameDto> units, List<UnitQuestionCount> unitQuestionCounts) {
         // Convert ExamDto.ExamSheetInfo to ExamWithUnitsDto.ExamSheetInfo
         ExamSheetInfo examSheetInfo = null;
         if (examDto.examSheetInfo() != null) {
@@ -105,6 +144,7 @@ public record ExamWithUnitsDto(
             examDto.qrCodeUrl(),
             examDto.createdAt(),
             examSheetInfo,
+            attendanceInfo,
             units,
             unitQuestionCounts
         );
@@ -119,6 +159,7 @@ public record ExamWithUnitsDto(
         if (grade == null || grade < 1 || grade > 3) throw new IllegalArgumentException("grade는 1-3 사이여야 합니다");
         if (createdAt == null) throw new IllegalArgumentException("createdAt은 필수입니다");
         if (examSheetInfo == null) throw new IllegalArgumentException("examSheetInfo는 필수입니다");
+        if (attendanceInfo == null) throw new IllegalArgumentException("attendanceInfo는 필수입니다");
         if (units == null) throw new IllegalArgumentException("units는 필수입니다");
         if (unitQuestionCounts == null) throw new IllegalArgumentException("unitQuestionCounts는 필수입니다");
     }
