@@ -145,12 +145,12 @@ public class OrderService {
 ```
 
 #### 계층별 책임
-| 계층 | 책임 | 의존성 |
-|------|------|--------|
-| **Controller** | HTTP 요청/응답 처리, 인증/인가 | Service |
-| **Service** | 비즈니스 로직, 트랜잭션 관리 | Repository, Entity |
-| **Repository** | 데이터 접근, 쿼리 실행 | Entity |
-| **Entity** | 도메인 모델, 비즈니스 규칙 | 없음 |
+| 계층           | 책임                           | 의존성             |
+| -------------- | ------------------------------ | ------------------ |
+| **Controller** | HTTP 요청/응답 처리, 인증/인가 | Service            |
+| **Service**    | 비즈니스 로직, 트랜잭션 관리   | Repository, Entity |
+| **Repository** | 데이터 접근, 쿼리 실행         | Entity             |
+| **Entity**     | 도메인 모델, 비즈니스 규칙     | 없음               |
 
 ---
 
@@ -167,7 +167,7 @@ public class OrderService {
 #### 구현 패턴
 ```java
 @RestController
-@RequestMapping("/api/users")
+@RequestMapping("/users")
 @RequiredArgsConstructor
 @Tag(name = "사용자 API")
 public class UserController {
@@ -485,10 +485,10 @@ public class SecurityConfig {
             .sessionManagement(session -> 
                 session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/auth/**").permitAll()
-                .requestMatchers("/api/public/**").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/products/**").permitAll()
-                .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                .requestMatchers("/auth/**").permitAll()
+                .requestMatchers("/public/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/products/**").permitAll()
+                .requestMatchers("/admin/**").hasRole("ADMIN")
                 .anyRequest().authenticated())
             .oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()));
         

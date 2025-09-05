@@ -141,4 +141,12 @@ public interface QuestionRepository extends JpaRepository<Question, UUID> {
      * @return 문제 수
      */
     Long countByQuestionType(Question.QuestionType questionType);
+    
+    /**
+     * 여러 단원의 문제들을 한 번에 조회 (N+1 문제 방지)
+     * 
+     * @param unitIds 단원 ID 목록
+     * @return 해당 단원들의 모든 문제 목록
+     */
+    List<Question> findByUnitIdIn(List<UUID> unitIds);
 }

@@ -4,6 +4,8 @@ import java.util.List;
 import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.iroomclass.springbackend.domain.unit.entity.Unit;
@@ -62,4 +64,15 @@ public interface UnitRepository extends JpaRepository<Unit, UUID> {
      * @return 해당 중분류에 속한 세부단원 목록 (표시 순서대로 정렬)
      */
     List<Unit> findBySubcategoryOrderByDisplayOrder(UnitSubcategory subcategory);
+    
+    /**
+     * Unit ID 목록으로 세부단원 조회
+     * 
+     * Question과 함께 조회할 때 사용됩니다.
+     * 
+     * @param unitIds Unit ID 목록
+     * @return 해당 Unit 목록 (표시 순서대로 정렬)
+     */
+    @Query("SELECT u FROM Unit u WHERE u.id IN :unitIds ORDER BY u.displayOrder")
+    List<Unit> findByIdInOrderByDisplayOrder(@Param("unitIds") List<UUID> unitIds);
 }

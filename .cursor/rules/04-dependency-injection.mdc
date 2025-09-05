@@ -27,7 +27,7 @@ alwaysApply: false
  * 학생 로그인, 정보 조회 등의 기능을 제공합니다.
  */
 @RestController
-@RequestMapping("/api/users")
+@RequestMapping("/users")
 @RequiredArgsConstructor  // Lombok으로 생성자 자동 생성
 @Tag(name = "사용자 API", description = "사용자 관리 관련 API")
 @Validated
@@ -56,7 +56,7 @@ public class UserController {
  * 시험 답안 관리 컨트롤러
  */
 @RestController
-@RequestMapping("/api/exam-answers")
+@RequestMapping("/exam-answers")
 @RequiredArgsConstructor
 @Tag(name = "시험 답안 API", description = "답안 제출 및 관리 API")
 public class ExamAnswerController {

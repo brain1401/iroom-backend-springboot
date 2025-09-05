@@ -1,5 +1,7 @@
 package com.iroomclass.springbackend.domain.auth.service;
 
+import com.iroomclass.springbackend.domain.auth.dto.StudentDto;
+import com.iroomclass.springbackend.domain.auth.dto.StudentUpsertRequest;
 import com.iroomclass.springbackend.domain.auth.dto.VerifyStudentRequest;
 import com.iroomclass.springbackend.domain.auth.dto.VerifyTeacherRequest;
 import com.iroomclass.springbackend.domain.auth.dto.VerificationResponse;
@@ -106,6 +108,58 @@ public class AuthVerificationService {
         } catch (Exception e) {
             log.error("선생님 검증 중 오류 발생: 사용자명={}, 오류={}", request.username(), e.getMessage(), e);
             return VerificationResponse.failure();
+        }
+    }
+
+    /**
+     * 학생 정보 Upsert (등록 또는 조회)
+     * 
+     * <p>
+     * 학생 정보가 데이터베이스에 없으면 새로 등록하고,
+     * 이미 있으면 기존 정보를 반환합니다.
+     * 3-factor 인증 (이름, 전화번호, 생년월일)을 통해 학생을 식별합니다.
+     * </p>
+     * 
+     * @param request 학생 등록/조회 요청 데이터
+     * @return 등록되거나 조회된 학생 정보 DTO
+     */
+    @Transactional
+    public StudentDto upsertStudent(StudentUpsertRequest request) {
+        log.info("학생 정보 Upsert 시작: 이름={}, 전화번호={}, 생년월일={}",
+                request.name(), request.phone(), request.birthDate());
+
+        try {
+            // 기존 학생 존재 여부 확인
+            Optional<Student> existingStudent = studentRepository
+                    .findByNameAndPhoneAndBirthDate(
+                            request.name(),
+                            request.phone(),
+                            request.birthDate());
+
+            if (existingStudent.isPresent()) {
+                // 기존 학생 정보 반환
+                Student student = existingStudent.get();
+                log.info("기존 학생 정보 조회: 이름={}, 학생ID={}", request.name(), student.getId());
+                return StudentDto.from(student);
+            } else {
+                // 새 학생 등록
+                Student newStudent = Student.builder()
+                        .name(request.name())
+                        .phone(request.phone())
+                        .birthDate(request.birthDate())
+                        .build();
+                
+                Student savedStudent = studentRepository.saveAndFlush(newStudent);
+                // JPA 엔티티를 다시 조회하여 auditing 필드(createdAt, updatedAt) 확실히 가져오기
+                Student refreshedStudent = studentRepository.findById(savedStudent.getId())
+                        .orElse(savedStudent); // fallback to savedStudent if somehow not found
+                log.info("새 학생 등록 완료: 이름={}, 학생ID={}", request.name(), refreshedStudent.getId());
+                return StudentDto.from(refreshedStudent);
+            }
+
+        } catch (Exception e) {
+            log.error("학생 정보 Upsert 중 오류 발생: 이름={}, 오류={}", request.name(), e.getMessage(), e);
+            throw new RuntimeException("학생 정보 처리 중 오류가 발생했습니다: " + e.getMessage(), e);
         }
     }
 }

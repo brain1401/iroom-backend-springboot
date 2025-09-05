@@ -1,8 +1,13 @@
 package com.iroomclass.springbackend.domain.exam.service;
 
 import com.iroomclass.springbackend.domain.exam.dto.ExamSheetDto;
+import com.iroomclass.springbackend.domain.exam.dto.CreateExamSheetRequest;
 import com.iroomclass.springbackend.domain.exam.entity.ExamSheet;
+import com.iroomclass.springbackend.domain.exam.entity.ExamSheetQuestion;
+import com.iroomclass.springbackend.domain.exam.entity.Question;
 import com.iroomclass.springbackend.domain.exam.repository.ExamSheetRepository;
+import com.iroomclass.springbackend.domain.exam.repository.ExamSheetQuestionRepository;
+import com.iroomclass.springbackend.domain.exam.repository.QuestionRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -11,9 +16,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
+import java.util.ArrayList;
+import com.iroomclass.springbackend.domain.exam.exception.QuestionNotFoundException;
+import com.iroomclass.springbackend.domain.exam.exception.GradeMismatchException;
 
 /**
  * 시험지 관련 비즈니스 로직 처리 서비스
@@ -27,24 +34,137 @@ import java.util.stream.Collectors;
 public class ExamSheetService {
     
     private final ExamSheetRepository examSheetRepository;
+    private final QuestionRepository questionRepository;
+    private final ExamSheetQuestionRepository examSheetQuestionRepository;
     
     /**
-     * 시험지 ID로 상세 정보 조회
+     * 시험지 생성
+     * 
+     * @param request 시험지 생성 요청 정보
+     * @return 생성된 시험지 DTO
+     * @throws RuntimeException 문제를 찾을 수 없거나 학년이 맞지 않을 때
+     */
+    @Transactional
+    public ExamSheetDto createExamSheet(CreateExamSheetRequest request) {
+        log.info("시험지 생성 시작: examName={}, grade={}, questionCount={}", 
+                request.examName(), request.grade(), request.questions().size());
+        
+        // 1. 문제 ID 추출 및 중복 확인
+        List<UUID> questionIds = request.questions().stream()
+                .map(CreateExamSheetRequest.ExamQuestionRequest::questionId)
+                .toList();
+        
+        // 중복 문제 ID 확인
+        Set<UUID> uniqueQuestionIds = new HashSet<>(questionIds);
+        if (uniqueQuestionIds.size() != questionIds.size()) {
+            throw new IllegalArgumentException("중복된 문제가 포함되어 있습니다");
+        }
+        
+        // 2. 문제들 존재 여부 확인 및 조회 (Unit 정보와 함께)
+        List<Question> questions = questionRepository.findAllById(questionIds);
+        if (questions.size() != questionIds.size()) {
+            Set<UUID> foundIds = questions.stream()
+                    .map(Question::getId)
+                    .collect(Collectors.toSet());
+            Set<UUID> missingIds = questionIds.stream()
+                    .filter(id -> !foundIds.contains(id))
+                    .collect(Collectors.toSet());
+            throw QuestionNotFoundException.forMultipleIds(new ArrayList<>(missingIds));
+        }
+        
+        // 3. 문제들의 학년 검증
+        List<Question> invalidGradeQuestions = questions.stream()
+                .filter(q -> q.getUnit() == null || !request.grade().equals(q.getUnit().getGrade()))
+                .toList();
+        
+        if (!invalidGradeQuestions.isEmpty()) {
+            List<UUID> invalidIds = invalidGradeQuestions.stream()
+                    .map(Question::getId)
+                    .toList();
+            throw GradeMismatchException.forQuestions(request.grade(), invalidIds);
+        }
+        
+        // 4. 문제 순서 검증 (1부터 연속해서 있는지)
+        List<Integer> questionOrders = request.questions().stream()
+                .map(CreateExamSheetRequest.ExamQuestionRequest::questionOrder)
+                .sorted()
+                .toList();
+        
+        for (int i = 0; i < questionOrders.size(); i++) {
+            if (!questionOrders.get(i).equals(i + 1)) {
+                throw new IllegalArgumentException("문제 순서는 1부터 연속해서 설정되어야 합니다. 누락된 순서: " + (i + 1));
+            }
+        }
+        
+        // 5. 시험지명 중복 검증
+        if (examSheetRepository.existsByGradeAndExamName(request.grade(), request.examName())) {
+            throw new IllegalArgumentException("해당 학년에서 같은 이름의 시험지가 이미 존재합니다: " + request.examName());
+        }
+        
+        // 6. ExamSheet 엔티티 생성 및 저장
+        ExamSheet examSheet = ExamSheet.builder()
+                .examName(request.examName())
+                .grade(request.grade())
+                .questions(new ArrayList<>()) // 빈 리스트로 초기화
+                .build();
+        
+        ExamSheet savedExamSheet = examSheetRepository.save(examSheet);
+        log.info("시험지 저장 완료: examSheetId={}, examName={}", savedExamSheet.getId(), savedExamSheet.getExamName());
+        
+        // 7. Question ID를 Question 객체로 매핑 (성능 최적화)
+        Map<UUID, Question> questionMap = questions.stream()
+                .collect(Collectors.toMap(Question::getId, q -> q));
+        
+        // 8. ExamSheetQuestion들 생성 및 저장 (배치 저장)
+        List<ExamSheetQuestion> examSheetQuestions = request.questions().stream()
+                .map(questionRequest -> {
+                    Question question = questionMap.get(questionRequest.questionId());
+                    return ExamSheetQuestion.builder()
+                            .examSheet(savedExamSheet)
+                            .question(question)
+                            .seqNo(questionRequest.questionOrder())
+                            .points(questionRequest.points())
+                            .selectionMethod(ExamSheetQuestion.SelectionMethod.MANUAL)
+                            .build();
+                })
+                .toList();
+        
+        List<ExamSheetQuestion> savedExamSheetQuestions = examSheetQuestionRepository.saveAll(examSheetQuestions);
+        log.info("시험지 문제 저장 완료: examSheetId={}, questionCount={}", 
+                savedExamSheet.getId(), savedExamSheetQuestions.size());
+        
+        // 9. 저장된 문제 정보를 ExamSheet에 설정 (DTO 변환을 위해)
+        savedExamSheet.getQuestions().addAll(savedExamSheetQuestions);
+        
+        // 10. DTO 변환 및 반환
+        ExamSheetDto result = ExamSheetDto.fromWithQuestions(savedExamSheet);
+        
+        log.info("시험지 생성 완료: examSheetId={}, examName={}, grade={}, totalQuestions={}, totalPoints={}", 
+                result.id(), result.examName(), result.grade(), result.totalQuestions(), result.totalPoints());
+        
+        return result;
+    }
+    
+    /**
+     * 시험지 ID로 상세 정보 조회 (Unit 정보 포함)
      * 
      * @param examSheetId 시험지 식별자
-     * @return 시험지 상세 정보 DTO (문제 목록 포함)
+     * @return 시험지 상세 정보 DTO (문제 목록 및 Unit 통계 포함)
      * @throws RuntimeException 시험지를 찾을 수 없을 때
      */
     public ExamSheetDto findById(UUID examSheetId) {
         log.info("시험지 상세 조회 시작: examSheetId={}", examSheetId);
         
-        ExamSheet examSheet = examSheetRepository.findByIdWithQuestions(examSheetId)
+        ExamSheet examSheet = examSheetRepository.findByIdWithQuestionsAndUnits(examSheetId)
             .orElseThrow(() -> new RuntimeException("시험지를 찾을 수 없습니다: " + examSheetId));
         
         log.info("시험지 상세 조회 완료: examSheetId={}, examName={}, questionCount={}", 
                 examSheetId, examSheet.getExamName(), examSheet.getTotalQuestions());
         
-        return ExamSheetDto.fromWithQuestions(examSheet);
+        // UnitSummary 생성
+        ExamSheetDto.UnitSummary unitSummary = ExamSheetDto.UnitSummary.from(examSheet.getQuestions());
+        
+        return ExamSheetDto.fromWithUnitSummary(examSheet, unitSummary);
     }
     
     /**
@@ -77,12 +197,15 @@ public class ExamSheetService {
         log.info("학년별 시험지 목록 조회: grade={}, page={}, size={}", 
                 grade, pageable.getPageNumber(), pageable.getPageSize());
         
-        Page<ExamSheet> examSheetPage = examSheetRepository.findByGradeOrderByCreatedAtDesc(grade, pageable);
+        Page<ExamSheet> examSheetPage = examSheetRepository.findByGradeWithQuestionsAndUnits(grade, pageable);
         
         log.info("학년별 시험지 목록 조회 완료: grade={}, totalElements={}, totalPages={}", 
                 grade, examSheetPage.getTotalElements(), examSheetPage.getTotalPages());
         
-        return examSheetPage.map(ExamSheetDto::from);
+        return examSheetPage.map(examSheet -> {
+            ExamSheetDto.UnitSummary unitSummary = ExamSheetDto.UnitSummary.from(examSheet.getQuestions());
+            return ExamSheetDto.fromWithUnitSummary(examSheet, unitSummary);
+        });
     }
     
     /**
@@ -95,12 +218,15 @@ public class ExamSheetService {
         log.info("전체 시험지 목록 조회: page={}, size={}", 
                 pageable.getPageNumber(), pageable.getPageSize());
         
-        Page<ExamSheet> examSheetPage = examSheetRepository.findAllByOrderByCreatedAtDesc(pageable);
+        Page<ExamSheet> examSheetPage = examSheetRepository.findAllWithQuestionsAndUnits(pageable);
         
         log.info("전체 시험지 목록 조회 완료: totalElements={}, totalPages={}", 
                 examSheetPage.getTotalElements(), examSheetPage.getTotalPages());
         
-        return examSheetPage.map(ExamSheetDto::from);
+        return examSheetPage.map(examSheet -> {
+            ExamSheetDto.UnitSummary unitSummary = ExamSheetDto.UnitSummary.from(examSheet.getQuestions());
+            return ExamSheetDto.fromWithUnitSummary(examSheet, unitSummary);
+        });
     }
     
     /**
@@ -115,12 +241,15 @@ public class ExamSheetService {
                 examName, pageable.getPageNumber(), pageable.getPageSize());
         
         Page<ExamSheet> examSheetPage = examSheetRepository
-            .findByExamNameContainingIgnoreCaseOrderByCreatedAtDesc(examName, pageable);
+            .findByExamNameContainingIgnoreCaseWithQuestionsAndUnits(examName, pageable);
         
         log.info("시험지명 검색 완료: examName={}, totalElements={}", 
                 examName, examSheetPage.getTotalElements());
         
-        return examSheetPage.map(ExamSheetDto::from);
+        return examSheetPage.map(examSheet -> {
+            ExamSheetDto.UnitSummary unitSummary = ExamSheetDto.UnitSummary.from(examSheet.getQuestions());
+            return ExamSheetDto.fromWithUnitSummary(examSheet, unitSummary);
+        });
     }
     
     /**
@@ -135,12 +264,15 @@ public class ExamSheetService {
         log.info("학년 및 시험지명 복합 검색: grade={}, examName={}", grade, examName);
         
         Page<ExamSheet> examSheetPage = examSheetRepository
-            .findByGradeAndExamNameContainingIgnoreCaseOrderByCreatedAtDesc(grade, examName, pageable);
+            .findByGradeAndExamNameContainingIgnoreCaseWithQuestionsAndUnits(grade, examName, pageable);
         
         log.info("학년 및 시험지명 복합 검색 완료: grade={}, examName={}, totalElements={}", 
                 grade, examName, examSheetPage.getTotalElements());
         
-        return examSheetPage.map(ExamSheetDto::from);
+        return examSheetPage.map(examSheet -> {
+            ExamSheetDto.UnitSummary unitSummary = ExamSheetDto.UnitSummary.from(examSheet.getQuestions());
+            return ExamSheetDto.fromWithUnitSummary(examSheet, unitSummary);
+        });
     }
     
     /**
@@ -345,23 +477,35 @@ public class ExamSheetService {
         if (grade != null && search != null && !search.trim().isEmpty()) {
             // 학년 + 검색어
             return examSheetRepository
-                .findByGradeAndExamNameContainingIgnoreCaseOrderByCreatedAtDesc(grade, search.trim(), pageable)
-                .map(ExamSheetDto::from);
+                .findByGradeAndExamNameContainingIgnoreCaseWithQuestionsAndUnits(grade, search.trim(), pageable)
+                .map(examSheet -> {
+                    ExamSheetDto.UnitSummary unitSummary = ExamSheetDto.UnitSummary.from(examSheet.getQuestions());
+                    return ExamSheetDto.fromWithUnitSummary(examSheet, unitSummary);
+                });
         } else if (grade != null) {
             // 학년만
             return examSheetRepository
-                .findByGradeOrderByCreatedAtDesc(grade, pageable)
-                .map(ExamSheetDto::from);
+                .findByGradeWithQuestionsAndUnits(grade, pageable)
+                .map(examSheet -> {
+                    ExamSheetDto.UnitSummary unitSummary = ExamSheetDto.UnitSummary.from(examSheet.getQuestions());
+                    return ExamSheetDto.fromWithUnitSummary(examSheet, unitSummary);
+                });
         } else if (search != null && !search.trim().isEmpty()) {
             // 검색어만
             return examSheetRepository
-                .findByExamNameContainingIgnoreCaseOrderByCreatedAtDesc(search.trim(), pageable)
-                .map(ExamSheetDto::from);
+                .findByExamNameContainingIgnoreCaseWithQuestionsAndUnits(search.trim(), pageable)
+                .map(examSheet -> {
+                    ExamSheetDto.UnitSummary unitSummary = ExamSheetDto.UnitSummary.from(examSheet.getQuestions());
+                    return ExamSheetDto.fromWithUnitSummary(examSheet, unitSummary);
+                });
         } else {
             // 전체 조회
             return examSheetRepository
-                .findAllByOrderByCreatedAtDesc(pageable)
-                .map(ExamSheetDto::from);
+                .findAllWithQuestionsAndUnits(pageable)
+                .map(examSheet -> {
+                    ExamSheetDto.UnitSummary unitSummary = ExamSheetDto.UnitSummary.from(examSheet.getQuestions());
+                    return ExamSheetDto.fromWithUnitSummary(examSheet, unitSummary);
+                });
         }
     }
     

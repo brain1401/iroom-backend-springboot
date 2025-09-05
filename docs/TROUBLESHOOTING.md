@@ -323,7 +323,7 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http.authorizeHttpRequests(auth -> auth
-            .requestMatchers("/api/swagger-ui/**", "/api/v3/api-docs/**").permitAll()
+            .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
             // ...
         );
         return http.build();
@@ -819,12 +819,12 @@ curl http://localhost:3055/api/system/health
 
 ### 팀 내 지원
 
-| 문제 유형 | 담당자 | 연락처 | 응답 시간 |
-|-----------|--------|--------|-----------|
-| **인프라 문제** | DevOps 팀 | #devops-support | 30분 내 |
-| **데이터베이스** | DBA 팀 | #database-support | 1시간 내 |
-| **애플리케이션** | 백엔드 팀 리드 | @backend-lead | 2시간 내 |
-| **보안 문제** | 보안 팀 | #security-team | 즉시 |
+| 문제 유형        | 담당자         | 연락처            | 응답 시간 |
+| ---------------- | -------------- | ----------------- | --------- |
+| **인프라 문제**  | DevOps 팀      | #devops-support   | 30분 내   |
+| **데이터베이스** | DBA 팀         | #database-support | 1시간 내  |
+| **애플리케이션** | 백엔드 팀 리드 | @backend-lead     | 2시간 내  |
+| **보안 문제**    | 보안 팀        | #security-team    | 즉시      |
 
 ### 외부 참고 자료
 

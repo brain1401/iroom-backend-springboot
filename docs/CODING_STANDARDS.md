@@ -51,11 +51,11 @@ com.iroomclass.spring_backend/
 
 ### 패키지 명명 규칙
 
-| 구분 | 규칙 | 예시 |
-|------|------|------|
-| **도메인 패키지** | 소문자, 단수형 | `user`, `order`, `product` |
-| **계층 패키지** | 계층명 복수형 | `controllers`, `services`, `repositories` |
-| **DTO 패키지** | `dto` 고정 | `dto` |
+| 구분              | 규칙           | 예시                                      |
+| ----------------- | -------------- | ----------------------------------------- |
+| **도메인 패키지** | 소문자, 단수형 | `user`, `order`, `product`                |
+| **계층 패키지**   | 계층명 복수형  | `controllers`, `services`, `repositories` |
+| **DTO 패키지**    | `dto` 고정     | `dto`                                     |
 
 ---
 
@@ -159,7 +159,7 @@ private static final String COMPLEX_QUERY = """
 #### ✅ 권장: 생성자 주입
 ```java
 @RestController
-@RequestMapping("/api/users")
+@RequestMapping("/users")
 @RequiredArgsConstructor  // Lombok으로 생성자 생성
 @Tag(name = "사용자 API", description = "사용자 관리 API")
 public class UserController {
@@ -246,7 +246,7 @@ public class UserService {
 ```java
 @Tag(name = "사용자 API", description = "사용자 관리 관련 API")
 @RestController
-@RequestMapping("/api/users")
+@RequestMapping("/users")
 public class UserController {
     
     @Operation(
@@ -525,7 +525,7 @@ class UserControllerIntegrationTest {
         
         // When
         ResponseEntity<ApiResponse<UserDto>> response = restTemplate.postForEntity(
-            "/api/users", 
+            "/users", 
             request, 
             new ParameterizedTypeReference<ApiResponse<UserDto>>() {}
         );

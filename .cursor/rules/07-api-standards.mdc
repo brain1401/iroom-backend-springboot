@@ -73,7 +73,7 @@ public record ApiResponse<T>(
  * 사용자 관리 컨트롤러
  */
 @RestController
-@RequestMapping("/api/users")
+@RequestMapping("/users")
 @RequiredArgsConstructor
 @Tag(name = "사용자 API", description = "학생 로그인 및 정보 관리 API")
 @Validated
@@ -154,7 +154,7 @@ public class UserController {
 ### ✅ 상태 코드 적용 예시
 ```java
 @RestController
-@RequestMapping("/api/exams")
+@RequestMapping("/exams")
 @RequiredArgsConstructor
 @Tag(name = "시험 관리 API")
 public class ExamController {
@@ -372,7 +372,7 @@ public ApiResponse<Page<QuestionListResponse>> getQuestions(
  * 시험 답안 관리 컨트롤러
  */
 @RestController
-@RequestMapping("/api/exam-answers")
+@RequestMapping("/exam-answers")
 @RequiredArgsConstructor
 @Tag(
     name = "시험 답안 API", 

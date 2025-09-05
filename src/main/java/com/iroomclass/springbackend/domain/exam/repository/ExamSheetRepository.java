@@ -31,6 +31,91 @@ public interface ExamSheetRepository extends JpaRepository<ExamSheet, UUID> {
     Optional<ExamSheet> findByIdWithQuestions(@Param("examSheetId") UUID examSheetId);
     
     /**
+     * 시험지 ID로 상세 조회 (문제 목록 및 단원 정보 포함)
+     * N+1 문제 방지를 위해 Question -> Unit -> Subcategory -> Category 전체 계층을 한 번에 조회
+     * 
+     * @param examSheetId 시험지 식별자
+     * @return 시험지 정보 (문제 목록 및 단원 정보 포함)
+     */
+    @Query("SELECT DISTINCT es FROM ExamSheet es " +
+           "LEFT JOIN FETCH es.questions esq " +
+           "LEFT JOIN FETCH esq.question q " +
+           "LEFT JOIN FETCH q.unit u " +
+           "LEFT JOIN FETCH u.subcategory sc " +
+           "LEFT JOIN FETCH sc.category c " +
+           "WHERE es.id = :examSheetId")
+    Optional<ExamSheet> findByIdWithQuestionsAndUnits(@Param("examSheetId") UUID examSheetId);
+    
+    /**
+     * 시험지 목록을 단원 정보와 함께 효율적으로 조회 (페이징)
+     * N+1 문제 방지를 위해 필요한 단원 정보를 한 번에 조회
+     * 
+     * @param pageable 페이징 정보
+     * @return 시험지 목록 (단원 정보 포함)
+     */
+    @Query(value = "SELECT DISTINCT es FROM ExamSheet es " +
+           "LEFT JOIN FETCH es.questions esq " +
+           "LEFT JOIN FETCH esq.question q " +
+           "LEFT JOIN FETCH q.unit u " +
+           "LEFT JOIN FETCH u.subcategory sc " +
+           "LEFT JOIN FETCH sc.category c",
+           countQuery = "SELECT COUNT(DISTINCT es) FROM ExamSheet es")
+    Page<ExamSheet> findAllWithQuestionsAndUnits(Pageable pageable);
+    
+    /**
+     * 학년별 시험지 목록을 단원 정보와 함께 효율적으로 조회 (페이징)
+     * 
+     * @param grade 학년
+     * @param pageable 페이징 정보
+     * @return 시험지 목록 (단원 정보 포함)
+     */
+    @Query(value = "SELECT DISTINCT es FROM ExamSheet es " +
+           "LEFT JOIN FETCH es.questions esq " +
+           "LEFT JOIN FETCH esq.question q " +
+           "LEFT JOIN FETCH q.unit u " +
+           "LEFT JOIN FETCH u.subcategory sc " +
+           "LEFT JOIN FETCH sc.category c " +
+           "WHERE es.grade = :grade",
+           countQuery = "SELECT COUNT(DISTINCT es) FROM ExamSheet es WHERE es.grade = :grade")
+    Page<ExamSheet> findByGradeWithQuestionsAndUnits(@Param("grade") Integer grade, Pageable pageable);
+    
+    /**
+     * 시험지명으로 검색하면서 단원 정보와 함께 효율적으로 조회
+     * 
+     * @param examName 검색할 시험지명
+     * @param pageable 페이징 정보
+     * @return 검색된 시험지 목록 (단원 정보 포함)
+     */
+    @Query(value = "SELECT DISTINCT es FROM ExamSheet es " +
+           "LEFT JOIN FETCH es.questions esq " +
+           "LEFT JOIN FETCH esq.question q " +
+           "LEFT JOIN FETCH q.unit u " +
+           "LEFT JOIN FETCH u.subcategory sc " +
+           "LEFT JOIN FETCH sc.category c " +
+           "WHERE es.examName LIKE %:examName%",
+           countQuery = "SELECT COUNT(DISTINCT es) FROM ExamSheet es WHERE es.examName LIKE %:examName%")
+    Page<ExamSheet> findByExamNameContainingIgnoreCaseWithQuestionsAndUnits(@Param("examName") String examName, Pageable pageable);
+    
+    /**
+     * 학년 + 시험지명 복합 검색하면서 단원 정보와 함께 효율적으로 조회
+     * 
+     * @param grade 학년
+     * @param examName 검색할 시험지명
+     * @param pageable 페이징 정보
+     * @return 검색된 시험지 목록 (단원 정보 포함)
+     */
+    @Query(value = "SELECT DISTINCT es FROM ExamSheet es " +
+           "LEFT JOIN FETCH es.questions esq " +
+           "LEFT JOIN FETCH esq.question q " +
+           "LEFT JOIN FETCH q.unit u " +
+           "LEFT JOIN FETCH u.subcategory sc " +
+           "LEFT JOIN FETCH sc.category c " +
+           "WHERE es.grade = :grade AND es.examName LIKE %:examName%",
+           countQuery = "SELECT COUNT(DISTINCT es) FROM ExamSheet es WHERE es.grade = :grade AND es.examName LIKE %:examName%")
+    Page<ExamSheet> findByGradeAndExamNameContainingIgnoreCaseWithQuestionsAndUnits(
+            @Param("grade") Integer grade, @Param("examName") String examName, Pageable pageable);
+    
+    /**
      * 학년별 시험지 목록 조회 (최신 순)
      * 
      * @param grade 학년 (1, 2, 3)

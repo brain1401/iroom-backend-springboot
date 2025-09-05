@@ -3,6 +3,8 @@ package com.iroomclass.springbackend.common.exception;
 import com.iroomclass.springbackend.common.ApiResponse;
 import com.iroomclass.springbackend.common.ResultStatus;
 import com.iroomclass.springbackend.domain.teacher.exception.TeacherNotFoundException;
+import com.iroomclass.springbackend.domain.exam.exception.QuestionNotFoundException;
+import com.iroomclass.springbackend.domain.exam.exception.GradeMismatchException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
@@ -233,6 +235,28 @@ public class GlobalExceptionHandler {
         
         log.warn("선생님 인증 실패: {}", ex.getMessage());
         return createErrorResponse(ex.getMessage(), HttpStatus.UNAUTHORIZED);
+    }
+
+    /**
+     * 문제 찾기 실패 예외 처리
+     */
+    @ExceptionHandler(QuestionNotFoundException.class)
+    public ResponseEntity<ApiResponse<Void>> handleQuestionNotFound(
+            QuestionNotFoundException ex, HttpServletRequest request) {
+        
+        log.warn("문제 찾기 실패: {}", ex.getMessage());
+        return createErrorResponse(ex.getMessage(), HttpStatus.NOT_FOUND);
+    }
+
+    /**
+     * 학년 불일치 예외 처리
+     */
+    @ExceptionHandler(GradeMismatchException.class)
+    public ResponseEntity<ApiResponse<Void>> handleGradeMismatch(
+            GradeMismatchException ex, HttpServletRequest request) {
+        
+        log.warn("학년 불일치: {}", ex.getMessage());
+        return createErrorResponse(ex.getMessage(), HttpStatus.BAD_REQUEST);
     }
 
     /**

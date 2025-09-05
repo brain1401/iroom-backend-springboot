@@ -24,20 +24,17 @@ import java.util.List;
  * 교육과정의 단원 구조 조회 API를 제공합니다.
  */
 @RestController
-@RequestMapping("/api/units")
+@RequestMapping("/units")
 @RequiredArgsConstructor
 @Slf4j
-@Tag(
-    name = "단원 관리 API",
-    description = """
+@Tag(name = "단원 관리 API", description = """
         교육과정의 단원 구조 조회 관련 API입니다.
-        
+
         주요 기능:
         - 계층적 단원 트리 구조 조회 (대분류 → 중분류 → 세부단원)
         - 학년별 단원 필터링 조회
         - 시험지 등록을 위한 단원 목록 조회
-        """
-)
+        """)
 public class UnitController {
 
     private final UnitService unitService;
@@ -49,77 +46,68 @@ public class UnitController {
      * @return 단원 트리 구조
      */
     @GetMapping("/tree")
-    @Operation(
-        summary = "단원 트리 구조 조회",
-        description = """
+    @Operation(summary = "단원 트리 구조 조회", description = """
             교육과정의 계층적 단원 구조를 트리 형태로 조회합니다.
-            
+
             구조: 대분류 → 중분류 → 세부단원
             - 대분류: 수와 연산, 문자와 식, 함수, 기하, 통계와 확률 등
             - 중분류: 정수와 유리수, 일차방정식, 이차방정식 등
             - 세부단원: 정수의 덧셈, 일차방정식의 해 등
-            
+
             **사용 방법:**
             - 전체 조회: GET /api/units/tree
             - 학년별 조회: GET /api/units/tree?grade=1
-            
+            - 문제 포함 조회: GET /api/units/tree?includeQuestions=true
+            - 학년별 + 문제 포함 조회: GET /api/units/tree?grade=1&includeQuestions=true
+
             **응답 특징:**
             - displayOrder 순서로 정렬된 계층 구조
             - 각 노드는 하위 children 배열 포함
             - 세부단원(Unit)은 학년 정보 포함
-            """
-    )
+            - includeQuestions=true인 경우, 세부단원에 해당 문제 목록 포함
+            """)
     @ApiResponses(value = {
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(
-            responseCode = "200",
-            description = "조회 성공",
-            content = @io.swagger.v3.oas.annotations.media.Content(
-                mediaType = "application/json",
-                schema = @io.swagger.v3.oas.annotations.media.Schema(
-                    implementation = ApiResponse.class
-                )
-            )
-        ),
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(
-            responseCode = "400",
-            description = "잘못된 학년 값 (1, 2, 3 이외의 값)",
-            content = @io.swagger.v3.oas.annotations.media.Content(
-                mediaType = "application/json",
-                schema = @io.swagger.v3.oas.annotations.media.Schema(
-                    implementation = ApiResponse.ErrorResponse.class
-                )
-            )
-        )
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "조회 성공", content = @io.swagger.v3.oas.annotations.media.Content(mediaType = "application/json", schema = @io.swagger.v3.oas.annotations.media.Schema(implementation = ApiResponse.class))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "잘못된 학년 값 (1, 2, 3 이외의 값)", content = @io.swagger.v3.oas.annotations.media.Content(mediaType = "application/json", schema = @io.swagger.v3.oas.annotations.media.Schema(implementation = ApiResponse.ErrorResponse.class)))
     })
     public ResponseEntity<ApiResponse<List<UnitTreeNode>>> getUnitsTree(
-        @Parameter(
-            description = "학년 필터 (선택적)", 
-            example = "1",
-            schema = @Schema(allowableValues = {"1", "2", "3"})
-        )
-        @RequestParam(required = false) Integer grade
-    ) {
-        log.info("단원 트리 구조 조회 API 호출: grade={}", grade);
-        
+            @Parameter(description = "학년 필터 (선택적)", example = "1", schema = @Schema(allowableValues = { "1", "2",
+                    "3" })) @RequestParam(required = false) Integer grade,
+            @Parameter(description = "문제 정보 포함 여부 (선택적, 시험지 등록용)", example = "true") 
+            @RequestParam(required = false, defaultValue = "false") Boolean includeQuestions) {
+        log.info("단원 트리 구조 조회 API 호출: grade={}, includeQuestions={}", grade, includeQuestions);
+
         List<UnitTreeNode> treeNodes;
-        
+
         if (grade != null) {
             // 학년별 조회
-            treeNodes = unitService.getUnitsByGradeAsTree(grade);
-            log.info("학년별 단원 트리 조회 완료: grade={}, 대분류 {} 개", grade, treeNodes.size());
-            return ResponseEntity.ok(
-                ApiResponse.success(grade + "학년 단원 트리 구조 조회 성공", treeNodes)
-            );
+            if (includeQuestions) {
+                treeNodes = unitService.getUnitsByGradeAsTreeWithQuestions(grade);
+                log.info("학년별 단원 트리 조회 완료 (문제 포함): grade={}, 대분류 {} 개", grade, treeNodes.size());
+            } else {
+                treeNodes = unitService.getUnitsByGradeAsTree(grade);
+                log.info("학년별 단원 트리 조회 완료: grade={}, 대분류 {} 개", grade, treeNodes.size());
+            }
+            String message = includeQuestions ? 
+                grade + "학년 단원 트리 구조 조회 성공 (문제 포함)" : 
+                grade + "학년 단원 트리 구조 조회 성공";
+            return ResponseEntity.ok(ApiResponse.success(message, treeNodes));
         } else {
             // 전체 조회
-            treeNodes = unitService.getAllUnitsAsTree();
-            log.info("전체 단원 트리 조회 완료: 대분류 {} 개", treeNodes.size());
-            return ResponseEntity.ok(
-                ApiResponse.success("전체 단원 트리 구조 조회 성공", treeNodes)
-            );
+            if (includeQuestions) {
+                treeNodes = unitService.getAllUnitsAsTreeWithQuestions();
+                log.info("전체 단원 트리 조회 완료 (문제 포함): 대분류 {} 개", treeNodes.size());
+            } else {
+                treeNodes = unitService.getAllUnitsAsTree();
+                log.info("전체 단원 트리 조회 완료: 대분류 {} 개", treeNodes.size());
+            }
+            String message = includeQuestions ? 
+                "전체 단원 트리 구조 조회 성공 (문제 포함)" : 
+                "전체 단원 트리 구조 조회 성공";
+            return ResponseEntity.ok(ApiResponse.success(message, treeNodes));
         }
     }
-    
+
     /**
      * 학년별 단원 목록 조회 API (플랫 구조)
      * 
@@ -127,46 +115,30 @@ public class UnitController {
      * @return 해당 학년의 세부단원 목록
      */
     @GetMapping("/list")
-    @Operation(
-        summary = "학년별 단원 목록 조회",
-        description = """
+    @Operation(summary = "학년별 단원 목록 조회", description = """
             특정 학년의 세부단원 목록을 평면적 구조로 조회합니다.
-            
+
             **사용 목적:**
             - 시험지 등록 시 단원 선택 목록으로 사용
             - 문제 등록 시 단원 매핑용으로 사용
-            
+
             **응답 특징:**
             - 계층 구조 없이 해당 학년의 모든 세부단원만 반환
             - displayOrder 순서로 정렬
             - 각 단원의 상위 분류 정보는 포함되지 않음
-            """
-    )
+            """)
     @ApiResponses(value = {
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(
-            responseCode = "200",
-            description = "조회 성공"
-        ),
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(
-            responseCode = "400",
-            description = "잘못된 학년 값 또는 필수 파라미터 누락"
-        )
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "조회 성공"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "잘못된 학년 값 또는 필수 파라미터 누락")
     })
     public ResponseEntity<ApiResponse<List<UnitTreeNode>>> getUnitsList(
-        @Parameter(
-            description = "학년 (필수)", 
-            example = "1",
-            required = true,
-            schema = @Schema(allowableValues = {"1", "2", "3"})
-        )
-        @RequestParam Integer grade
-    ) {
+            @Parameter(description = "학년 (필수)", example = "1", required = true, schema = @Schema(allowableValues = {
+                    "1", "2", "3" })) @RequestParam Integer grade) {
         log.info("학년별 단원 목록 조회 API 호출: grade={}", grade);
-        
+
         List<UnitTreeNode> units = unitService.getUnitsByGrade(grade);
-        
+
         return ResponseEntity.ok(
-            ApiResponse.success(grade + "학년 단원 목록 조회 성공", units)
-        );
+                ApiResponse.success(grade + "학년 단원 목록 조회 성공", units));
     }
 }

@@ -37,7 +37,10 @@ public record UnitTreeNode(
     String unitCode,
     
     @Schema(description = "하위 노드 목록")
-    List<UnitTreeNode> children
+    List<UnitTreeNode> children,
+    
+    @Schema(description = "문제 목록 (세부단원인 경우만)", nullable = true)
+    List<QuestionDto> questions
 ) {
     
     /**
@@ -70,7 +73,8 @@ public record UnitTreeNode(
             category.getDisplayOrder(),
             category.getDescription(),
             null, // 대분류는 단원 코드가 없음
-            children
+            children,
+            null // 대분류는 문제가 없음
         );
     }
     
@@ -90,7 +94,8 @@ public record UnitTreeNode(
             subcategory.getDisplayOrder(),
             subcategory.getDescription(),
             null, // 중분류는 단원 코드가 없음
-            children
+            children,
+            null // 중분류는 문제가 없음
         );
     }
     
@@ -109,7 +114,29 @@ public record UnitTreeNode(
             unit.getDisplayOrder(),
             unit.getDescription(),
             unit.getUnitCode(),
-            List.of() // 세부단원은 리프 노드이므로 하위 노드가 없음
+            List.of(), // 세부단원은 리프 노드이므로 하위 노드가 없음
+            null // 문제 목록은 별도로 설정됨
+        );
+    }
+    
+    /**
+     * Unit과 Question 목록으로부터 트리 노드 생성 (리프 노드)
+     *
+     * @param unit 세부단원 엔티티
+     * @param questions 문제 목록
+     * @return UnitTreeNode
+     */
+    public static UnitTreeNode fromUnitWithQuestions(Unit unit, List<QuestionDto> questions) {
+        return new UnitTreeNode(
+            unit.getId(),
+            unit.getUnitName(),
+            NodeType.UNIT,
+            unit.getGrade(),
+            unit.getDisplayOrder(),
+            unit.getDescription(),
+            unit.getUnitCode(),
+            List.of(), // 세부단원은 리프 노드이므로 하위 노드가 없음
+            questions
         );
     }
     
@@ -128,7 +155,8 @@ public record UnitTreeNode(
             0,
             "전체 단원 구조",
             null,
-            children
+            children,
+            null // 루트 노드는 문제가 없음
         );
     }
 }

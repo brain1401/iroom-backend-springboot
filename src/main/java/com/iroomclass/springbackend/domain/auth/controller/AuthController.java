@@ -1,6 +1,8 @@
 package com.iroomclass.springbackend.domain.auth.controller;
 
 import com.iroomclass.springbackend.common.ApiResponse;
+import com.iroomclass.springbackend.domain.auth.dto.StudentDto;
+import com.iroomclass.springbackend.domain.auth.dto.StudentUpsertRequest;
 import com.iroomclass.springbackend.domain.auth.dto.VerifyStudentRequest;
 import com.iroomclass.springbackend.domain.auth.dto.VerifyTeacherRequest;
 import com.iroomclass.springbackend.domain.auth.dto.VerificationResponse;
@@ -201,6 +203,141 @@ public class AuthController {
         } catch (Exception e) {
             log.error("선생님 검증 API 오류: 사용자명={}, 오류={}", request.username(), e.getMessage(), e);
             throw new RuntimeException("선생님 검증 중 오류가 발생했습니다", e);
+        }
+    }
+
+    /**
+     * 학생 정보 Upsert (등록 또는 조회)
+     * 
+     * <p>
+     * 학생 정보가 데이터베이스에 없으면 새로 등록하고,
+     * 이미 있으면 기존 정보를 반환합니다.
+     * 3-factor 인증 (이름, 전화번호, 생년월일)을 통해 학생을 식별합니다.
+     * </p>
+     * 
+     * @param request 학생 등록/조회 요청 데이터
+     * @return 등록되거나 조회된 학생 정보
+     */
+    @PostMapping("/upsert-student")
+    @Operation(summary = "학생 정보 등록 또는 조회", description = """
+            학생의 3-factor 정보(이름, 전화번호, 생년월일)를 통해 학생 정보를 등록하거나 조회합니다.
+
+            **동작 방식:**
+            - 데이터베이스에 일치하는 학생이 없으면: 새로 등록 후 학생 정보 반환
+            - 데이터베이스에 일치하는 학생이 있으면: 기존 학생 정보 반환
+
+            **식별 방식:**
+            - 이름: 정확히 일치하는 학생 이름
+            - 전화번호: 010-1234-5678 형식의 정확한 매칭
+            - 생년월일: YYYY-MM-DD 형식의 정확한 매칭
+
+            **반환 정보:**
+            - 학생 ID (자동 생성)
+            - 이름, 전화번호, 생년월일
+            - 생성/수정 시간
+
+            **보안 고려사항:**
+            - 개인정보 보호를 위해 안전한 처리 필요
+            - 중복 등록 방지를 위한 정확한 매칭 수행
+            """)
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "200", 
+                    description = "학생 정보 등록/조회 성공", 
+                    content = @Content(
+                            mediaType = "application/json", 
+                            schema = @Schema(implementation = ApiResponse.class), 
+                            examples = {
+                    @ExampleObject(
+                            name = "새 학생 등록 성공", 
+                            summary = "데이터베이스에 없던 학생이 새로 등록된 경우", 
+                            value = """
+                                    {
+                                      "result": "SUCCESS",
+                                      "message": "학생 정보가 등록되었습니다",
+                                      "data": {
+                                        "id": 1,
+                                        "name": "홍길동",
+                                        "phone": "010-1234-5678",
+                                        "birthDate": "2005-03-15",
+                                        "createdAt": "2024-08-17T10:30:00",
+                                        "updatedAt": "2024-08-17T10:30:00"
+                                      }
+                                    }
+                                    """),
+                    @ExampleObject(
+                            name = "기존 학생 조회 성공", 
+                            summary = "데이터베이스에 이미 있던 학생 정보를 조회한 경우", 
+                            value = """
+                                    {
+                                      "result": "SUCCESS",
+                                      "message": "학생 정보가 조회되었습니다",
+                                      "data": {
+                                        "id": 5,
+                                        "name": "홍길동",
+                                        "phone": "010-1234-5678",
+                                        "birthDate": "2005-03-15",
+                                        "createdAt": "2024-08-15T09:20:00",
+                                        "updatedAt": "2024-08-15T09:20:00"
+                                      }
+                                    }
+                                    """)
+            })),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "400", 
+                    description = "잘못된 요청 - 필수 필드 누락 또는 형식 오류", 
+                    content = @Content(
+                            mediaType = "application/json", 
+                            schema = @Schema(implementation = ApiResponse.class), 
+                            examples = @ExampleObject(
+                                    name = "입력 검증 오류", 
+                                    value = """
+                                            {
+                                              "result": "ERROR",
+                                              "message": "이름은 필수입니다",
+                                              "data": null
+                                            }
+                                            """))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "500", 
+                    description = "서버 내부 오류", 
+                    content = @Content(
+                            mediaType = "application/json", 
+                            schema = @Schema(implementation = ApiResponse.class), 
+                            examples = @ExampleObject(
+                                    name = "서버 오류", 
+                                    value = """
+                                            {
+                                              "result": "ERROR",
+                                              "message": "학생 정보 처리 중 오류가 발생했습니다",
+                                              "data": null
+                                            }
+                                            """)))
+    })
+    public ApiResponse<StudentDto> upsertStudent(@Valid @RequestBody StudentUpsertRequest request) {
+        log.info("학생 정보 Upsert API 호출: 이름={}", request.name());
+
+        try {
+            StudentDto response = authVerificationService.upsertStudent(request);
+
+            log.info("학생 정보 Upsert API 성공: 이름={}, 학생ID={}", 
+                    request.name(), response.id());
+
+            // 새로 등록된 학생인지 기존 학생인지에 따라 메시지 구분
+            // null-safe 비교: createdAt과 updatedAt이 같으면 새로 등록된 것으로 간주
+            boolean isNewStudent = response.createdAt() != null && response.updatedAt() != null 
+                    && response.createdAt().equals(response.updatedAt());
+            
+            String message = isNewStudent 
+                    ? "학생 정보가 등록되었습니다" 
+                    : "학생 정보가 조회되었습니다";
+
+            return ApiResponse.success(message, response);
+
+        } catch (Exception e) {
+            log.error("학생 정보 Upsert API 오류: 이름={}, 오류={}", 
+                    request.name(), e.getMessage(), e);
+            throw new RuntimeException("학생 정보 처리 중 오류가 발생했습니다", e);
         }
     }
 }
