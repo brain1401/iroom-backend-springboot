@@ -13,6 +13,12 @@ spring:
   jmx:
     enabled: false
 
+  # 파일 업로드 크기 제한 설정 (텍스트 인식용)
+  servlet:
+    multipart:
+      max-file-size: 20MB      # 개별 파일 최대 크기
+      max-request-size: 25MB   # 전체 요청 최대 크기
+
   # 데이터베이스 연결 설정 (성능 최적화)
   # 환경 변수를 사용한 설정: DB_URL, DB_USERNAME, DB_PASSWORD
   datasource:
