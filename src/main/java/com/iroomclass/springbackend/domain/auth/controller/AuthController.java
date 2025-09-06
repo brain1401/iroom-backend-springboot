@@ -39,32 +39,34 @@ public class AuthController {
     private final AuthVerificationService authVerificationService;
 
     /**
-     * 학생 검증
+     * 학생 검증 (Upsert 패턴)
      * 
      * <p>
      * 학생의 이름, 전화번호, 생년월일을 통해 데이터베이스에서 매칭되는
-     * 학생이 있는지 검증합니다. 3-factor 인증을 통한 정확한 매칭을 보장합니다.
+     * 학생을 조회하거나 생성합니다. 3-factor 정보를 통한 정확한 식별을 보장합니다.
+     * 존재하지 않는 학생은 자동으로 생성되므로 항상 성공을 반환합니다.
      * </p>
      * 
      * @param request 학생 검증 요청 데이터
-     * @return 검증 성공 시 true, 실패 시 false
+     * @return 항상 검증 성공 (true)
      */
     @PostMapping("/verify-student")
-    @Operation(summary = "학생 검증", description = """
-            학생의 3-factor 정보(이름, 전화번호, 생년월일)를 통해 DB에서 매칭되는 학생이 있는지 검증합니다.
+    @Operation(summary = "학생 검증 (Upsert)", description = """
+            학생의 3-factor 정보(이름, 전화번호, 생년월일)를 통해 DB에서 매칭되는 학생을 조회하거나 생성합니다.
 
-            **검증 방식:**
+            **동작 방식:**
             - 이름: 정확히 일치하는 학생 이름
             - 전화번호: 010-1234-5678 형식의 정확한 매칭
             - 생년월일: YYYY-MM-DD 형식의 정확한 매칭
-            - 역할: STUDENT 역할을 가진 사용자만 대상
+            - 존재하는 학생: 기존 학생 정보 활용
+            - 존재하지 않는 학생: 자동으로 생성
 
             **반환값:**
-            - verified: true (검증 성공) 또는 false (검증 실패)
+            - verified: 항상 true (Upsert 패턴으로 인해 항상 성공)
 
             **보안 고려사항:**
-            - 개인정보 보호를 위해 검증 실패 시 구체적인 실패 이유를 제공하지 않습니다
-            - 브루트 포스 공격 방지를 위해 적절한 요청 제한이 필요할 수 있습니다
+            - 개인정보 보호를 위한 안전한 학생 생성
+            - 중복 생성 방지를 위한 정확한 매칭 수행
             """)
     @ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "검증 완료 - 성공/실패 여부 반환", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiResponse.class), examples = {
@@ -77,12 +79,12 @@ public class AuthController {
                               }
                             }
                             """),
-                    @ExampleObject(name = "학생 검증 실패", summary = "DB에서 매칭되는 학생을 찾지 못한 경우", value = """
+                    @ExampleObject(name = "신규 학생 생성", summary = "DB에 없던 학생이 자동으로 생성된 경우", value = """
                             {
                               "result": "SUCCESS",
                               "message": "학생 검증이 완료되었습니다",
                               "data": {
-                                "verified": false
+                                "verified": true
                               }
                             }
                             """)

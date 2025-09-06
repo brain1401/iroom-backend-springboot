@@ -27,6 +27,13 @@ spring:
         order_inserts: true
         order_updates: true
         
+        # Foreign Key 제약조건 처리 개선
+        globally_quoted_identifiers: false
+        
+        # DDL 처리 최적화 (테스트 환경)
+        hbm2ddl:
+          auto: create-drop
+        
         # 캐시 비활성화 (테스트 정확성)
         cache:
           use_second_level_cache: false

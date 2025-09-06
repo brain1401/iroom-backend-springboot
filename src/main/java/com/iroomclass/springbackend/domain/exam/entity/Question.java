@@ -162,6 +162,7 @@ public class Question {
 
             for (Map<String, Object> block : questionData) {
                 String type = (String) block.get("type");
+                @SuppressWarnings("unchecked")
                 List<Map<String, Object>> content = (List<Map<String, Object>>) block.get("content");
 
                 if ("paragraph".equals(type)) {

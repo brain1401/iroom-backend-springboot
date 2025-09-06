@@ -44,7 +44,7 @@ public class ExamSheetService {
      * @return 생성된 시험지 DTO
      * @throws RuntimeException 문제를 찾을 수 없거나 학년이 맞지 않을 때
      */
-    @Transactional
+    @Transactional(readOnly = false)  // 명시적으로 readOnly=false 설정 (데이터 생성)
     public ExamSheetDto createExamSheet(CreateExamSheetRequest request) {
         log.info("시험지 생성 시작: examName={}, grade={}, questionCount={}", 
                 request.examName(), request.grade(), request.questions().size());

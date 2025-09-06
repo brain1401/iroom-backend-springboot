@@ -48,6 +48,10 @@ public interface StudentRepository extends JpaRepository<Student, Long> {
      */
     Optional<Student> findByNameAndPhoneAndBirthDate(String name, String phone, LocalDate birthDate);
     
+    // REMOVED: Repository default methods moved to Service layer to fix transaction boundary issues
+    // - findOrCreateStudent() -> moved to StudentAuthService.findOrCreateStudent()
+    // - upsertStudent() -> handled by StudentAuthService.upsertStudent()
+    
     /**
      * 특정 학년의 시험에 제출한 적이 있는 모든 학생 조회
      * 

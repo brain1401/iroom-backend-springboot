@@ -2,6 +2,7 @@ package com.iroomclass.springbackend.domain.student.service;
 
 import com.iroomclass.springbackend.domain.auth.entity.Student;
 import com.iroomclass.springbackend.domain.auth.repository.StudentRepository;
+import com.iroomclass.springbackend.domain.auth.dto.StudentUpsertRequest;
 import com.iroomclass.springbackend.domain.student.dto.request.StudentAuthRequest;
 import com.iroomclass.springbackend.domain.student.dto.response.*;
 import com.iroomclass.springbackend.domain.student.exception.StudentNotFoundException;
@@ -47,19 +48,30 @@ public class StudentService {
      * @throws StudentNotFoundException 인증 정보가 일치하지 않을 때
      */
     public StudentLoginResponse login(StudentAuthRequest request) {
-        log.info("학생 로그인 시도: name={}, phone={}", request.name(), request.phone());
+        log.info("학생 로그인 시도 (upsert): name={}, phone={}", request.name(), request.phone());
         
-        try {
-            Student student = studentAuthService.validateAndGetStudent(request);
-            
-            log.info("학생 로그인 성공: studentId={}, name={}", student.getId(), student.getName());
-            
-            return StudentLoginResponse.from(student);
-        } catch (StudentNotFoundException e) {
-            log.warn("학생 로그인 실패: name={}, phone={}, reason={}", 
-                    request.name(), request.phone(), e.getMessage());
-            throw e;
-        }
+        // 기존 방식과 다르게 예외를 발생시키지 않고 upsert 수행
+        Student student = studentAuthService.upsertStudentFromAuth(request);
+        
+        log.info("학생 로그인 성공 (upsert): studentId={}, name={}", student.getId(), student.getName());
+        
+        return StudentLoginResponse.from(student);
+    }
+    
+    /**
+     * 학생 로그인 (StudentUpsertRequest 버전)
+     * 
+     * @param request 학생 Upsert 요청 (이름, 생년월일, 전화번호)
+     * @return 학생 로그인 응답 (ID, 이름)
+     */
+    public StudentLoginResponse loginWithUpsert(StudentUpsertRequest request) {
+        log.info("학생 로그인 시도 (upsert): name={}, phone={}", request.name(), request.phone());
+        
+        Student student = studentAuthService.upsertStudent(request);
+        
+        log.info("학생 로그인 성공 (upsert): studentId={}, name={}", student.getId(), student.getName());
+        
+        return StudentLoginResponse.from(student);
     }
 
     /**
@@ -71,10 +83,29 @@ public class StudentService {
      * @throws StudentNotFoundException 인증 정보가 일치하지 않을 때
      */
     public Page<RecentSubmissionDto> getRecentSubmissions(StudentAuthRequest request, Pageable pageable) {
-        log.info("최근 시험 제출 내역 조회: name={}, page={}, size={}", 
+        log.info("최근 시험 제출 내역 조회 (upsert): name={}, page={}, size={}", 
                 request.name(), pageable.getPageNumber(), pageable.getPageSize());
         
-        Student student = studentAuthService.validateAndGetStudent(request);
+        Student student = studentAuthService.upsertStudentFromAuth(request);
+        
+        Page<RecentSubmissionDto> submissions = studentExamSubmissionRepository
+                .findRecentSubmissionsByStudentId(student.getId(), pageable);
+        
+        log.info("최근 시험 제출 내역 조회 완료: studentId={}, totalElements={}", 
+                student.getId(), submissions.getTotalElements());
+        
+        return submissions;
+    }
+    
+    /**
+     * 최근 시험 제출 내역 조회 (StudentUpsertRequest 버전)
+     */
+    @Transactional(readOnly = false)  // 명시적으로 readOnly=false 설정 (학생 upsert 포함)
+    public Page<RecentSubmissionDto> getRecentSubmissionsWithUpsert(StudentUpsertRequest request, Pageable pageable) {
+        log.info("최근 시험 제출 내역 조회 (upsert): name={}, page={}, size={}", 
+                request.name(), pageable.getPageNumber(), pageable.getPageSize());
+        
+        Student student = studentAuthService.upsertStudent(request);
         
         Page<RecentSubmissionDto> submissions = studentExamSubmissionRepository
                 .findRecentSubmissionsByStudentId(student.getId(), pageable);
@@ -94,10 +125,28 @@ public class StudentService {
      * @throws StudentNotFoundException 인증 정보가 일치하지 않을 때
      */
     public Page<ExamResultSummaryDto> getExamResultsSummary(StudentAuthRequest request, Pageable pageable) {
-        log.info("시험 결과 요약 조회: name={}, page={}, size={}", 
+        log.info("시험 결과 요약 조회 (upsert): name={}, page={}, size={}", 
                 request.name(), pageable.getPageNumber(), pageable.getPageSize());
         
-        Student student = studentAuthService.validateAndGetStudent(request);
+        Student student = studentAuthService.upsertStudentFromAuth(request);
+        
+        Page<ExamResultSummaryDto> results = studentExamResultRepository
+                .findExamResultsSummaryByStudentId(student.getId(), pageable);
+        
+        log.info("시험 결과 요약 조회 완료: studentId={}, totalElements={}", 
+                student.getId(), results.getTotalElements());
+        
+        return results;
+    }
+    
+    /**
+     * 시험 결과 요약 목록 조회 (StudentUpsertRequest 버전)
+     */
+    public Page<ExamResultSummaryDto> getExamResultsSummaryWithUpsert(StudentUpsertRequest request, Pageable pageable) {
+        log.info("시험 결과 요약 조회 (upsert): name={}, page={}, size={}", 
+                request.name(), pageable.getPageNumber(), pageable.getPageSize());
+        
+        Student student = studentAuthService.upsertStudent(request);
         
         Page<ExamResultSummaryDto> results = studentExamResultRepository
                 .findExamResultsSummaryByStudentId(student.getId(), pageable);
@@ -117,9 +166,9 @@ public class StudentService {
      * @throws StudentNotFoundException 인증 정보가 일치하지 않거나 시험 결과가 없을 때
      */
     public ExamDetailResultDto getExamDetailResult(StudentAuthRequest request, UUID examId) {
-        log.info("시험 상세 결과 조회: name={}, examId={}", request.name(), examId);
+        log.info("시험 상세 결과 조회 (upsert): name={}, examId={}", request.name(), examId);
         
-        Student student = studentAuthService.validateAndGetStudent(request);
+        Student student = studentAuthService.upsertStudentFromAuth(request);
         
         ExamResult examResult = studentExamResultRepository
                 .findDetailedExamResultByStudentIdAndExamId(student.getId(), examId)
@@ -136,6 +185,29 @@ public class StudentService {
         
         return result;
     }
+    
+    /**
+     * 특정 시험의 상세 결과 조회 (StudentUpsertRequest 버전)
+     */
+    public ExamDetailResultDto getExamDetailResultWithUpsert(StudentUpsertRequest request, UUID examId) {
+        log.info("시험 상세 결과 조회 (upsert): name={}, examId={}", request.name(), examId);
+        
+        Student student = studentAuthService.upsertStudent(request);
+        
+        ExamResult examResult = studentExamResultRepository
+                .findDetailedExamResultByStudentIdAndExamId(student.getId(), examId)
+                .orElseThrow(() -> {
+                    log.warn("시험 결과를 찾을 수 없음: studentId={}, examId={}", student.getId(), examId);
+                    return new StudentNotFoundException("해당 시험의 결과를 찾을 수 없습니다");
+                });
+
+        ExamDetailResultDto result = convertToExamDetailResultDto(examResult);
+        
+        log.info("시험 상세 결과 조회 완료: studentId={}, examId={}, totalScore={}", 
+                student.getId(), examId, result.totalScore());
+        
+        return result;
+    }
 
     /**
      * 학생 정보 조회 (최신 학년 정보 포함)
@@ -145,9 +217,32 @@ public class StudentService {
      * @throws StudentNotFoundException 인증 정보가 일치하지 않을 때
      */
     public StudentInfoDto getStudentInfo(StudentAuthRequest request) {
-        log.info("학생 정보 조회: name={}, phone={}", request.name(), request.phone());
+        log.info("학생 정보 조회 (upsert): name={}, phone={}", request.name(), request.phone());
         
-        Student student = studentAuthService.validateAndGetStudent(request);
+        Student student = studentAuthService.upsertStudentFromAuth(request);
+        
+        // 최신 응시한 시험의 학년 정보 조회
+        Integer latestGrade = studentExamSubmissionRepository
+                .findLatestGradeByStudentId(student.getId());
+        
+        StudentInfoDto studentInfo = StudentInfoDto.of(
+                student.getName(), 
+                student.getPhone(), 
+                student.getBirthDate(), 
+                latestGrade);
+        
+        log.info("학생 정보 조회 완료: studentId={}, grade={}", student.getId(), latestGrade);
+        
+        return studentInfo;
+    }
+    
+    /**
+     * 학생 정보 조회 (StudentUpsertRequest 버전)
+     */
+    public StudentInfoDto getStudentInfoWithUpsert(StudentUpsertRequest request) {
+        log.info("학생 정보 조회 (upsert): name={}, phone={}", request.name(), request.phone());
+        
+        Student student = studentAuthService.upsertStudent(request);
         
         // 최신 응시한 시험의 학년 정보 조회
         Integer latestGrade = studentExamSubmissionRepository
@@ -174,10 +269,22 @@ public class StudentService {
      * @throws StudentNotFoundException 인증 정보가 일치하지 않을 때
      */
     public void logout(StudentAuthRequest request) {
-        log.info("학생 로그아웃: name={}, phone={}", request.name(), request.phone());
+        log.info("학생 로그아웃 (upsert): name={}, phone={}", request.name(), request.phone());
         
         // 인증 확인만 수행 (현재는 별도 로그아웃 처리 없음)
-        Student student = studentAuthService.validateAndGetStudent(request);
+        // upsert 패턴 사용으로 학생이 없어도 에러가 발생하지 않음
+        Student student = studentAuthService.upsertStudentFromAuth(request);
+        
+        log.info("학생 로그아웃 완료: studentId={}", student.getId());
+    }
+    
+    /**
+     * 학생 로그아웃 (StudentUpsertRequest 버전)
+     */
+    public void logoutWithUpsert(StudentUpsertRequest request) {
+        log.info("학생 로그아웃 (upsert): name={}, phone={}", request.name(), request.phone());
+        
+        Student student = studentAuthService.upsertStudent(request);
         
         log.info("학생 로그아웃 완료: studentId={}", student.getId());
     }

@@ -1,6 +1,7 @@
 package com.iroomclass.springbackend.domain.student.controller;
 
 import com.iroomclass.springbackend.common.ApiResponse;
+import com.iroomclass.springbackend.domain.auth.dto.StudentUpsertRequest;
 import com.iroomclass.springbackend.domain.student.dto.request.StudentAuthRequest;
 import com.iroomclass.springbackend.domain.student.dto.response.*;
 import com.iroomclass.springbackend.domain.student.service.StudentService;
@@ -23,8 +24,8 @@ import java.util.UUID;
 /**
  * 학생 API 컨트롤러
  * 
- * <p>학생 인증 및 시험 관련 정보 조회 API를 제공합니다.
- * 모든 엔드포인트는 3요소 인증(이름, 생년월일, 전화번호)을 사용합니다.</p>
+ * <p>학생 관리 및 시험 관련 정보 조회 API를 제공합니다.
+ * 모든 엔드포인트는 3요소 정보(이름, 생년월일, 전화번호)를 사용하여 학생을 조회하거나 생성합니다.</p>
  */
 @RestController
 @RequestMapping("/student")
@@ -32,18 +33,19 @@ import java.util.UUID;
 @Tag(
     name = "학생 API", 
     description = """
-        학생 인증 및 시험 정보 조회 API
+        학생 관리 및 시험 정보 조회 API
         
         주요 기능:
-        - 3요소 인증 로그인 (이름, 생년월일, 전화번호)
+        - 3요소 정보 기반 학생 등록/로그인 (이름, 생년월일, 전화번호)
         - 최근 시험 제출 내역 조회
         - 시험 결과 요약 및 상세 조회
         - 학생 정보 조회
         - 로그아웃
         
-        인증 방식:
-        - JWT 토큰 없이 매 요청마다 3요소 인증 수행
-        - 모든 엔드포인트에서 StudentAuthRequest 사용
+        학생 관리 방식:
+        - JWT 토큰 없이 매 요청마다 3요소 정보 확인
+        - 존재하지 않는 학생은 자동으로 생성 (Upsert 패턴)
+        - 모든 엔드포인트에서 StudentUpsertRequest 사용
         """
 )
 @Slf4j
@@ -52,41 +54,42 @@ public class StudentController {
     private final StudentService studentService;
 
     /**
-     * 학생 로그인
+     * 학생 등록/로그인
      * 
-     * @param request 학생 인증 요청 (이름, 생년월일, 전화번호)
+     * @param request 학생 정보 요청 (이름, 생년월일, 전화번호)
      * @return 로그인 응답 (학생 ID, 이름)
      */
     @PostMapping("/login")
     @ResponseStatus(HttpStatus.OK)
     @Operation(
-        summary = "학생 로그인",
+        summary = "학생 등록/로그인",
         description = """
-            학생의 3요소 인증 정보를 통해 로그인을 수행합니다.
+            학생의 3요소 정보를 통해 학생을 조회하거나 생성합니다.
             
-            인증 방식:
-            - 이름, 생년월일, 전화번호 조합으로 인증
+            동작 방식:
+            - 이름, 생년월일, 전화번호 조합으로 학생 검색
             - JWT 토큰을 사용하지 않음
-            - 인증 성공 시 학생 기본 정보 반환
+            - 존재하는 학생: 기존 정보 반환
+            - 존재하지 않는 학생: 자동으로 생성 후 정보 반환
             
             응답 정보:
             - 학생 ID (Long)
             - 학생 이름 (String)
             """,
         requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
-            description = "학생 인증 정보",
+            description = "학생 정보",
             required = true,
-            content = @Content(schema = @Schema(implementation = StudentAuthRequest.class))
+            content = @Content(schema = @Schema(implementation = StudentUpsertRequest.class))
         ),
         responses = {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(
                 responseCode = "200", 
-                description = "로그인 성공",
+                description = "등록/로그인 성공",
                 content = @Content(schema = @Schema(implementation = StudentLoginResponse.class))
             ),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(
                 responseCode = "404", 
-                description = "학생 정보를 찾을 수 없음",
+                description = "시스템 오류 (정상적으로는 발생하지 않음)",
                 content = @Content(schema = @Schema(implementation = ApiResponse.class))
             ),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(
@@ -97,19 +100,19 @@ public class StudentController {
         }
     )
     public ApiResponse<StudentLoginResponse> login(
-            @Valid @RequestBody StudentAuthRequest request) {
+            @Valid @RequestBody StudentUpsertRequest request) {
         
-        log.info("학생 로그인 요청: name={}", request.name());
+        log.info("학생 등록/로그인 요청: name={}", request.name());
         
-        StudentLoginResponse response = studentService.login(request);
+        StudentLoginResponse response = studentService.loginWithUpsert(request);
         
-        return ApiResponse.success("학생 로그인 성공", response);
+        return ApiResponse.success("학생 등록/로그인 성공", response);
     }
 
     /**
      * 최근 시험 제출 내역 조회
      * 
-     * @param request 학생 인증 요청
+     * @param request 학생 정보 요청
      * @param pageable 페이징 정보 (기본값: page=0, size=10)
      * @return 최근 제출 내역 페이지
      */
@@ -134,9 +137,9 @@ public class StudentController {
             - 최대 size=100 제한
             """,
         requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
-            description = "학생 인증 정보",
+            description = "학생 정보",
             required = true,
-            content = @Content(schema = @Schema(implementation = StudentAuthRequest.class))
+            content = @Content(schema = @Schema(implementation = StudentUpsertRequest.class))
         ),
         responses = {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(
@@ -151,7 +154,7 @@ public class StudentController {
         }
     )
     public ApiResponse<Page<RecentSubmissionDto>> getRecentSubmissions(
-            @Valid @RequestBody StudentAuthRequest request,
+            @Valid @RequestBody StudentUpsertRequest request,
             @PageableDefault(page = 0, size = 10) 
             @Parameter(description = "페이징 정보 (page=0, size=10)", hidden = true) 
             Pageable pageable) {
@@ -159,7 +162,7 @@ public class StudentController {
         log.info("최근 시험 제출 내역 조회 요청: name={}, page={}", 
                 request.name(), pageable.getPageNumber());
         
-        Page<RecentSubmissionDto> submissions = studentService.getRecentSubmissions(request, pageable);
+        Page<RecentSubmissionDto> submissions = studentService.getRecentSubmissionsWithUpsert(request, pageable);
         
         return ApiResponse.success("최근 시험 제출 내역 조회 성공", submissions);
     }
@@ -167,7 +170,7 @@ public class StudentController {
     /**
      * 시험 결과 요약 목록 조회
      * 
-     * @param request 학생 인증 요청
+     * @param request 학생 정보 요청
      * @param pageable 페이징 정보 (기본값: page=0, size=10)
      * @return 시험 결과 요약 페이지
      */
@@ -197,9 +200,9 @@ public class StudentController {
             - 채점 완료된 시험만 조회
             """,
         requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
-            description = "학생 인증 정보",
+            description = "학생 정보",
             required = true,
-            content = @Content(schema = @Schema(implementation = StudentAuthRequest.class))
+            content = @Content(schema = @Schema(implementation = StudentUpsertRequest.class))
         ),
         responses = {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(
@@ -214,7 +217,7 @@ public class StudentController {
         }
     )
     public ApiResponse<Page<ExamResultSummaryDto>> getExamResultsSummary(
-            @Valid @RequestBody StudentAuthRequest request,
+            @Valid @RequestBody StudentUpsertRequest request,
             @PageableDefault(page = 0, size = 10) 
             @Parameter(description = "페이징 정보 (page=0, size=10)", hidden = true) 
             Pageable pageable) {
@@ -222,7 +225,7 @@ public class StudentController {
         log.info("시험 결과 요약 조회 요청: name={}, page={}", 
                 request.name(), pageable.getPageNumber());
         
-        Page<ExamResultSummaryDto> results = studentService.getExamResultsSummary(request, pageable);
+        Page<ExamResultSummaryDto> results = studentService.getExamResultsSummaryWithUpsert(request, pageable);
         
         return ApiResponse.success("시험 결과 요약 조회 성공", results);
     }
@@ -230,7 +233,7 @@ public class StudentController {
     /**
      * 특정 시험의 상세 결과 조회
      * 
-     * @param request 학생 인증 요청
+     * @param request 학생 정보 요청
      * @param examId 시험 ID
      * @return 시험 상세 결과
      */
@@ -267,9 +270,9 @@ public class StudentController {
             )
         },
         requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
-            description = "학생 인증 정보",
+            description = "학생 정보",
             required = true,
-            content = @Content(schema = @Schema(implementation = StudentAuthRequest.class))
+            content = @Content(schema = @Schema(implementation = StudentUpsertRequest.class))
         ),
         responses = {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(
@@ -288,14 +291,14 @@ public class StudentController {
         }
     )
     public ApiResponse<ExamDetailResultDto> getExamDetailResult(
-            @Valid @RequestBody StudentAuthRequest request,
+            @Valid @RequestBody StudentUpsertRequest request,
             @PathVariable("examId") 
             @Parameter(description = "시험 ID", example = "550e8400-e29b-41d4-a716-446655440000") 
             UUID examId) {
         
         log.info("시험 상세 결과 조회 요청: name={}, examId={}", request.name(), examId);
         
-        ExamDetailResultDto result = studentService.getExamDetailResult(request, examId);
+        ExamDetailResultDto result = studentService.getExamDetailResultWithUpsert(request, examId);
         
         return ApiResponse.success("시험 상세 결과 조회 성공", result);
     }
@@ -303,7 +306,7 @@ public class StudentController {
     /**
      * 학생 정보 조회
      * 
-     * @param request 학생 인증 요청
+     * @param request 학생 정보 요청
      * @return 학생 정보
      */
     @PostMapping("/info")
@@ -330,9 +333,9 @@ public class StudentController {
             - Exam.grade 필드를 통해 동적으로 판단
             """,
         requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
-            description = "학생 인증 정보",
+            description = "학생 정보",
             required = true,
-            content = @Content(schema = @Schema(implementation = StudentAuthRequest.class))
+            content = @Content(schema = @Schema(implementation = StudentUpsertRequest.class))
         ),
         responses = {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(
@@ -347,11 +350,11 @@ public class StudentController {
         }
     )
     public ApiResponse<StudentInfoDto> getStudentInfo(
-            @Valid @RequestBody StudentAuthRequest request) {
+            @Valid @RequestBody StudentUpsertRequest request) {
         
         log.info("학생 정보 조회 요청: name={}", request.name());
         
-        StudentInfoDto studentInfo = studentService.getStudentInfo(request);
+        StudentInfoDto studentInfo = studentService.getStudentInfoWithUpsert(request);
         
         return ApiResponse.success("학생 정보 조회 성공", studentInfo);
     }
@@ -359,7 +362,7 @@ public class StudentController {
     /**
      * 학생 로그아웃
      * 
-     * @param request 학생 인증 요청
+     * @param request 학생 정보 요청
      * @return 로그아웃 완료 응답
      */
     @PostMapping("/logout")
@@ -380,13 +383,13 @@ public class StudentController {
             - 로그아웃 로그 기록
             
             참고사항:
-            - 인증 정보가 올바르지 않으면 404 오류 반환
+            - 학생 정보 검증 실패 시 해당 학생 자동 생성
             - 성공 시 data는 null로 반환
             """,
         requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
-            description = "학생 인증 정보",
+            description = "학생 정보",
             required = true,
-            content = @Content(schema = @Schema(implementation = StudentAuthRequest.class))
+            content = @Content(schema = @Schema(implementation = StudentUpsertRequest.class))
         ),
         responses = {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(
@@ -404,11 +407,11 @@ public class StudentController {
         }
     )
     public ApiResponse<Void> logout(
-            @Valid @RequestBody StudentAuthRequest request) {
+            @Valid @RequestBody StudentUpsertRequest request) {
         
         log.info("학생 로그아웃 요청: name={}", request.name());
         
-        studentService.logout(request);
+        studentService.logoutWithUpsert(request);
         
         return ApiResponse.success("학생 로그아웃 성공");
     }
