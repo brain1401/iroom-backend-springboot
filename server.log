@@ -1,0 +1,168 @@
+> Task :compileJava UP-TO-DATE
+> Task :processResources UP-TO-DATE
+> Task :classes UP-TO-DATE
+> Task :resolveMainClassName UP-TO-DATE
+
+> Task :bootRun
+Standard Commons Logging discovery in action with spring-jcl: please remove commons-logging.jar from classpath in order to avoid potential conflicts
+12:01:03,951 |-WARN in ch.qos.logback.core.joran.action.ConversionRuleAction - [converterClass] attribute is deprecated and replaced by [class]. See element [conversionRule] near line 11
+12:01:03,952 |-WARN in ch.qos.logback.core.joran.action.ConversionRuleAction - [converterClass] attribute is deprecated and replaced by [class]. See element [conversionRule] near line 13
+12:01:03,952 |-WARN in ch.qos.logback.core.joran.action.ConversionRuleAction - [converterClass] attribute is deprecated and replaced by [class]. See element [conversionRule] near line 15
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+[32m :: Spring Boot :: [39m              [2m (v3.5.5)[0;39m
+
+[[2m2025-09-06 12:01:04.060[0;39m] [32m INFO[0;39m [35m47422[0;39m [2m---[0;39m [2m[kground-preinit][0;39m [36mo.h.validator.internal.util.Version     [0;39m [2m:[0;39m HV000001: Hibernate Validator 8.0.3.Final
+[[2m2025-09-06 12:01:04.089[0;39m] [32m INFO[0;39m [35m47422[0;39m [2m---[0;39m [2m[           main][0;39m [36mc.i.s.SpringBackendApplication          [0;39m [2m:[0;39m Starting SpringBackendApplication using Java 21.0.8 with PID 47422 (/home/aiden/programming/final-project/iroom-backend-springboot/build/classes/java/main started by aiden in /home/aiden/programming/final-project/iroom-backend-springboot)
+[[2m2025-09-06 12:01:04.090[0;39m] [32mDEBUG[0;39m [35m47422[0;39m [2m---[0;39m [2m[           main][0;39m [36mc.i.s.SpringBackendApplication          [0;39m [2m:[0;39m Running with Spring Boot v3.5.5, Spring v6.2.10
+[[2m2025-09-06 12:01:04.090[0;39m] [32m INFO[0;39m [35m47422[0;39m [2m---[0;39m [2m[           main][0;39m [36mc.i.s.SpringBackendApplication          [0;39m [2m:[0;39m No active profile set, falling back to 1 default profile: "default"
+[[2m2025-09-06 12:01:04.703[0;39m] [32m INFO[0;39m [35m47422[0;39m [2m---[0;39m [2m[           main][0;39m [36m.s.d.r.c.RepositoryConfigurationDelegate[0;39m [2m:[0;39m Multiple Spring Data modules found, entering strict repository configuration mode
+[[2m2025-09-06 12:01:04.704[0;39m] [32m INFO[0;39m [35m47422[0;39m [2m---[0;39m [2m[           main][0;39m [36m.s.d.r.c.RepositoryConfigurationDelegate[0;39m [2m:[0;39m Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+[[2m2025-09-06 12:01:04.808[0;39m] [32m INFO[0;39m [35m47422[0;39m [2m---[0;39m [2m[           main][0;39m [36m.s.d.r.c.RepositoryConfigurationDelegate[0;39m [2m:[0;39m Finished Spring Data repository scanning in 98 ms. Found 13 JPA repository interfaces.
+[[2m2025-09-06 12:01:04.819[0;39m] [32m INFO[0;39m [35m47422[0;39m [2m---[0;39m [2m[           main][0;39m [36m.s.d.r.c.RepositoryConfigurationDelegate[0;39m [2m:[0;39m Multiple Spring Data modules found, entering strict repository configuration mode
+[[2m2025-09-06 12:01:04.820[0;39m] [32m INFO[0;39m [35m47422[0;39m [2m---[0;39m [2m[           main][0;39m [36m.s.d.r.c.RepositoryConfigurationDelegate[0;39m [2m:[0;39m Bootstrapping Spring Data Redis repositories in DEFAULT mode.
+[[2m2025-09-06 12:01:04.831[0;39m] [32m INFO[0;39m [35m47422[0;39m [2m---[0;39m [2m[           main][0;39m [36m.RepositoryConfigurationExtensionSupport[0;39m [2m:[0;39m Spring Data Redis - Could not safely identify store assignment for repository candidate interface com.iroomclass.springbackend.domain.auth.repository.StudentRepository; If you want this repository to be a Redis repository, consider annotating your entities with one of these annotations: org.springframework.data.redis.core.RedisHash (preferred), or consider extending one of the following types with your repository: org.springframework.data.keyvalue.repository.KeyValueRepository
+[[2m2025-09-06 12:01:04.831[0;39m] [32m INFO[0;39m [35m47422[0;39m [2m---[0;39m [2m[           main][0;39m [36m.RepositoryConfigurationExtensionSupport[0;39m [2m:[0;39m Spring Data Redis - Could not safely identify store assignment for repository candidate interface com.iroomclass.springbackend.domain.auth.repository.TeacherRepository; If you want this repository to be a Redis repository, consider annotating your entities with one of these annotations: org.springframework.data.redis.core.RedisHash (preferred), or consider extending one of the following types with your repository: org.springframework.data.keyvalue.repository.KeyValueRepository
+[[2m2025-09-06 12:01:04.832[0;39m] [32m INFO[0;39m [35m47422[0;39m [2m---[0;39m [2m[           main][0;39m [36m.RepositoryConfigurationExtensionSupport[0;39m [2m:[0;39m Spring Data Redis - Could not safely identify store assignment for repository candidate interface com.iroomclass.springbackend.domain.exam.repository.ExamRepository; If you want this repository to be a Redis repository, consider annotating your entities with one of these annotations: org.springframework.data.redis.core.RedisHash (preferred), or consider extending one of the following types with your repository: org.springframework.data.keyvalue.repository.KeyValueRepository
+[[2m2025-09-06 12:01:04.832[0;39m] [32m INFO[0;39m [35m47422[0;39m [2m---[0;39m [2m[           main][0;39m [36m.RepositoryConfigurationExtensionSupport[0;39m [2m:[0;39m Spring Data Redis - Could not safely identify store assignment for repository candidate interface com.iroomclass.springbackend.domain.exam.repository.ExamResultRepository; If you want this repository to be a Redis repository, consider annotating your entities with one of these annotations: org.springframework.data.redis.core.RedisHash (preferred), or consider extending one of the following types with your repository: org.springframework.data.keyvalue.repository.KeyValueRepository
+[[2m2025-09-06 12:01:04.832[0;39m] [32m INFO[0;39m [35m47422[0;39m [2m---[0;39m [2m[           main][0;39m [36m.RepositoryConfigurationExtensionSupport[0;39m [2m:[0;39m Spring Data Redis - Could not safely identify store assignment for repository candidate interface com.iroomclass.springbackend.domain.exam.repository.ExamSheetQuestionRepository; If you want this repository to be a Redis repository, consider annotating your entities with one of these annotations: org.springframework.data.redis.core.RedisHash (preferred), or consider extending one of the following types with your repository: org.springframework.data.keyvalue.repository.KeyValueRepository
+[[2m2025-09-06 12:01:04.832[0;39m] [32m INFO[0;39m [35m47422[0;39m [2m---[0;39m [2m[           main][0;39m [36m.RepositoryConfigurationExtensionSupport[0;39m [2m:[0;39m Spring Data Redis - Could not safely identify store assignment for repository candidate interface com.iroomclass.springbackend.domain.exam.repository.ExamSheetRepository; If you want this repository to be a Redis repository, consider annotating your entities with one of these annotations: org.springframework.data.redis.core.RedisHash (preferred), or consider extending one of the following types with your repository: org.springframework.data.keyvalue.repository.KeyValueRepository
+[[2m2025-09-06 12:01:04.833[0;39m] [32m INFO[0;39m [35m47422[0;39m [2m---[0;39m [2m[           main][0;39m [36m.RepositoryConfigurationExtensionSupport[0;39m [2m:[0;39m Spring Data Redis - Could not safely identify store assignment for repository candidate interface com.iroomclass.springbackend.domain.exam.repository.ExamSubmissionRepository; If you want this repository to be a Redis repository, consider annotating your entities with one of these annotations: org.springframework.data.redis.core.RedisHash (preferred), or consider extending one of the following types with your repository: org.springframework.data.keyvalue.repository.KeyValueRepository
+[[2m2025-09-06 12:01:04.833[0;39m] [32m INFO[0;39m [35m47422[0;39m [2m---[0;39m [2m[           main][0;39m [36m.RepositoryConfigurationExtensionSupport[0;39m [2m:[0;39m Spring Data Redis - Could not safely identify store assignment for repository candidate interface com.iroomclass.springbackend.domain.exam.repository.QuestionRepository; If you want this repository to be a Redis repository, consider annotating your entities with one of these annotations: org.springframework.data.redis.core.RedisHash (preferred), or consider extending one of the following types with your repository: org.springframework.data.keyvalue.repository.KeyValueRepository
+[[2m2025-09-06 12:01:04.833[0;39m] [32m INFO[0;39m [35m47422[0;39m [2m---[0;39m [2m[           main][0;39m [36m.RepositoryConfigurationExtensionSupport[0;39m [2m:[0;39m Spring Data Redis - Could not safely identify store assignment for repository candidate interface com.iroomclass.springbackend.domain.student.repository.StudentExamResultRepository; If you want this repository to be a Redis repository, consider annotating your entities with one of these annotations: org.springframework.data.redis.core.RedisHash (preferred), or consider extending one of the following types with your repository: org.springframework.data.keyvalue.repository.KeyValueRepository
+[[2m2025-09-06 12:01:04.833[0;39m] [32m INFO[0;39m [35m47422[0;39m [2m---[0;39m [2m[           main][0;39m [36m.RepositoryConfigurationExtensionSupport[0;39m [2m:[0;39m Spring Data Redis - Could not safely identify store assignment for repository candidate interface com.iroomclass.springbackend.domain.student.repository.StudentExamSubmissionRepository; If you want this repository to be a Redis repository, consider annotating your entities with one of these annotations: org.springframework.data.redis.core.RedisHash (preferred), or consider extending one of the following types with your repository: org.springframework.data.keyvalue.repository.KeyValueRepository
+[[2m2025-09-06 12:01:04.833[0;39m] [32m INFO[0;39m [35m47422[0;39m [2m---[0;39m [2m[           main][0;39m [36m.RepositoryConfigurationExtensionSupport[0;39m [2m:[0;39m Spring Data Redis - Could not safely identify store assignment for repository candidate interface com.iroomclass.springbackend.domain.unit.repository.UnitCategoryRepository; If you want this repository to be a Redis repository, consider annotating your entities with one of these annotations: org.springframework.data.redis.core.RedisHash (preferred), or consider extending one of the following types with your repository: org.springframework.data.keyvalue.repository.KeyValueRepository
+[[2m2025-09-06 12:01:04.833[0;39m] [32m INFO[0;39m [35m47422[0;39m [2m---[0;39m [2m[           main][0;39m [36m.RepositoryConfigurationExtensionSupport[0;39m [2m:[0;39m Spring Data Redis - Could not safely identify store assignment for repository candidate interface com.iroomclass.springbackend.domain.unit.repository.UnitRepository; If you want this repository to be a Redis repository, consider annotating your entities with one of these annotations: org.springframework.data.redis.core.RedisHash (preferred), or consider extending one of the following types with your repository: org.springframework.data.keyvalue.repository.KeyValueRepository
+[[2m2025-09-06 12:01:04.833[0;39m] [32m INFO[0;39m [35m47422[0;39m [2m---[0;39m [2m[           main][0;39m [36m.RepositoryConfigurationExtensionSupport[0;39m [2m:[0;39m Spring Data Redis - Could not safely identify store assignment for repository candidate interface com.iroomclass.springbackend.domain.unit.repository.UnitSubcategoryRepository; If you want this repository to be a Redis repository, consider annotating your entities with one of these annotations: org.springframework.data.redis.core.RedisHash (preferred), or consider extending one of the following types with your repository: org.springframework.data.keyvalue.repository.KeyValueRepository
+[[2m2025-09-06 12:01:04.834[0;39m] [32m INFO[0;39m [35m47422[0;39m [2m---[0;39m [2m[           main][0;39m [36m.s.d.r.c.RepositoryConfigurationDelegate[0;39m [2m:[0;39m Finished Spring Data repository scanning in 8 ms. Found 0 Redis repository interfaces.
+[[2m2025-09-06 12:01:05.173[0;39m] [32m INFO[0;39m [35m47422[0;39m [2m---[0;39m [2m[           main][0;39m [36mo.s.b.w.embedded.tomcat.TomcatWebServer [0;39m [2m:[0;39m Tomcat initialized with port 3058 (http)
+[[2m2025-09-06 12:01:05.181[0;39m] [32m INFO[0;39m [35m47422[0;39m [2m---[0;39m [2m[           main][0;39m [36mo.a.coyote.http11.Http11NioProtocol     [0;39m [2m:[0;39m Initializing ProtocolHandler ["http-nio-3058"]
+[[2m2025-09-06 12:01:05.182[0;39m] [32m INFO[0;39m [35m47422[0;39m [2m---[0;39m [2m[           main][0;39m [36mo.apache.catalina.core.StandardService  [0;39m [2m:[0;39m Starting service [Tomcat]
+[[2m2025-09-06 12:01:05.182[0;39m] [32m INFO[0;39m [35m47422[0;39m [2m---[0;39m [2m[           main][0;39m [36mo.apache.catalina.core.StandardEngine   [0;39m [2m:[0;39m Starting Servlet engine: [Apache Tomcat/10.1.44]
+[[2m2025-09-06 12:01:05.216[0;39m] [32m INFO[0;39m [35m47422[0;39m [2m---[0;39m [2m[           main][0;39m [36mo.a.c.c.C.[Tomcat].[localhost].[/api]   [0;39m [2m:[0;39m Initializing Spring embedded WebApplicationContext
+[[2m2025-09-06 12:01:05.216[0;39m] [32m INFO[0;39m [35m47422[0;39m [2m---[0;39m [2m[           main][0;39m [36mw.s.c.ServletWebServerApplicationContext[0;39m [2m:[0;39m Root WebApplicationContext: initialization completed in 1101 ms
+Standard Commons Logging discovery in action with spring-jcl: please remove commons-logging.jar from classpath in order to avoid potential conflicts
+[[2m2025-09-06 12:01:05.313[0;39m] [32m INFO[0;39m [35m47422[0;39m [2m---[0;39m [2m[           main][0;39m [36mo.hibernate.jpa.internal.util.LogHelper [0;39m [2m:[0;39m HHH000204: Processing PersistenceUnitInfo [name: default]
+[[2m2025-09-06 12:01:05.339[0;39m] [32m INFO[0;39m [35m47422[0;39m [2m---[0;39m [2m[           main][0;39m [36morg.hibernate.Version                   [0;39m [2m:[0;39m HHH000412: Hibernate ORM core version 6.6.26.Final
+[[2m2025-09-06 12:01:05.357[0;39m] [32m INFO[0;39m [35m47422[0;39m [2m---[0;39m [2m[           main][0;39m [36mo.h.c.internal.RegionFactoryInitiator   [0;39m [2m:[0;39m HHH000026: Second-level cache disabled
+[[2m2025-09-06 12:01:05.510[0;39m] [32m INFO[0;39m [35m47422[0;39m [2m---[0;39m [2m[           main][0;39m [36mo.s.o.j.p.SpringPersistenceUnitInfo     [0;39m [2m:[0;39m No LoadTimeWeaver setup: ignoring JPA class transformer
+[[2m2025-09-06 12:01:05.528[0;39m] [32m INFO[0;39m [35m47422[0;39m [2m---[0;39m [2m[           main][0;39m [36mcom.zaxxer.hikari.HikariDataSource      [0;39m [2m:[0;39m SpringBootHikariCP - Starting...
+[[2m2025-09-06 12:01:05.842[0;39m] [32m INFO[0;39m [35m47422[0;39m [2m---[0;39m [2m[           main][0;39m [36mcom.zaxxer.hikari.pool.HikariPool       [0;39m [2m:[0;39m SpringBootHikariCP - Added connection com.mysql.cj.jdbc.ConnectionImpl@3ba1f56e
+[[2m2025-09-06 12:01:05.843[0;39m] [32m INFO[0;39m [35m47422[0;39m [2m---[0;39m [2m[           main][0;39m [36mcom.zaxxer.hikari.HikariDataSource      [0;39m [2m:[0;39m SpringBootHikariCP - Start completed.
+[[2m2025-09-06 12:01:05.893[0;39m] [33m WARN[0;39m [35m47422[0;39m [2m---[0;39m [2m[           main][0;39m [36morg.hibernate.orm.deprecation           [0;39m [2m:[0;39m HHH90000025: MySQLDialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
+[[2m2025-09-06 12:01:05.916[0;39m] [32m INFO[0;39m [35m47422[0;39m [2m---[0;39m [2m[           main][0;39m [36morg.hibernate.orm.connections.pooling   [0;39m [2m:[0;39m HHH10001005: Database info:
+	Database JDBC URL [Connecting through datasource 'HikariDataSource (SpringBootHikariCP)']
+	Database driver: undefined/unknown
+	Database version: 8.0.26
+	Autocommit mode: undefined/unknown
+	Isolation level: undefined/unknown
+	Minimum pool size: undefined/unknown
+	Maximum pool size: undefined/unknown
+[[2m2025-09-06 12:01:06.601[0;39m] [32m INFO[0;39m [35m47422[0;39m [2m---[0;39m [2m[           main][0;39m [36mo.h.e.t.j.p.i.JtaPlatformInitiator      [0;39m [2m:[0;39m HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+[[2m2025-09-06 12:01:06.629[0;39m] [32m INFO[0;39m [35m47422[0;39m [2m---[0;39m [2m[           main][0;39m [36morg.hibernate.orm.connections.access    [0;39m [2m:[0;39m HHH10001501: Connection obtained from JdbcConnectionAccess [org.hibernate.engine.jdbc.env.internal.JdbcEnvironmentInitiator$ConnectionProviderJdbcConnectionAccess@7c046af] for (non-JTA) DDL execution was not in auto-commit mode; the Connection 'local transaction' will be committed and the Connection will be set into auto-commit mode.
+[[2m2025-09-06 12:01:07.755[0;39m] [32m INFO[0;39m [35m47422[0;39m [2m---[0;39m [2m[           main][0;39m [36mj.LocalContainerEntityManagerFactoryBean[0;39m [2m:[0;39m Initialized JPA EntityManagerFactory for persistence unit 'default'
+[[2m2025-09-06 12:01:07.924[0;39m] [32m INFO[0;39m [35m47422[0;39m [2m---[0;39m [2m[           main][0;39m [36mo.s.d.j.r.query.QueryEnhancerFactory    [0;39m [2m:[0;39m Hibernate is in classpath; If applicable, HQL parser will be used.
+[[2m2025-09-06 12:01:10.925[0;39m] [32m INFO[0;39m [35m47422[0;39m [2m---[0;39m [2m[           main][0;39m [36mc.i.springbackend.config.AiServerConfig [0;39m [2m:[0;39m AI 서버 WebClient 설정 시작: baseUrl=http://localhost:8000, connectTimeout=30초, responseTimeout=60초
+[[2m2025-09-06 12:01:11.028[0;39m] [32m INFO[0;39m [35m47422[0;39m [2m---[0;39m [2m[           main][0;39m [36mc.i.springbackend.config.AiServerConfig [0;39m [2m:[0;39m AI 서버 WebClient 설정 완료
+[[2m2025-09-06 12:01:11.029[0;39m] [32m INFO[0;39m [35m47422[0;39m [2m---[0;39m [2m[           main][0;39m [36mc.i.springbackend.config.S3Config       [0;39m [2m:[0;39m S3 클라이언트 생성 시작: region=ap-northeast-2, bucketName=
+[[2m2025-09-06 12:01:11.345[0;39m] [32m INFO[0;39m [35m47422[0;39m [2m---[0;39m [2m[           main][0;39m [36mc.i.springbackend.config.S3Config       [0;39m [2m:[0;39m S3 클라이언트 생성 완료
+[[2m2025-09-06 12:01:11.393[0;39m] [32m INFO[0;39m [35m47422[0;39m [2m---[0;39m [2m[           main][0;39m [36mc.i.springbackend.config.S3Config       [0;39m [2m:[0;39m S3 프리사인드 URL 생성기 생성 시작: region=ap-northeast-2, urlDuration=60분
+[[2m2025-09-06 12:01:11.402[0;39m] [32m INFO[0;39m [35m47422[0;39m [2m---[0;39m [2m[           main][0;39m [36mc.i.springbackend.config.S3Config       [0;39m [2m:[0;39m S3 프리사인드 URL 생성기 생성 완료
+[[2m2025-09-06 12:01:11.406[0;39m] [32m INFO[0;39m [35m47422[0;39m [2m---[0;39m [2m[           main][0;39m [36mc.i.springbackend.config.S3Config       [0;39m [2m:[0;39m S3 비동기 클라이언트 생성 시작: region=ap-northeast-2
+[[2m2025-09-06 12:01:11.462[0;39m] [32m INFO[0;39m [35m47422[0;39m [2m---[0;39m [2m[           main][0;39m [36mc.i.springbackend.config.S3Config       [0;39m [2m:[0;39m S3 비동기 클라이언트 생성 완료
+[[2m2025-09-06 12:01:11.474[0;39m] [32m INFO[0;39m [35m47422[0;39m [2m---[0;39m [2m[           main][0;39m [36mc.i.springbackend.config.S3Config       [0;39m [2m:[0;39m S3 Transfer Manager 생성 시작: minPartSize=8MB
+[[2m2025-09-06 12:01:11.480[0;39m] [32m INFO[0;39m [35m47422[0;39m [2m---[0;39m [2m[           main][0;39m [36mc.i.springbackend.config.S3Config       [0;39m [2m:[0;39m S3 Transfer Manager 생성 완료
+[[2m2025-09-06 12:01:11.654[0;39m] [33m WARN[0;39m [35m47422[0;39m [2m---[0;39m [2m[           main][0;39m [36m.s.s.UserDetailsServiceAutoConfiguration[0;39m [2m:[0;39m 
+
+Using generated security password: 430228fa-308b-4a5e-b92c-a46e3a4191c0
+
+This generated password is for development use only. Your security configuration must be updated before running your application in production.
+
+[[2m2025-09-06 12:01:11.659[0;39m] [32m INFO[0;39m [35m47422[0;39m [2m---[0;39m [2m[           main][0;39m [36mr$InitializeUserDetailsManagerConfigurer[0;39m [2m:[0;39m Global AuthenticationManager configured with UserDetailsService bean with name inMemoryUserDetailsManager
+[[2m2025-09-06 12:01:12.062[0;39m] [32m INFO[0;39m [35m47422[0;39m [2m---[0;39m [2m[           main][0;39m [36mo.a.coyote.http11.Http11NioProtocol     [0;39m [2m:[0;39m Starting ProtocolHandler ["http-nio-3058"]
+[[2m2025-09-06 12:01:12.071[0;39m] [32m INFO[0;39m [35m47422[0;39m [2m---[0;39m [2m[           main][0;39m [36mo.s.b.w.embedded.tomcat.TomcatWebServer [0;39m [2m:[0;39m Tomcat started on port 3058 (http) with context path '/api'
+[[2m2025-09-06 12:01:12.079[0;39m] [32m INFO[0;39m [35m47422[0;39m [2m---[0;39m [2m[           main][0;39m [36mc.i.s.SpringBackendApplication          [0;39m [2m:[0;39m Started SpringBackendApplication in 8.394 seconds (process running for 8.601)
+[[2m2025-09-06 12:01:28.513[0;39m] [32m INFO[0;39m [35m47422[0;39m [2m---[0;39m [2m[nio-3058-exec-1][0;39m [36mo.a.c.c.C.[Tomcat].[localhost].[/api]   [0;39m [2m:[0;39m Initializing Spring DispatcherServlet 'dispatcherServlet'
+[[2m2025-09-06 12:01:28.513[0;39m] [32m INFO[0;39m [35m47422[0;39m [2m---[0;39m [2m[nio-3058-exec-1][0;39m [36mo.s.web.servlet.DispatcherServlet       [0;39m [2m:[0;39m Initializing Servlet 'dispatcherServlet'
+[[2m2025-09-06 12:01:28.514[0;39m] [32m INFO[0;39m [35m47422[0;39m [2m---[0;39m [2m[nio-3058-exec-1][0;39m [36mo.s.web.servlet.DispatcherServlet       [0;39m [2m:[0;39m Completed initialization in 1 ms
+[[2m2025-09-06 12:01:28.601[0;39m] [32m INFO[0;39m [35m47422[0;39m [2m---[0;39m [2m[nio-3058-exec-1][0;39m [36mc.i.s.d.s.controller.StudentController  [0;39m [2m:[0;39m 최근 시험 제출 내역 조회 요청: name=홍태극, page=0
+[[2m2025-09-06 12:01:28.606[0;39m] [32m INFO[0;39m [35m47422[0;39m [2m---[0;39m [2m[nio-3058-exec-1][0;39m [36mc.i.s.d.student.service.StudentService  [0;39m [2m:[0;39m 최근 시험 제출 내역 조회 (upsert): name=홍태극, page=0, size=10
+[[2m2025-09-06 12:01:28.606[0;39m] [32m INFO[0;39m [35m47422[0;39m [2m---[0;39m [2m[nio-3058-exec-1][0;39m [36mc.i.s.d.s.service.StudentAuthService    [0;39m [2m:[0;39m 학생 upsert 요청: name=홍태극, phone=010-2790-6727, birthDate=2099-09-15
+[[2m2025-09-06 12:01:28.645[0;39m] [32mDEBUG[0;39m [35m47422[0;39m [2m---[0;39m [2m[nio-3058-exec-1][0;39m [36morg.hibernate.SQL                       [0;39m [2m:[0;39m 
+    /* <criteria> */ select
+        s1_0.id,
+        s1_0.birth_date,
+        s1_0.created_at,
+        s1_0.name,
+        s1_0.phone,
+        s1_0.updated_at 
+    from
+        student s1_0 
+    where
+        s1_0.name=? 
+        and s1_0.phone=? 
+        and s1_0.birth_date=?
+[[2m2025-09-06 12:01:28.698[0;39m] [32m INFO[0;39m [35m47422[0;39m [2m---[0;39m [2m[nio-3058-exec-1][0;39m [36mc.i.s.d.s.service.StudentAuthService    [0;39m [2m:[0;39m 새 학생 생성: name=홍태극, phone=010-2790-6727, birthDate=2099-09-15
+[[2m2025-09-06 12:01:28.711[0;39m] [32mDEBUG[0;39m [35m47422[0;39m [2m---[0;39m [2m[nio-3058-exec-1][0;39m [36morg.hibernate.SQL                       [0;39m [2m:[0;39m 
+    /* insert for
+        com.iroomclass.springbackend.domain.auth.entity.Student */insert 
+    into
+        student (birth_date, created_at, name, phone, updated_at) 
+    values
+        (?, ?, ?, ?, ?)
+[[2m2025-09-06 12:01:28.743[0;39m] [32m INFO[0;39m [35m47422[0;39m [2m---[0;39m [2m[nio-3058-exec-1][0;39m [36mc.i.s.d.s.service.StudentAuthService    [0;39m [2m:[0;39m 학생 upsert 완료: studentId=126, name=홍태극
+[[2m2025-09-06 12:01:28.757[0;39m] [32mDEBUG[0;39m [35m47422[0;39m [2m---[0;39m [2m[nio-3058-exec-1][0;39m [36morg.hibernate.SQL                       [0;39m [2m:[0;39m 
+    /* SELECT
+        new com.iroomclass.springbackend.domain.student.dto.response.RecentSubmissionDto(e.examName, es.submittedAt, e.content, CAST(COUNT(esq.id) AS long)) 
+    FROM
+        ExamSubmission es 
+    JOIN
+        es.exam e 
+    JOIN
+        ExamSheetQuestion esq 
+            ON esq.examSheet.id = e.examSheet.id 
+    WHERE
+        es.student.id = :studentId 
+    GROUP BY
+        e.id,
+        e.examName,
+        es.submittedAt,
+        e.content 
+    ORDER BY
+        es.submittedAt DESC */ select
+            e1_0.exam_name,
+            es1_0.submitted_at,
+            e1_0.content,
+            cast(count(esq1_0.id) as signed) 
+        from
+            exam_submission es1_0 
+        join
+            exam e1_0 
+                on e1_0.id=es1_0.exam_id 
+        join
+            exam_sheet_question esq1_0 
+                on esq1_0.exam_sheet_id=e1_0.exam_sheet_id 
+        where
+            es1_0.student_id=? 
+        group by
+            e1_0.id,
+            e1_0.exam_name,
+            es1_0.submitted_at,
+            e1_0.content 
+        order by
+            es1_0.submitted_at desc 
+        limit
+            ?
+[[2m2025-09-06 12:01:28.785[0;39m] [32m INFO[0;39m [35m47422[0;39m [2m---[0;39m [2m[nio-3058-exec-1][0;39m [36mc.i.s.d.student.service.StudentService  [0;39m [2m:[0;39m 최근 시험 제출 내역 조회 완료: studentId=126, totalElements=0
+[[2m2025-09-06 12:01:28.878[0;39m] [33m WARN[0;39m [35m47422[0;39m [2m---[0;39m [2m[nio-3058-exec-1][0;39m [36mration$PageModule$WarningLoggingModifier[0;39m [2m:[0;39m Serializing PageImpl instances as-is is not supported, meaning that there is no guarantee about the stability of the resulting JSON structure!
+	For a stable JSON structure, please use Spring Data's PagedModel (globally via @EnableSpringDataWebSupport(pageSerializationMode = VIA_DTO))
+	or Spring HATEOAS and Spring Data's PagedResourcesAssembler as documented in https://docs.spring.io/spring-data/commons/reference/repositories/core-extensions.html#core.web.pageables.
+
+[[2m2025-09-06 12:26:59.270[0;39m] [33m WARN[0;39m [35m47422[0;39m [2m---[0;39m [2m[iCP:housekeeper][0;39m [36mcom.zaxxer.hikari.pool.PoolBase         [0;39m [2m:[0;39m SpringBootHikariCP - Failed to validate connection com.mysql.cj.jdbc.ConnectionImpl@3f83587 (No operations allowed after connection closed.). Possibly consider using a shorter maxLifetime value.
+[[2m2025-09-06 16:04:53.644[0;39m] [33m WARN[0;39m [35m47422[0;39m [2m---[0;39m [2m[iCP:housekeeper][0;39m [36mcom.zaxxer.hikari.pool.PoolBase         [0;39m [2m:[0;39m SpringBootHikariCP - Failed to validate connection com.mysql.cj.jdbc.ConnectionImpl@7dd54efd (No operations allowed after connection closed.). Possibly consider using a shorter maxLifetime value.

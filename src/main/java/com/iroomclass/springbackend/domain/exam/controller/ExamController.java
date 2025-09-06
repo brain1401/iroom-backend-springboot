@@ -7,6 +7,8 @@ import com.iroomclass.springbackend.domain.exam.dto.ExamSubmissionStatusDto;
 import com.iroomclass.springbackend.domain.exam.dto.ExamWithUnitsDto;
 import com.iroomclass.springbackend.domain.exam.dto.UnitSummaryDto;
 import com.iroomclass.springbackend.domain.exam.dto.UnitNameDto;
+import com.iroomclass.springbackend.domain.exam.dto.ExamQuestionsResponseDto;
+import com.iroomclass.springbackend.domain.exam.dto.QuestionDetailDto;
 import com.iroomclass.springbackend.domain.exam.repository.ExamRepository;
 import com.iroomclass.springbackend.domain.exam.service.ExamService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -288,6 +290,71 @@ public class ExamController {
             log.error("시험 통계 조회 실패: type={}, error={}", type, e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(ApiResponse.errorWithType("통계 조회 중 오류가 발생했습니다"));
+        }
+    }
+
+    // ========================================
+    // 문제 조회 관련 엔드포인트
+    // ========================================
+
+    /**
+     * 시험 문제 조회 (학생 제출용)
+     */
+    @Operation(summary = "시험 문제 조회 (학생 제출용)", description = """
+            특정 시험에 포함된 모든 문제 정보를 조회합니다.
+            학생이 시험을 제출할 때 필요한 모든 정보를 제공합니다.
+
+            **제공되는 정보:**
+            - 시험 기본 정보 (시험명, 학년)
+            - 문제 통계 (총 문제 수, 객관식/주관식 개수, 총 배점)
+            - 문제별 상세 정보 (순서, 유형, 내용, 배점, 선택지, 이미지)
+            - 문제 유형별 비율 정보
+
+            **정렬 순서:**
+            - 문제 순서(seqNo) 오름차순 정렬
+
+            **활용 목적:**
+            - 학생 시험 제출 페이지
+            - 객관식/주관식 답안 입력 인터페이스 구성
+            - 이미지 스캔 및 인식을 위한 문제 정보 제공
+
+            **사용 예시:**
+            - `/api/exams/{examId}/questions`
+
+            **성능 최적화:**
+            - JOIN FETCH를 사용하여 N+1 쿼리 방지
+            - 필요한 정보만 선택적 로딩
+            """, responses = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "조회 성공", 
+                content = @Content(schema = @Schema(implementation = ExamQuestionsResponseDto.class))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "시험을 찾을 수 없음", 
+                content = @Content(schema = @Schema(implementation = ApiResponse.class)))
+    })
+    @GetMapping("/{examId}/questions")
+    public ResponseEntity<ApiResponse<ExamQuestionsResponseDto>> getExamQuestions(
+            @Parameter(description = "시험 고유 식별자", required = true) 
+            @PathVariable UUID examId) {
+        
+        log.info("시험 문제 조회 요청: examId={}", examId);
+
+        try {
+            ExamQuestionsResponseDto examQuestions = examService.findExamQuestions(examId);
+            
+            log.info("시험 문제 조회 완료: examId={}, totalQuestions={}, multipleChoice={}, subjective={}", 
+                    examId, examQuestions.totalQuestions(), examQuestions.multipleChoiceCount(), 
+                    examQuestions.subjectiveCount());
+            
+            return ResponseEntity.ok(ApiResponse.success("시험 문제 조회 성공", examQuestions));
+            
+        } catch (RuntimeException e) {
+            log.warn("시험 문제 조회 실패: examId={}, error={}", examId, e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(ApiResponse.errorWithType("시험을 찾을 수 없습니다"));
+                    
+        } catch (Exception e) {
+            log.error("시험 문제 조회 중 예상치 못한 오류: examId={}, error={}", examId, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.errorWithType("시험 문제 조회 중 오류가 발생했습니다"));
         }
     }
 

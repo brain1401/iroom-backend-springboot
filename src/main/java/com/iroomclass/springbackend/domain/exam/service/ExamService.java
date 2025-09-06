@@ -2,8 +2,10 @@ package com.iroomclass.springbackend.domain.exam.service;
 
 import com.iroomclass.springbackend.domain.exam.dto.ExamDto;
 import com.iroomclass.springbackend.domain.exam.dto.ExamFilterRequest;
+import com.iroomclass.springbackend.domain.exam.dto.ExamQuestionsResponseDto;
 import com.iroomclass.springbackend.domain.exam.dto.ExamSubmissionStatusDto;
 import com.iroomclass.springbackend.domain.exam.dto.ExamWithUnitsDto;
+import com.iroomclass.springbackend.domain.exam.dto.QuestionDetailDto;
 import com.iroomclass.springbackend.domain.exam.dto.UnitSummaryDto;
 import com.iroomclass.springbackend.domain.exam.dto.UnitNameDto;
 import com.iroomclass.springbackend.domain.exam.repository.projection.UnitNameProjection;
@@ -58,6 +60,36 @@ public class ExamService {
         
         log.info("시험 조회 완료: examId={}, examName={}", examId, exam.getExamName());
         return ExamDto.fromWithExamSheet(exam);
+    }
+    
+    /**
+     * 시험 문제 목록 조회 (학생 제출용)
+     * 
+     * <p>학생이 시험에 응시할 때 필요한 모든 문제 정보를 제공합니다.
+     * 문제 내용, 선택지, 이미지, 통계 정보 등이 포함됩니다.</p>
+     * 
+     * @param examId 시험 식별자
+     * @return 시험 문제 상세 정보 및 통계
+     * @throws RuntimeException 시험을 찾을 수 없을 때
+     */
+    public ExamQuestionsResponseDto findExamQuestions(UUID examId) {
+        log.info("시험 문제 조회 시작: examId={}", examId);
+        
+        // 1. 시험 정보 조회
+        Exam exam = examRepository.findByIdWithExamSheet(examId)
+            .orElseThrow(() -> new RuntimeException("시험을 찾을 수 없습니다: " + examId));
+        
+        // 2. 시험지의 문제 목록 조회 (문제와 단원 정보 포함)
+        List<com.iroomclass.springbackend.domain.exam.entity.ExamSheetQuestion> examSheetQuestions = 
+            examSheetQuestionRepository.findByExamSheetIdWithQuestionsAndUnits(exam.getExamSheet().getId());
+        
+        // 3. DTO 변환
+        ExamQuestionsResponseDto responseDto = ExamQuestionsResponseDto.from(exam, examSheetQuestions);
+        
+        log.info("시험 문제 조회 완료: examId={}, totalQuestions={}, multipleChoice={}, subjective={}", 
+                examId, responseDto.totalQuestions(), responseDto.multipleChoiceCount(), responseDto.subjectiveCount());
+        
+        return responseDto;
     }
     
     /**
