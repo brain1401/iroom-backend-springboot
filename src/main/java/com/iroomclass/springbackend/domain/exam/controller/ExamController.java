@@ -3,6 +3,7 @@ package com.iroomclass.springbackend.domain.exam.controller;
 import com.iroomclass.springbackend.common.ApiResponse;
 import com.iroomclass.springbackend.domain.exam.dto.CreateExamRequest;
 import com.iroomclass.springbackend.domain.exam.dto.CreateExamResponse;
+import com.iroomclass.springbackend.domain.exam.dto.ExamAnswerSheetDto;
 import com.iroomclass.springbackend.domain.exam.dto.ExamAttendeeDto;
 import com.iroomclass.springbackend.domain.exam.dto.ExamDto;
 import com.iroomclass.springbackend.domain.exam.dto.ExamFilterRequest;
@@ -760,6 +761,155 @@ public class ExamController {
         } catch (Exception e) {
             log.error("시험 응시자 목록 조회 중 예상치 못한 오류: examId={}", examId, e);
             throw new RuntimeException("시험 응시자 목록 조회 중 오류가 발생했습니다", e);
+        }
+    }
+    
+    /**
+     * 시험 제출 ID로 학생 답안지 조회
+     * 
+     * <p>
+     * 특정 시험 제출에 대한 학생의 답안지를 조회합니다.
+     * submission_id를 통해 해당 학생의 전체 답안 정보를 반환합니다.
+     * </p>
+     */
+    @Operation(
+        summary = "학생 답안지 조회",
+        description = """
+            특정 시험 제출(submission)에 대한 학생의 전체 답안지를 조회합니다.
+            
+            **제공되는 정보:**
+            - 학생 정보 (이름, 전화번호)
+            - 시험 정보 (시험명, 학년, 생성일)
+            - 제출 정보 (제출 시간, 답변한 문제 수)
+            - 문제별 상세 답안
+              * 문제 내용 및 유형
+              * 학생 답안
+              * 정답
+              * 선택지 (객관식인 경우)
+              * 단원 정보
+              * 배점 및 점수 (채점된 경우)
+            
+            **활용 목적:**
+            - 선생님이 학생의 답안지 상세 확인
+            - 채점 전/후 답안 검토
+            - 문제별 답안 분석
+            
+            **사용 예시:**
+            ```
+            GET /api/exams/submissions/{submissionId}/answer-sheet
+            ```
+            """,
+        responses = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                responseCode = "200", 
+                description = "조회 성공",
+                content = @Content(
+                    mediaType = "application/json",
+                    schema = @Schema(implementation = ExamAnswerSheetDto.class),
+                    examples = @ExampleObject(value = """
+                        {
+                            "result": "SUCCESS",
+                            "message": "학생 답안지 조회 성공",
+                            "data": {
+                                "submissionId": "550e8400-e29b-41d4-a716-446655440000",
+                                "studentInfo": {
+                                    "studentId": 1,
+                                    "studentName": "홍길동",
+                                    "phoneNumber": "010-1234-5678"
+                                },
+                                "examInfo": {
+                                    "examId": "550e8400-e29b-41d4-a716-446655440001",
+                                    "examName": "2025년 1학기 중간고사",
+                                    "grade": 2,
+                                    "createdAt": "2025-01-15T09:00:00"
+                                },
+                                "submittedAt": "2025-01-20T10:30:00",
+                                "totalQuestions": 20,
+                                "answeredQuestions": 18,
+                                "questionAnswers": [
+                                    {
+                                        "questionNumber": 1,
+                                        "questionId": "550e8400-e29b-41d4-a716-446655440002",
+                                        "questionType": "MULTIPLE_CHOICE",
+                                        "questionText": "다음 중 가장 큰 수는?",
+                                        "choices": ["1. 15", "2. 20", "3. 25", "4. 30", "5. 35"],
+                                        "studentAnswer": "3",
+                                        "correctAnswer": "5",
+                                        "isAnswered": true,
+                                        "isCorrect": false,
+                                        "score": 0,
+                                        "maxScore": 5,
+                                        "unitInfo": {
+                                            "unitId": "550e8400-e29b-41d4-a716-446655440003",
+                                            "unitName": "방정식",
+                                            "unitCode": "MAT-2-01"
+                                        }
+                                    }
+                                ]
+                            }
+                        }
+                        """)
+                )
+            ),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                responseCode = "404", 
+                description = "시험 제출 정보 또는 답안지를 찾을 수 없음",
+                content = @Content(
+                    mediaType = "application/json",
+                    schema = @Schema(implementation = ApiResponse.class),
+                    examples = @ExampleObject(value = """
+                        {
+                            "result": "ERROR",
+                            "message": "시험 제출 정보를 찾을 수 없습니다",
+                            "data": null
+                        }
+                        """)
+                )
+            ),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                responseCode = "500", 
+                description = "서버 내부 오류",
+                content = @Content(
+                    mediaType = "application/json",
+                    schema = @Schema(implementation = ApiResponse.class)
+                )
+            )
+        }
+    )
+    @GetMapping("/submissions/{submissionId}/answer-sheet")
+    public ResponseEntity<ApiResponse<ExamAnswerSheetDto>> getExamAnswerSheet(
+            @Parameter(
+                description = "시험 제출 ID", 
+                required = true,
+                example = "550e8400-e29b-41d4-a716-446655440000"
+            )
+            @PathVariable UUID submissionId) {
+        
+        log.info("학생 답안지 조회 요청: submissionId={}", submissionId);
+        
+        try {
+            // 서비스 호출
+            ExamAnswerSheetDto answerSheet = examService.getExamAnswerSheet(submissionId);
+            
+            log.info("학생 답안지 조회 성공: submissionId={}, studentName={}, totalQuestions={}, answeredQuestions={}",
+                    submissionId, 
+                    answerSheet.studentInfo().studentName(),
+                    answerSheet.totalQuestions(),
+                    answerSheet.answeredQuestions());
+            
+            return ResponseEntity.ok(
+                ApiResponse.success("학생 답안지 조회 성공", answerSheet)
+            );
+            
+        } catch (RuntimeException e) {
+            log.error("학생 답안지 조회 실패: submissionId={}, error={}", submissionId, e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(ApiResponse.errorWithType(e.getMessage()));
+                    
+        } catch (Exception e) {
+            log.error("학생 답안지 조회 중 예상치 못한 오류: submissionId={}", submissionId, e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.errorWithType("답안지 조회 중 오류가 발생했습니다"));
         }
     }
 }

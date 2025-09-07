@@ -128,7 +128,8 @@ public class Question {
     /**
      * 객관식 선택지 (JSON 형태)
      * 객관식 문제일 때만 사용
-     * 예시: {"1": "선택지1", "2": "선택지2", "3": "선택지3", "4": "선택지4", "5": "선택지5"}
+     * 예시: [{"id": 1, "text": "$2$"}, {"id": 2, "text": "$1$"}, {"id": 3, "text":
+     * "서로 같다"}, {"id": 4, "text": "$6$"}, {"id": 5, "text": "$5$"}]
      */
     @Column(columnDefinition = "JSON")
     private String choices;
@@ -159,17 +160,17 @@ public class Question {
             if (questionText == null || questionText.trim().isEmpty()) {
                 return "<p></p>";
             }
-            
+
             String trimmedText = questionText.trim();
             StringBuilder html = new StringBuilder();
-            
+
             // JSON 형식인지 확인 (배열 형태로 시작하는 경우)
             if (trimmedText.startsWith("[")) {
                 try {
                     List<Map<String, Object>> questionData = objectMapper.readValue(questionText,
                             new TypeReference<List<Map<String, Object>>>() {
                             });
-                    
+
                     for (Map<String, Object> block : questionData) {
                         String type = (String) block.get("type");
                         @SuppressWarnings("unchecked")
@@ -219,7 +220,7 @@ public class Question {
             return formatPlainTextAsHtml(questionText);
         }
     }
-    
+
     /**
      * 일반 텍스트를 HTML로 포맷팅
      * LaTeX 수식 표기($...$)를 유지하면서 HTML 단락으로 감싸기
@@ -228,12 +229,12 @@ public class Question {
         if (text == null || text.trim().isEmpty()) {
             return "<p></p>";
         }
-        
+
         // HTML 이스케이프 처리 (< > & 등)
         String escapedText = text.replace("&", "&amp;")
-                                 .replace("<", "&lt;")
-                                 .replace(">", "&gt;");
-        
+                .replace("<", "&lt;")
+                .replace(">", "&gt;");
+
         // LaTeX 수식이 포함된 경우 특별한 클래스 추가
         if (escapedText.contains("$")) {
             return "<p class='question-with-latex'>" + escapedText + "</p>";

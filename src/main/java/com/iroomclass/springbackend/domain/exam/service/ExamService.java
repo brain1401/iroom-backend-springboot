@@ -2,27 +2,31 @@ package com.iroomclass.springbackend.domain.exam.service;
 
 import com.iroomclass.springbackend.domain.exam.dto.CreateExamRequest;
 import com.iroomclass.springbackend.domain.exam.dto.CreateExamResponse;
+import com.iroomclass.springbackend.domain.exam.dto.ExamAnswerSheetDto;
 import com.iroomclass.springbackend.domain.exam.dto.ExamAttendeeDto;
 import com.iroomclass.springbackend.domain.exam.dto.ExamDto;
 import com.iroomclass.springbackend.domain.exam.dto.ExamFilterRequest;
 import com.iroomclass.springbackend.domain.exam.dto.ExamQuestionsResponseDto;
 import com.iroomclass.springbackend.domain.exam.dto.ExamSubmissionStatusDto;
 import com.iroomclass.springbackend.domain.exam.dto.ExamWithUnitsDto;
-import com.iroomclass.springbackend.domain.exam.dto.QuestionDetailDto;
 import com.iroomclass.springbackend.domain.exam.dto.UnitSummaryDto;
 import com.iroomclass.springbackend.domain.exam.dto.UnitNameDto;
 import com.iroomclass.springbackend.domain.exam.repository.projection.UnitNameProjection;
 import com.iroomclass.springbackend.domain.exam.entity.Exam;
 import com.iroomclass.springbackend.domain.exam.entity.ExamSheet;
 import com.iroomclass.springbackend.domain.exam.entity.ExamSubmission;
+import com.iroomclass.springbackend.domain.exam.entity.StudentAnswerSheet;
+import com.iroomclass.springbackend.domain.exam.entity.Question;
 import com.iroomclass.springbackend.domain.exam.repository.ExamRepository;
 import com.iroomclass.springbackend.domain.exam.repository.ExamSheetRepository;
 import com.iroomclass.springbackend.domain.exam.repository.ExamSubmissionRepository;
 import com.iroomclass.springbackend.domain.exam.repository.ExamSubmissionRepository.ExamSubmissionStats;
 import com.iroomclass.springbackend.domain.exam.repository.ExamSheetQuestionRepository;
+import com.iroomclass.springbackend.domain.exam.repository.StudentAnswerSheetRepository;
 import com.iroomclass.springbackend.domain.exam.repository.projection.UnitProjection;
 import com.iroomclass.springbackend.domain.exam.repository.projection.UnitBasicProjection;
 import lombok.RequiredArgsConstructor;
+import java.util.concurrent.atomic.AtomicInteger;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -53,6 +57,7 @@ public class ExamService {
     private final ExamSubmissionRepository examSubmissionRepository;
     private final ExamSheetQuestionRepository examSheetQuestionRepository;
     private final ExamSheetRepository examSheetRepository;
+    private final StudentAnswerSheetRepository studentAnswerSheetRepository;
 
     /**
      * 시험 생성
@@ -981,5 +986,109 @@ public class ExamService {
                 examId, attendeePage.getTotalElements(), attendeePage.getContent().size());
 
         return attendeePage;
+    }
+
+    /**
+     * 시험 제출 ID로 학생 답안지 조회
+     * 
+     * <p>
+     * 특정 시험 제출에 대한 학생의 전체 답안 정보를 조회합니다.
+     * 학생 정보, 시험 정보, 각 문제별 답안을 포함한 상세 정보를 반환합니다.
+     * </p>
+     * 
+     * @param submissionId 시험 제출 ID
+     * @return 학생 답안지 상세 정보
+     * @throws RuntimeException 제출 정보 또는 답안지를 찾을 수 없을 때
+     */
+    @Transactional(readOnly = true)
+    public ExamAnswerSheetDto getExamAnswerSheet(UUID submissionId) {
+        log.info("학생 답안지 조회 시작: submissionId={}", submissionId);
+
+        // 1. 시험 제출 정보 조회
+        ExamSubmission submission = examSubmissionRepository.findById(submissionId)
+                .orElseThrow(() -> {
+                    log.error("시험 제출 정보를 찾을 수 없습니다: submissionId={}", submissionId);
+                    return new RuntimeException("시험 제출 정보를 찾을 수 없습니다: " + submissionId);
+                });
+
+        // 2. 학생 답안지 조회 (문제별 답안 포함)
+        StudentAnswerSheet answerSheet = studentAnswerSheetRepository.findBySubmissionIdWithQuestions(submissionId)
+                .orElseThrow(() -> {
+                    log.error("학생 답안지를 찾을 수 없습니다: submissionId={}", submissionId);
+                    return new RuntimeException("학생 답안지를 찾을 수 없습니다: " + submissionId);
+                });
+
+        // 3. 학생 정보 DTO 생성
+        ExamAnswerSheetDto.StudentInfo studentInfo = new ExamAnswerSheetDto.StudentInfo(
+                submission.getStudent().getId(),
+                submission.getStudent().getName(),
+                submission.getStudent().getPhone());
+
+        // 4. 시험 정보 DTO 생성
+        Exam exam = submission.getExam();
+        ExamAnswerSheetDto.ExamInfo examInfo = new ExamAnswerSheetDto.ExamInfo(
+                exam.getId(),
+                exam.getExamName(),
+                exam.getGrade(),
+                exam.getCreatedAt());
+
+        // 5. 문제별 답안 DTO 리스트 생성
+        // AtomicInteger를 사용하여 문제 번호 순차 할당
+        final AtomicInteger questionCounter = new AtomicInteger(1);
+        List<ExamAnswerSheetDto.QuestionAnswerDto> questionAnswers = answerSheet.getStudentAnswerSheetQuestions()
+                .stream()
+                .map(sheetQuestion -> {
+                    Question question = sheetQuestion.getQuestion();
+
+                    // 단원 정보
+                    ExamAnswerSheetDto.QuestionAnswerDto.UnitInfo unitInfo = new ExamAnswerSheetDto.QuestionAnswerDto.UnitInfo(
+                            question.getUnit().getId(),
+                            question.getUnit().getUnitName(),
+                            question.getUnit().getUnitCode());
+
+                    // 객관식 선택지 처리
+                    List<String> choices = null;
+                    if (question.getQuestionType() == Question.QuestionType.MULTIPLE_CHOICE
+                            && question.getChoices() != null) {
+                        // JSON 문자열을 List로 변환 (간단한 처리)
+                        try {
+                            choices = List.of(question.getChoices());
+                        } catch (Exception e) {
+                            log.warn("선택지 파싱 실패: questionId={}", question.getId());
+                        }
+                    }
+
+                    // 답안 DTO 생성 (순차적 문제 번호 할당)
+                    return new ExamAnswerSheetDto.QuestionAnswerDto(
+                            questionCounter.getAndIncrement(), // 순차적 문제 번호 할당
+                            question.getId(),
+                            question.getQuestionType().toString(),
+                            question.getQuestionText(),
+                            choices,
+                            sheetQuestion.getAnswerContent(),
+                            question.getAnswerText(),
+                            sheetQuestion.hasAnswer(),
+                            null, // isCorrect는 채점 후에만 설정
+                            null, // score는 채점 후에만 설정
+                            question.getPoints(),
+                            unitInfo);
+                })
+                .collect(Collectors.toList());
+
+        // 6. 전체 답안지 DTO 생성
+        ExamAnswerSheetDto answerSheetDto = new ExamAnswerSheetDto(
+                submissionId,
+                studentInfo,
+                examInfo,
+                submission.getSubmittedAt(),
+                answerSheet.getTotalProblemCount(),
+                answerSheet.getAnsweredProblemCount(),
+                questionAnswers);
+
+        log.info("학생 답안지 조회 완료: submissionId={}, studentName={}, totalQuestions={}, answeredQuestions={}",
+                submissionId, studentInfo.studentName(),
+                answerSheetDto.totalQuestions(), answerSheetDto.answeredQuestions());
+
+        return answerSheetDto;
     }
 }
