@@ -1,5 +1,6 @@
 package com.iroomclass.springbackend.domain.textrecognition.service;
 
+import com.iroomclass.springbackend.common.UUIDv7Generator;
 import com.iroomclass.springbackend.domain.textrecognition.client.AIServerClient;
 import com.iroomclass.springbackend.domain.textrecognition.dto.*;
 import java.util.List;
@@ -47,8 +48,8 @@ public class TextRecognitionService {
         // 파일 검증
         validateFile(request.file());
         
-        // 고유한 작업 ID 생성
-        String jobId = UUID.randomUUID().toString();
+        // 고유한 작업 ID 생성 (JUG 라이브러리로 UUID v7 생성)
+        String jobId = UUIDv7Generator.generateString();
         
         log.info("텍스트 인식 작업 시작: jobId={}, filename={}", jobId, request.file().getOriginalFilename());
         

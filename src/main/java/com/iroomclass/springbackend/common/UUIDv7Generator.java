@@ -1,19 +1,21 @@
 package com.iroomclass.springbackend.common;
 
+import com.fasterxml.uuid.Generators;
+import com.fasterxml.uuid.impl.TimeBasedEpochRandomGenerator;
+
 import java.nio.ByteBuffer;
-import java.security.SecureRandom;
 import java.util.UUID;
 
 /**
  * UUIDv7 생성기
  * 
  * <p>
- * 시간 순서대로 정렬 가능한 UUID를 생성합니다.
- * MySQL의 GENERATE_UUIDV7() 함수와 동일한 결과를 생성합니다.
+ * JUG(Java UUID Generator) 라이브러리를 사용하여
+ * 시간 순서대로 정렬 가능한 UUID v7을 생성합니다.
  * </p>
  * 
  * <p>
- * UUIDv7 구조:
+ * UUIDv7 구조 (RFC-9562):
  * </p>
  * <ul>
  * <li>48비트: 유닉스 타임스탬프 (밀리초)</li>
@@ -22,11 +24,15 @@ import java.util.UUID;
  * </ul>
  * 
  * @author AI Assistant
- * @since 1.0
+ * @since 2.0
  */
 public class UUIDv7Generator {
 
-    private static final SecureRandom RANDOM = new SecureRandom();
+    /**
+     * JUG의 UUID v7 생성기 인스턴스
+     * Thread-safe하므로 싱글톤으로 사용
+     */
+    private static final TimeBasedEpochRandomGenerator GENERATOR = Generators.timeBasedEpochRandomGenerator();
 
     /**
      * UUIDv7 생성
@@ -34,27 +40,7 @@ public class UUIDv7Generator {
      * @return 새로운 UUIDv7
      */
     public static UUID generate() {
-        long timestampMs = System.currentTimeMillis();
-
-        // 랜덤 바이트 생성
-        byte[] randomBytes = new byte[10];
-        RANDOM.nextBytes(randomBytes);
-
-        // 타임스탬프를 상위 48비트에 배치
-        long mostSigBits = (timestampMs << 16) |
-                (0x7000L | ((randomBytes[0] & 0x0F) << 8) | (randomBytes[1] & 0xFF));
-
-        // 나머지 64비트 구성
-        long leastSigBits = ((long) (0x80 | (randomBytes[2] & 0x3F)) << 56) |
-                ((long) (randomBytes[3] & 0xFF) << 48) |
-                ((long) (randomBytes[4] & 0xFF) << 40) |
-                ((long) (randomBytes[5] & 0xFF) << 32) |
-                ((long) (randomBytes[6] & 0xFF) << 24) |
-                ((long) (randomBytes[7] & 0xFF) << 16) |
-                ((long) (randomBytes[8] & 0xFF) << 8) |
-                (randomBytes[9] & 0xFF);
-
-        return new UUID(mostSigBits, leastSigBits);
+        return GENERATOR.generate();
     }
 
     /**
@@ -94,6 +80,7 @@ public class UUIDv7Generator {
      * @return 생성 시점의 타임스탬프 (밀리초)
      */
     public static long extractTimestamp(UUID uuidv7) {
+        // UUID v7의 상위 48비트가 타임스탬프
         return uuidv7.getMostSignificantBits() >>> 16;
     }
 
@@ -113,34 +100,30 @@ public class UUIDv7Generator {
      * @return UUIDv7인지 여부
      */
     public static boolean isUUIDv7(UUID uuid) {
-        // UUID 버전 확인 (상위 4비트가 7인지)
-        return ((uuid.getMostSignificantBits() >>> 12) & 0xF) == 7;
+        // UUID 버전 확인 (버전 필드가 7인지)
+        // UUID v7의 경우 version 필드(12-15번째 비트)가 0111(7)이어야 함
+        int version = (int) ((uuid.getMostSignificantBits() >> 12) & 0x0f);
+        return version == 7;
     }
 
     /**
      * 현재 시간으로부터 상대적 시간차이를 가진 UUIDv7 생성 (테스트용)
      * 
-     * @param offsetMs 현재 시간으로부터의 오프셋 (밀리초)
-     * @return 지정된 시간의 UUIDv7
+     * <p>
+     * 참고: JUG 라이브러리는 커스텀 타임스탬프를 직접 지원하지 않으므로
+     * 이 메서드는 일반 UUID v7을 생성하되, 시간 오프셋은 무시됩니다.
+     * 실제 테스트에서는 Thread.sleep()을 사용하거나
+     * 다른 방법으로 시간차를 만들어야 합니다.
+     * </p>
+     * 
+     * @param offsetMs 현재 시간으로부터의 오프셋 (밀리초) - 무시됨
+     * @return 현재 시간 기준의 UUIDv7
+     * @deprecated JUG 라이브러리 제약으로 인해 offset이 적용되지 않음
      */
+    @Deprecated
     public static UUID generateWithOffset(long offsetMs) {
-        long timestampMs = System.currentTimeMillis() + offsetMs;
-
-        byte[] randomBytes = new byte[10];
-        RANDOM.nextBytes(randomBytes);
-
-        long mostSigBits = (timestampMs << 16) |
-                (0x7000L | ((randomBytes[0] & 0x0F) << 8) | (randomBytes[1] & 0xFF));
-
-        long leastSigBits = ((long) (0x80 | (randomBytes[2] & 0x3F)) << 56) |
-                ((long) (randomBytes[3] & 0xFF) << 48) |
-                ((long) (randomBytes[4] & 0xFF) << 40) |
-                ((long) (randomBytes[5] & 0xFF) << 32) |
-                ((long) (randomBytes[6] & 0xFF) << 24) |
-                ((long) (randomBytes[7] & 0xFF) << 16) |
-                ((long) (randomBytes[8] & 0xFF) << 8) |
-                (randomBytes[9] & 0xFF);
-
-        return new UUID(mostSigBits, leastSigBits);
+        // JUG 라이브러리는 현재 시간 기준으로만 생성 가능
+        // 커스텀 타임스탬프 지원 안 함
+        return generate();
     }
 }

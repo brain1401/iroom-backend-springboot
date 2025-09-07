@@ -155,30 +155,49 @@ public class Question {
      */
     public String getQuestionTextAsHtml() {
         try {
-            List<Map<String, Object>> questionData = objectMapper.readValue(questionText,
-                    new TypeReference<List<Map<String, Object>>>() {
-                    });
+            // null 체크
+            if (questionText == null || questionText.trim().isEmpty()) {
+                return "<p></p>";
+            }
+            
+            String trimmedText = questionText.trim();
             StringBuilder html = new StringBuilder();
+            
+            // JSON 형식인지 확인 (배열 형태로 시작하는 경우)
+            if (trimmedText.startsWith("[")) {
+                try {
+                    List<Map<String, Object>> questionData = objectMapper.readValue(questionText,
+                            new TypeReference<List<Map<String, Object>>>() {
+                            });
+                    
+                    for (Map<String, Object> block : questionData) {
+                        String type = (String) block.get("type");
+                        @SuppressWarnings("unchecked")
+                        List<Map<String, Object>> content = (List<Map<String, Object>>) block.get("content");
 
-            for (Map<String, Object> block : questionData) {
-                String type = (String) block.get("type");
-                @SuppressWarnings("unchecked")
-                List<Map<String, Object>> content = (List<Map<String, Object>>) block.get("content");
+                        if ("paragraph".equals(type)) {
+                            html.append("<p>");
+                            for (Map<String, Object> item : content) {
+                                String itemType = (String) item.get("type");
+                                String value = (String) item.get("value");
 
-                if ("paragraph".equals(type)) {
-                    html.append("<p>");
-                    for (Map<String, Object> item : content) {
-                        String itemType = (String) item.get("type");
-                        String value = (String) item.get("value");
-
-                        if ("text".equals(itemType)) {
-                            html.append(value);
-                        } else if ("latex".equals(itemType)) {
-                            html.append("$").append(value).append("$");
+                                if ("text".equals(itemType)) {
+                                    html.append(value);
+                                } else if ("latex".equals(itemType)) {
+                                    html.append("$").append(value).append("$");
+                                }
+                            }
+                            html.append("</p>");
                         }
                     }
-                    html.append("</p>");
+                } catch (JsonProcessingException e) {
+                    // JSON 파싱 실패 시 일반 텍스트로 처리
+                    log.debug("JSON 파싱 실패, 일반 텍스트로 처리: {}", e.getMessage());
+                    html.append(formatPlainTextAsHtml(questionText));
                 }
+            } else {
+                // JSON이 아닌 일반 텍스트인 경우
+                html.append(formatPlainTextAsHtml(questionText));
             }
 
             // 이미지가 있으면 문제 내용 아래에 추가
@@ -194,9 +213,32 @@ public class Question {
 
             return html.toString();
 
-        } catch (JsonProcessingException e) {
-            log.error("JSON 파싱 오류: {}", e.getMessage(), e);
-            return questionText; // JSON 파싱 실패 시 원본 반환
+        } catch (Exception e) {
+            log.error("문제 텍스트 HTML 변환 오류: {}", e.getMessage(), e);
+            // 에러 발생 시에도 안전하게 텍스트 반환
+            return formatPlainTextAsHtml(questionText);
+        }
+    }
+    
+    /**
+     * 일반 텍스트를 HTML로 포맷팅
+     * LaTeX 수식 표기($...$)를 유지하면서 HTML 단락으로 감싸기
+     */
+    private String formatPlainTextAsHtml(String text) {
+        if (text == null || text.trim().isEmpty()) {
+            return "<p></p>";
+        }
+        
+        // HTML 이스케이프 처리 (< > & 등)
+        String escapedText = text.replace("&", "&amp;")
+                                 .replace("<", "&lt;")
+                                 .replace(">", "&gt;");
+        
+        // LaTeX 수식이 포함된 경우 특별한 클래스 추가
+        if (escapedText.contains("$")) {
+            return "<p class='question-with-latex'>" + escapedText + "</p>";
+        } else {
+            return "<p>" + escapedText + "</p>";
         }
     }
 
