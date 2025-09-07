@@ -17,12 +17,15 @@ import com.iroomclass.springbackend.domain.exam.entity.ExamSheet;
 import com.iroomclass.springbackend.domain.exam.entity.ExamSubmission;
 import com.iroomclass.springbackend.domain.exam.entity.StudentAnswerSheet;
 import com.iroomclass.springbackend.domain.exam.entity.Question;
+import com.iroomclass.springbackend.domain.exam.entity.ExamResult;
+import com.iroomclass.springbackend.domain.exam.entity.ExamResultQuestion;
 import com.iroomclass.springbackend.domain.exam.repository.ExamRepository;
 import com.iroomclass.springbackend.domain.exam.repository.ExamSheetRepository;
 import com.iroomclass.springbackend.domain.exam.repository.ExamSubmissionRepository;
 import com.iroomclass.springbackend.domain.exam.repository.ExamSubmissionRepository.ExamSubmissionStats;
 import com.iroomclass.springbackend.domain.exam.repository.ExamSheetQuestionRepository;
 import com.iroomclass.springbackend.domain.exam.repository.StudentAnswerSheetRepository;
+import com.iroomclass.springbackend.domain.exam.repository.ExamResultRepository;
 import com.iroomclass.springbackend.domain.exam.repository.projection.UnitProjection;
 import com.iroomclass.springbackend.domain.exam.repository.projection.UnitBasicProjection;
 import lombok.RequiredArgsConstructor;
@@ -58,6 +61,7 @@ public class ExamService {
     private final ExamSheetQuestionRepository examSheetQuestionRepository;
     private final ExamSheetRepository examSheetRepository;
     private final StudentAnswerSheetRepository studentAnswerSheetRepository;
+    private final ExamResultRepository examResultRepository;
 
     /**
      * 시험 생성
@@ -1018,13 +1022,38 @@ public class ExamService {
                     return new RuntimeException("학생 답안지를 찾을 수 없습니다: " + submissionId);
                 });
 
-        // 3. 학생 정보 DTO 생성
+        // 3. 채점 결과 조회 (최신 버전)
+        List<ExamResult> examResults = examResultRepository.findAllVersionsBySubmissionId(submissionId);
+        ExamResult latestResult = null;
+        Map<UUID, ExamResultQuestion> resultQuestionMap = null;
+        
+        if (!examResults.isEmpty()) {
+            // 최신 버전 찾기 (version 컬럼이 없으므로 가장 최근 것 사용)
+            latestResult = examResults.stream()
+                    .filter(r -> r.getStatus() == ExamResult.ResultStatus.COMPLETED)
+                    .findFirst()
+                    .orElse(examResults.get(0)); // 완료된 채점이 없으면 첫 번째 것 사용
+            
+            // 문제별 채점 결과 맵 생성
+            if (latestResult != null && latestResult.getQuestionResults() != null) {
+                resultQuestionMap = latestResult.getQuestionResults().stream()
+                        .collect(Collectors.toMap(
+                                erq -> erq.getQuestion().getId(),
+                                erq -> erq
+                        ));
+            }
+        }
+        
+        final Map<UUID, ExamResultQuestion> finalResultMap = resultQuestionMap;
+        final ExamResult finalLatestResult = latestResult;
+
+        // 4. 학생 정보 DTO 생성
         ExamAnswerSheetDto.StudentInfo studentInfo = new ExamAnswerSheetDto.StudentInfo(
                 submission.getStudent().getId(),
                 submission.getStudent().getName(),
                 submission.getStudent().getPhone());
 
-        // 4. 시험 정보 DTO 생성
+        // 5. 시험 정보 DTO 생성
         Exam exam = submission.getExam();
         ExamAnswerSheetDto.ExamInfo examInfo = new ExamAnswerSheetDto.ExamInfo(
                 exam.getId(),
@@ -1032,8 +1061,7 @@ public class ExamService {
                 exam.getGrade(),
                 exam.getCreatedAt());
 
-        // 5. 문제별 답안 DTO 리스트 생성
-        // AtomicInteger를 사용하여 문제 번호 순차 할당
+        // 6. 문제별 답안 DTO 리스트 생성
         final AtomicInteger questionCounter = new AtomicInteger(1);
         List<ExamAnswerSheetDto.QuestionAnswerDto> questionAnswers = answerSheet.getStudentAnswerSheetQuestions()
                 .stream()
@@ -1050,7 +1078,6 @@ public class ExamService {
                     List<String> choices = null;
                     if (question.getQuestionType() == Question.QuestionType.MULTIPLE_CHOICE
                             && question.getChoices() != null) {
-                        // JSON 문자열을 List로 변환 (간단한 처리)
                         try {
                             choices = List.of(question.getChoices());
                         } catch (Exception e) {
@@ -1058,9 +1085,21 @@ public class ExamService {
                         }
                     }
 
-                    // 답안 DTO 생성 (순차적 문제 번호 할당)
+                    // 채점 결과 정보 추출
+                    Boolean isCorrect = null;
+                    Integer score = null;
+                    String feedback = null;
+                    
+                    if (finalResultMap != null && finalResultMap.containsKey(question.getId())) {
+                        ExamResultQuestion erq = finalResultMap.get(question.getId());
+                        isCorrect = erq.getIsCorrect();
+                        score = erq.getScore();
+                        feedback = erq.getScoringComment();
+                    }
+
+                    // 답안 DTO 생성
                     return new ExamAnswerSheetDto.QuestionAnswerDto(
-                            questionCounter.getAndIncrement(), // 순차적 문제 번호 할당
+                            questionCounter.getAndIncrement(),
                             question.getId(),
                             question.getQuestionType().toString(),
                             question.getQuestionText(),
@@ -1068,14 +1107,37 @@ public class ExamService {
                             sheetQuestion.getAnswerContent(),
                             question.getAnswerText(),
                             sheetQuestion.hasAnswer(),
-                            null, // isCorrect는 채점 후에만 설정
-                            null, // score는 채점 후에만 설정
+                            isCorrect,  // 채점 결과 포함
+                            score,      // 점수 포함
                             question.getPoints(),
+                            feedback,   // 피드백 포함
                             unitInfo);
                 })
                 .collect(Collectors.toList());
 
-        // 6. 전체 답안지 DTO 생성
+        // 7. 채점 결과 정보 DTO 생성
+        ExamAnswerSheetDto.GradingResult gradingResult = null;
+        if (finalLatestResult != null) {
+            // 정답/오답 개수 계산
+            long correctCount = questionAnswers.stream()
+                    .filter(q -> q.isCorrect() != null && q.isCorrect())
+                    .count();
+            long wrongCount = questionAnswers.stream()
+                    .filter(q -> q.isCorrect() != null && !q.isCorrect())
+                    .count();
+            
+            gradingResult = new ExamAnswerSheetDto.GradingResult(
+                    finalLatestResult.getId(),
+                    finalLatestResult.getTotalScore(),
+                    finalLatestResult.getStatus(),
+                    finalLatestResult.getGradedAt(),
+                    finalLatestResult.getScoringComment(),
+                    (int) correctCount,
+                    (int) wrongCount
+            );
+        }
+
+        // 8. 전체 답안지 DTO 생성
         ExamAnswerSheetDto answerSheetDto = new ExamAnswerSheetDto(
                 submissionId,
                 studentInfo,
@@ -1083,11 +1145,14 @@ public class ExamService {
                 submission.getSubmittedAt(),
                 answerSheet.getTotalProblemCount(),
                 answerSheet.getAnsweredProblemCount(),
-                questionAnswers);
+                questionAnswers,
+                gradingResult  // 채점 결과 추가
+        );
 
-        log.info("학생 답안지 조회 완료: submissionId={}, studentName={}, totalQuestions={}, answeredQuestions={}",
+        log.info("학생 답안지 조회 완료: submissionId={}, studentName={}, totalQuestions={}, answeredQuestions={}, graded={}",
                 submissionId, studentInfo.studentName(),
-                answerSheetDto.totalQuestions(), answerSheetDto.answeredQuestions());
+                answerSheetDto.totalQuestions(), answerSheetDto.answeredQuestions(),
+                gradingResult != null);
 
         return answerSheetDto;
     }

@@ -336,7 +336,7 @@ public class TeacherDashboardService {
                 correctAnswers,
                 incorrectAnswers,
                 examResult.getGradedAt(),
-                examResult.getVersion(),
+                null,  // version 컬럼이 제거됨
                 examResult.getScoringComment());
 
         // 7. 문제별 답안 정보 생성

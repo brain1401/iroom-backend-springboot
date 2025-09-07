@@ -103,14 +103,6 @@ public class ExamResult {
     private String scoringComment;
 
     /**
-     * 재채점 버전
-     * 동일한 제출물에 대한 채점 버전 관리
-     */
-    @Column(nullable = false)
-    @Builder.Default
-    private Integer version = 1;
-
-    /**
      * 생성일시
      */
     @Column(name = "created_at", nullable = false)
@@ -199,7 +191,6 @@ public class ExamResult {
                 .examSubmission(this.examSubmission)
                 .examSheet(this.examSheet)
                 .status(ResultStatus.PENDING)
-                .version(this.version + 1)
                 .build();
     }
 
@@ -228,7 +219,7 @@ public class ExamResult {
      * @return 재채점이면 true
      */
     public boolean isRegraded() {
-        return status == ResultStatus.REGRADED || version > 1;
+        return status == ResultStatus.REGRADED;
     }
 
     /**
