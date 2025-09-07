@@ -98,7 +98,7 @@ public class ExamService {
         Exam exam = Exam.builder()
                 .examSheet(examSheet)
                 .examName(request.examName())
-                .grade(examSheet.getGrade()) // 시험지의 학년 정보 복사
+                .grade(request.grade()) // 시험지의 학년 정보 복사
                 .content(request.description())
                 .maxStudent(request.maxStudent()) // 요청에서 최대 학생 수 설정
                 .qrCodeUrl(null) // QR 코드는 나중에 생성
@@ -1026,24 +1026,23 @@ public class ExamService {
         List<ExamResult> examResults = examResultRepository.findAllVersionsBySubmissionId(submissionId);
         ExamResult latestResult = null;
         Map<UUID, ExamResultQuestion> resultQuestionMap = null;
-        
+
         if (!examResults.isEmpty()) {
             // 최신 버전 찾기 (version 컬럼이 없으므로 가장 최근 것 사용)
             latestResult = examResults.stream()
                     .filter(r -> r.getStatus() == ExamResult.ResultStatus.COMPLETED)
                     .findFirst()
                     .orElse(examResults.get(0)); // 완료된 채점이 없으면 첫 번째 것 사용
-            
+
             // 문제별 채점 결과 맵 생성
             if (latestResult != null && latestResult.getQuestionResults() != null) {
                 resultQuestionMap = latestResult.getQuestionResults().stream()
                         .collect(Collectors.toMap(
                                 erq -> erq.getQuestion().getId(),
-                                erq -> erq
-                        ));
+                                erq -> erq));
             }
         }
-        
+
         final Map<UUID, ExamResultQuestion> finalResultMap = resultQuestionMap;
         final ExamResult finalLatestResult = latestResult;
 
@@ -1089,7 +1088,7 @@ public class ExamService {
                     Boolean isCorrect = null;
                     Integer score = null;
                     String feedback = null;
-                    
+
                     if (finalResultMap != null && finalResultMap.containsKey(question.getId())) {
                         ExamResultQuestion erq = finalResultMap.get(question.getId());
                         isCorrect = erq.getIsCorrect();
@@ -1107,10 +1106,10 @@ public class ExamService {
                             sheetQuestion.getAnswerContent(),
                             question.getAnswerText(),
                             sheetQuestion.hasAnswer(),
-                            isCorrect,  // 채점 결과 포함
-                            score,      // 점수 포함
+                            isCorrect, // 채점 결과 포함
+                            score, // 점수 포함
                             question.getPoints(),
-                            feedback,   // 피드백 포함
+                            feedback, // 피드백 포함
                             unitInfo);
                 })
                 .collect(Collectors.toList());
@@ -1125,7 +1124,7 @@ public class ExamService {
             long wrongCount = questionAnswers.stream()
                     .filter(q -> q.isCorrect() != null && !q.isCorrect())
                     .count();
-            
+
             gradingResult = new ExamAnswerSheetDto.GradingResult(
                     finalLatestResult.getId(),
                     finalLatestResult.getTotalScore(),
@@ -1133,8 +1132,7 @@ public class ExamService {
                     finalLatestResult.getGradedAt(),
                     finalLatestResult.getScoringComment(),
                     (int) correctCount,
-                    (int) wrongCount
-            );
+                    (int) wrongCount);
         }
 
         // 8. 전체 답안지 DTO 생성
@@ -1146,7 +1144,7 @@ public class ExamService {
                 answerSheet.getTotalProblemCount(),
                 answerSheet.getAnsweredProblemCount(),
                 questionAnswers,
-                gradingResult  // 채점 결과 추가
+                gradingResult // 채점 결과 추가
         );
 
         log.info("학생 답안지 조회 완료: submissionId={}, studentName={}, totalQuestions={}, answeredQuestions={}, graded={}",
