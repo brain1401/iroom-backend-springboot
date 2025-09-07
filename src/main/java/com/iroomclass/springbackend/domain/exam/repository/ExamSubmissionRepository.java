@@ -135,6 +135,15 @@ public interface ExamSubmissionRepository extends JpaRepository<ExamSubmission, 
     Optional<ExamSubmission> findByExamIdAndStudentId(@Param("examId") UUID examId, @Param("studentId") Long studentId);
     
     /**
+     * 특정 시험과 학생의 가장 최근 제출 기록 조회
+     * 
+     * @param examId 시험 ID
+     * @param studentId 학생 ID
+     * @return 가장 최근 제출 기록 (없으면 empty)
+     */
+    Optional<ExamSubmission> findTopByExamIdAndStudentIdOrderBySubmittedAtDesc(UUID examId, Long studentId);
+    
+    /**
      * 시험 ID별 제출 수 통계를 위한 Projection 인터페이스
      */
     interface ExamSubmissionStats {

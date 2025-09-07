@@ -314,6 +314,34 @@ public class StudentService {
     }
 
     /**
+     * 학생의 시험 이력 조회 (페이지네이션)
+     * 
+     * <p>학생이 응시한 모든 시험의 정보를 조회합니다.
+     * 시험명, 시험 ID, 응시일, 문제 수, 점수 정보를 포함합니다.</p>
+     * 
+     * @param request 학생 Upsert 요청 (이름, 생년월일, 전화번호)
+     * @param pageable 페이지네이션 정보
+     * @return 학생의 시험 이력 페이지
+     */
+    @Transactional(readOnly = false)  // 학생 upsert를 위해 readOnly=false 설정
+    public Page<StudentExamHistoryDto> getExamHistoryWithUpsert(StudentUpsertRequest request, Pageable pageable) {
+        log.info("학생 시험 이력 조회 (upsert): name={}, page={}, size={}", 
+                request.name(), pageable.getPageNumber(), pageable.getPageSize());
+        
+        // 학생 인증 및 upsert
+        Student student = studentAuthService.upsertStudent(request);
+        
+        // 시험 이력 조회
+        Page<StudentExamHistoryDto> examHistory = studentExamSubmissionRepository
+                .findExamHistoryByStudentId(student.getId(), pageable);
+        
+        log.info("학생 시험 이력 조회 완료: studentId={}, totalElements={}", 
+                student.getId(), examHistory.getTotalElements());
+        
+        return examHistory;
+    }
+
+    /**
      * ExamResult를 ExamDetailResultDto로 변환
      * 
      * @param examResult 시험 결과 엔티티

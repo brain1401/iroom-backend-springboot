@@ -94,4 +94,36 @@ public interface StudentExamSubmissionRepository extends JpaRepository<ExamSubmi
         WHERE es.student.id = :studentId AND es.exam.id = :examId
         """)
     java.util.Optional<ExamSubmission> findByStudentIdAndExamId(@Param("studentId") Long studentId, @Param("examId") UUID examId);
+    
+    /**
+     * 학생의 시험 이력 조회 (페이지네이션)
+     * 
+     * <p>학생이 응시한 모든 시험의 정보를 조회합니다.
+     * 시험 ID, 시험명, 응시일, 문제 수, 점수를 포함합니다.</p>
+     * 
+     * @param studentId 학생 ID
+     * @param pageable  페이지네이션 정보
+     * @return 학생의 시험 이력 페이지
+     */
+    @Query("""
+        SELECT new com.iroomclass.springbackend.domain.student.dto.response.StudentExamHistoryDto(
+            e.id,
+            e.examName,
+            es.submittedAt,
+            CAST(COUNT(DISTINCT esq.id) AS int),
+            er.totalScore
+        )
+        FROM ExamSubmission es
+        JOIN es.exam e
+        JOIN e.examSheet exs
+        JOIN ExamSheetQuestion esq ON esq.examSheet.id = exs.id
+        LEFT JOIN ExamResult er ON er.examSubmission.id = es.id
+        WHERE es.student.id = :studentId
+            AND (er.id IS NULL OR er.status = 'COMPLETED' OR er.status = 'REGRADED')
+        GROUP BY e.id, e.examName, es.submittedAt, er.totalScore
+        ORDER BY es.submittedAt DESC
+        """)
+    Page<com.iroomclass.springbackend.domain.student.dto.response.StudentExamHistoryDto> findExamHistoryByStudentId(
+            @Param("studentId") Long studentId, 
+            Pageable pageable);
 }

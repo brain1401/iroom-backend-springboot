@@ -12,8 +12,12 @@ import com.iroomclass.springbackend.domain.exam.dto.ExamWithUnitsDto;
 import com.iroomclass.springbackend.domain.exam.dto.UnitSummaryDto;
 import com.iroomclass.springbackend.domain.exam.dto.UnitNameDto;
 import com.iroomclass.springbackend.domain.exam.dto.ExamQuestionsResponseDto;
+import com.iroomclass.springbackend.domain.exam.dto.StudentAnswerSheetRequest;
+import com.iroomclass.springbackend.domain.exam.dto.SubmitAndGradeRequest;
+import com.iroomclass.springbackend.domain.exam.dto.SubmitAndGradeResponse;
 import com.iroomclass.springbackend.domain.exam.repository.ExamRepository;
 import com.iroomclass.springbackend.domain.exam.service.ExamService;
+import com.iroomclass.springbackend.domain.exam.service.ExamGradingService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.Parameters;
@@ -64,6 +68,7 @@ import java.util.UUID;
 public class ExamController {
 
     private final ExamService examService;
+    private final ExamGradingService examGradingService;
     private final ExamRepository examRepository;
 
     /**
@@ -910,6 +915,265 @@ public class ExamController {
             log.error("학생 답안지 조회 중 예상치 못한 오류: submissionId={}", submissionId, e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(ApiResponse.errorWithType("답안지 조회 중 오류가 발생했습니다"));
+        }
+    }
+    
+    /**
+     * 학생 정보 기반 답안지 조회 API
+     * 
+     * <p>학생 정보(이름, 전화번호, 생년월일)와 시험 ID를 기반으로 해당 학생의 답안지를 조회합니다.</p>
+     * 
+     * @param examId 시험 ID
+     * @param request 학생 정보 요청 DTO
+     * @return 학생 답안지 정보
+     */
+    @Operation(
+        summary = "학생 정보 기반 답안지 조회",
+        description = """
+            학생 정보(이름, 전화번호, 생년월일)와 시험 ID를 기반으로 해당 학생의 답안지를 조회합니다.
+            
+            - 학생 정보로 학생을 조회
+            - 해당 학생과 시험의 제출 기록 확인
+            - 답안지 정보 반환 (문제별 답안, 채점 결과 포함)
+            """,
+        responses = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                responseCode = "200",
+                description = "답안지 조회 성공",
+                content = @Content(
+                    mediaType = "application/json",
+                    schema = @Schema(implementation = ExamAnswerSheetDto.class),
+                    examples = @ExampleObject(
+                        value = """
+                            {
+                              "result": "SUCCESS",
+                              "message": "학생 답안지 조회 성공",
+                              "data": {
+                                "submissionId": "550e8400-e29b-41d4-a716-446655440000",
+                                "studentInfo": {
+                                  "studentId": 126,
+                                  "studentName": "김철수",
+                                  "phone": "010-1234-5678"
+                                },
+                                "examInfo": {
+                                  "examId": "2beeab06-8adb-11f0-80d3-0242c0a81002",
+                                  "examName": "중1 2학기 중간고사",
+                                  "grade": 1,
+                                  "createdAt": "2025-01-15T09:00:00"
+                                },
+                                "submittedAt": "2025-01-15T10:30:00",
+                                "totalQuestions": 20,
+                                "answeredQuestions": 18,
+                                "questionAnswers": [
+                                  {
+                                    "questionNumber": 1,
+                                    "questionId": "123e4567-e89b-12d3-a456-426614174000",
+                                    "questionType": "MULTIPLE_CHOICE",
+                                    "questionText": "다음 중 소수는?",
+                                    "choices": ["1", "2", "3", "4"],
+                                    "studentAnswer": "2",
+                                    "correctAnswer": "2",
+                                    "hasAnswer": true,
+                                    "isCorrect": true,
+                                    "score": 5,
+                                    "points": 5,
+                                    "feedback": "정답입니다!",
+                                    "unitInfo": {
+                                      "unitId": "456e7890-e89b-12d3-a456-426614174000",
+                                      "unitName": "소수와 소인수분해",
+                                      "unitCode": "M1-2-01"
+                                    }
+                                  }
+                                ],
+                                "gradingResult": {
+                                  "resultId": "789e0123-e89b-12d3-a456-426614174000",
+                                  "totalScore": 85,
+                                  "status": "COMPLETED",
+                                  "gradedAt": "2025-01-15T11:00:00",
+                                  "scoringComment": "전반적으로 잘 풀었습니다.",
+                                  "correctCount": 17,
+                                  "wrongCount": 3
+                                }
+                              }
+                            }
+                            """
+                    )
+                )
+            ),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                responseCode = "404",
+                description = "학생 또는 제출 기록을 찾을 수 없음",
+                content = @Content(
+                    mediaType = "application/json",
+                    examples = @ExampleObject(
+                        value = """
+                            {
+                              "result": "ERROR",
+                              "message": "학생 정보를 찾을 수 없습니다",
+                              "data": null
+                            }
+                            """
+                    )
+                )
+            ),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                responseCode = "400",
+                description = "잘못된 요청 데이터",
+                content = @Content(
+                    mediaType = "application/json",
+                    examples = @ExampleObject(
+                        value = """
+                            {
+                              "result": "ERROR",
+                              "message": "전화번호 형식이 올바르지 않습니다",
+                              "data": null
+                            }
+                            """
+                    )
+                )
+            )
+        }
+    )
+    @PostMapping("/{examId}/student-answer-sheet")
+    public ResponseEntity<ApiResponse<ExamAnswerSheetDto>> getStudentAnswerSheet(
+            @Parameter(
+                description = "시험 ID", 
+                required = true,
+                example = "2beeab06-8adb-11f0-80d3-0242c0a81002"
+            )
+            @PathVariable UUID examId,
+            @Valid @RequestBody StudentAnswerSheetRequest request) {
+        
+        log.info("학생 정보 기반 답안지 조회 요청: examId={}, studentName={}, phone={}, birthDate={}", 
+                examId, request.name(), request.phone(), request.birthDate());
+        
+        try {
+            // 서비스 호출
+            ExamAnswerSheetDto answerSheet = examService.getStudentAnswerSheetByInfo(
+                    examId, request.name(), request.phone(), request.birthDate());
+            
+            log.info("학생 답안지 조회 성공: examId={}, studentName={}, totalQuestions={}, answeredQuestions={}",
+                    examId, 
+                    answerSheet.studentInfo().studentName(),
+                    answerSheet.totalQuestions(),
+                    answerSheet.answeredQuestions());
+            
+            return ResponseEntity.ok(
+                ApiResponse.success("학생 답안지 조회 성공", answerSheet)
+            );
+            
+        } catch (RuntimeException e) {
+            log.error("학생 답안지 조회 실패: examId={}, studentName={}, error={}", 
+                    examId, request.name(), e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(ApiResponse.errorWithType(e.getMessage()));
+                    
+        } catch (Exception e) {
+            log.error("학생 답안지 조회 중 예상치 못한 오류: examId={}, studentName={}", 
+                    examId, request.name(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.errorWithType("답안지 조회 중 오류가 발생했습니다"));
+        }
+    }
+    
+    /**
+     * 시험 답안 제출 및 채점
+     */
+    @Operation(
+        summary = "시험 답안 제출 및 채점", 
+        description = """
+                학생의 시험 답안을 제출하고 즉시 AI 채점을 수행합니다.
+                
+                **처리 과정:**
+                1. 시험 및 학생 정보 검증
+                2. 중복 제출 여부 확인  
+                3. 답안 데이터 저장 (exam_submission, student_answer_sheet, student_answer_sheet_question)
+                4. AI 서버로 채점 요청 (force_grading=true인 경우)
+                5. 채점 결과 반환 (exam_result, exam_result_question)
+                
+                **주요 특징:**
+                - 제출과 채점이 하나의 API로 통합 처리
+                - AI 채점 실패 시에도 제출은 성공으로 처리
+                - UUIDv7 형식으로 시간 기반 정렬 가능
+                - 객관식(selected_choice)과 주관식(answer_text) 답안 모두 지원
+                """,
+        responses = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                responseCode = "200", 
+                description = "제출 및 채점 성공", 
+                content = @Content(schema = @Schema(implementation = SubmitAndGradeResponse.class))
+            ),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                responseCode = "400", 
+                description = "잘못된 요청 (중복 제출, 유효하지 않은 답안 등)"
+            ),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                responseCode = "404", 
+                description = "시험 또는 학생을 찾을 수 없음"
+            ),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                responseCode = "500", 
+                description = "서버 내부 오류"
+            )
+        }
+    )
+    @PostMapping("/submit-and-grade")
+    public ResponseEntity<ApiResponse<SubmitAndGradeResponse>> submitAndGrade(
+            @Valid @RequestBody 
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                description = "시험 답안 제출 및 채점 요청",
+                content = @Content(
+                    mediaType = "application/json",
+                    schema = @Schema(implementation = SubmitAndGradeRequest.class),
+                    examples = @ExampleObject(
+                        name = "시험 답안 제출 예시",
+                        value = """
+                        {
+                          "examId": "018e3d5a-7b4c-7000-8000-000000000000",
+                          "studentId": 12345,
+                          "answers": [
+                            {
+                              "questionId": "018e3d5a-7b4c-7000-8000-000000000001",
+                              "selectedChoice": 3
+                            },
+                            {
+                              "questionId": "018e3d5a-7b4c-7000-8000-000000000002",
+                              "answerText": "x = 10, y = 20"
+                            }
+                          ],
+                          "forceGrading": true,
+                          "gradingOptions": {}
+                        }
+                        """
+                    )
+                )
+            ) 
+            SubmitAndGradeRequest request) {
+        
+        log.info("시험 답안 제출 및 채점 요청: examId={}, studentId={}, answersCount={}, forceGrading={}", 
+                request.examId(), request.studentId(), request.answers().size(), request.forceGrading());
+        
+        try {
+            SubmitAndGradeResponse response = examGradingService.submitAndGrade(request);
+            
+            log.info("시험 답안 제출 및 채점 성공: examId={}, studentId={}, submissionId={}, status={}", 
+                    request.examId(), request.studentId(), response.submissionId(), response.status());
+            
+            return ResponseEntity.ok(
+                ApiResponse.success("시험 답안 제출 및 채점이 완료되었습니다", response)
+            );
+            
+        } catch (RuntimeException e) {
+            log.error("시험 답안 제출 및 채점 실패: examId={}, studentId={}, error={}", 
+                    request.examId(), request.studentId(), e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(ApiResponse.errorWithType(e.getMessage()));
+                    
+        } catch (Exception e) {
+            log.error("시험 답안 제출 및 채점 중 예상치 못한 오류: examId={}, studentId={}", 
+                    request.examId(), request.studentId(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.errorWithType("시험 답안 제출 및 채점 중 오류가 발생했습니다"));
         }
     }
 }

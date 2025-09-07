@@ -360,6 +360,74 @@ public class StudentController {
     }
 
     /**
+     * 학생 시험 이력 조회
+     * 
+     * @param request 학생 정보 요청 (이름, 생년월일, 전화번호)
+     * @param pageable 페이징 정보 (기본값: page=0, size=10)
+     * @return 학생의 시험 이력 페이지
+     */
+    @PostMapping("/exam-history")
+    @ResponseStatus(HttpStatus.OK)
+    @Operation(
+        summary = "학생 시험 이력 조회",
+        description = """
+            학생이 응시한 모든 시험의 정보를 페이징으로 조회합니다.
+            
+            조회 정보:
+            - 시험 ID
+            - 시험명
+            - 응시일시
+            - 총 문제 수
+            - 총점
+            
+            정렬 기준:
+            - 응시일시 내림차순 (최신순)
+            
+            페이징:
+            - 기본 page=0, size=10
+            - 최대 size=100 제한
+            
+            참고사항:
+            - 재채점된 경우 최신 버전의 결과만 반환
+            - 채점 완료된 시험의 점수 포함
+            - 채점되지 않은 시험은 점수가 0으로 표시
+            """,
+        requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
+            description = "학생 정보",
+            required = true,
+            content = @Content(schema = @Schema(implementation = StudentUpsertRequest.class))
+        ),
+        responses = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                responseCode = "200", 
+                description = "조회 성공",
+                content = @Content(schema = @Schema(implementation = StudentExamHistoryDto.class))
+            ),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                responseCode = "404", 
+                description = "학생 정보를 찾을 수 없음"
+            ),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                responseCode = "400", 
+                description = "요청 데이터 검증 실패"
+            )
+        }
+    )
+    public ApiResponse<Page<StudentExamHistoryDto>> getExamHistory(
+            @Valid @RequestBody StudentUpsertRequest request,
+            @PageableDefault(page = 0, size = 10) 
+            @Parameter(description = "페이징 정보 (page=0, size=10)", hidden = true) 
+            Pageable pageable) {
+        
+        log.info("학생 시험 이력 조회 요청: name={}, page={}", 
+                request.name(), pageable.getPageNumber());
+        
+        Page<StudentExamHistoryDto> examHistory = studentService.getExamHistoryWithUpsert(request, pageable);
+        
+        return ApiResponse.success("학생 시험 이력 조회 성공", examHistory);
+    }
+
+    /**
      * 학생 로그아웃
      * 
      * @param request 학생 정보 요청

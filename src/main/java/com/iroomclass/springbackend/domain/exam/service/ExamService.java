@@ -28,6 +28,9 @@ import com.iroomclass.springbackend.domain.exam.repository.StudentAnswerSheetRep
 import com.iroomclass.springbackend.domain.exam.repository.ExamResultRepository;
 import com.iroomclass.springbackend.domain.exam.repository.projection.UnitProjection;
 import com.iroomclass.springbackend.domain.exam.repository.projection.UnitBasicProjection;
+import com.iroomclass.springbackend.domain.auth.entity.Student;
+import com.iroomclass.springbackend.domain.auth.repository.StudentRepository;
+import java.time.LocalDate;
 import lombok.RequiredArgsConstructor;
 import java.util.concurrent.atomic.AtomicInteger;
 import lombok.extern.slf4j.Slf4j;
@@ -62,6 +65,7 @@ public class ExamService {
     private final ExamSheetRepository examSheetRepository;
     private final StudentAnswerSheetRepository studentAnswerSheetRepository;
     private final ExamResultRepository examResultRepository;
+    private final StudentRepository studentRepository;
 
     /**
      * 시험 생성
@@ -1153,5 +1157,45 @@ public class ExamService {
                 gradingResult != null);
 
         return answerSheetDto;
+    }
+    
+    /**
+     * 학생 정보 기반 답안지 조회
+     * 
+     * <p>학생 정보(이름, 전화번호, 생년월일)와 시험 ID를 기반으로 해당 학생의 답안지를 조회합니다.</p>
+     * 
+     * @param examId 시험 ID
+     * @param name 학생 이름
+     * @param phone 학생 전화번호
+     * @param birthDate 학생 생년월일
+     * @return 학생 답안지 정보
+     * @throws RuntimeException 학생 또는 제출 정보를 찾을 수 없을 때
+     */
+    @Transactional(readOnly = true)
+    public ExamAnswerSheetDto getStudentAnswerSheetByInfo(UUID examId, String name, String phone, LocalDate birthDate) {
+        log.info("학생 정보 기반 답안지 조회 시작: examId={}, studentName={}, phone={}, birthDate={}", 
+                examId, name, phone, birthDate);
+        
+        // 1. 학생 정보로 학생 조회
+        Student student = studentRepository.findByNameAndPhoneAndBirthDate(name, phone, birthDate)
+                .orElseThrow(() -> {
+                    log.error("학생 정보를 찾을 수 없습니다: name={}, phone={}, birthDate={}", name, phone, birthDate);
+                    return new RuntimeException("학생 정보를 찾을 수 없습니다");
+                });
+        
+        log.debug("학생 조회 성공: studentId={}, studentName={}", student.getId(), student.getName());
+        
+        // 2. 해당 학생과 시험의 제출 기록 조회 (가장 최근 제출 기록)
+        ExamSubmission submission = examSubmissionRepository.findTopByExamIdAndStudentIdOrderBySubmittedAtDesc(examId, student.getId())
+                .orElseThrow(() -> {
+                    log.error("시험 제출 정보를 찾을 수 없습니다: examId={}, studentId={}", examId, student.getId());
+                    return new RuntimeException("해당 시험에 대한 제출 기록을 찾을 수 없습니다");
+                });
+        
+        log.debug("시험 제출 기록 조회 성공: submissionId={}, submittedAt={}", 
+                submission.getId(), submission.getSubmittedAt());
+        
+        // 3. 기존 getExamAnswerSheet 메서드를 호출하여 답안지 정보 조회
+        return getExamAnswerSheet(submission.getId());
     }
 }
