@@ -2,6 +2,7 @@ package com.iroomclass.springbackend.domain.exam.service;
 
 import com.iroomclass.springbackend.domain.exam.dto.CreateExamRequest;
 import com.iroomclass.springbackend.domain.exam.dto.CreateExamResponse;
+import com.iroomclass.springbackend.domain.exam.dto.ExamAttendeeDto;
 import com.iroomclass.springbackend.domain.exam.dto.ExamDto;
 import com.iroomclass.springbackend.domain.exam.dto.ExamFilterRequest;
 import com.iroomclass.springbackend.domain.exam.dto.ExamQuestionsResponseDto;
@@ -13,6 +14,7 @@ import com.iroomclass.springbackend.domain.exam.dto.UnitNameDto;
 import com.iroomclass.springbackend.domain.exam.repository.projection.UnitNameProjection;
 import com.iroomclass.springbackend.domain.exam.entity.Exam;
 import com.iroomclass.springbackend.domain.exam.entity.ExamSheet;
+import com.iroomclass.springbackend.domain.exam.entity.ExamSubmission;
 import com.iroomclass.springbackend.domain.exam.repository.ExamRepository;
 import com.iroomclass.springbackend.domain.exam.repository.ExamSheetRepository;
 import com.iroomclass.springbackend.domain.exam.repository.ExamSubmissionRepository;
@@ -464,9 +466,10 @@ public class ExamService {
      * 시험 ID로 단원 정보가 포함된 상세 정보 조회 (성능 최적화)
      * 
      * <p>
+     * 
      * @EntityGraph를 사용하여 N+1 쿼리 문제 없이 한 번의 쿼리로
-     * 시험과 관련된 모든 단원 정보를 가져옵니다.
-     * </p>
+     *               시험과 관련된 모든 단원 정보를 가져옵니다.
+     *               </p>
      * 
      * @param examId 시험 식별자
      * @return 단원 정보가 포함된 시험 DTO
@@ -879,5 +882,104 @@ public class ExamService {
                 originalDto.qrCodeUrl(),
                 originalDto.createdAt(),
                 correctedExamSheetInfo);
+    }
+
+    /**
+     * 특정 시험의 응시자 목록을 페이징하여 조회
+     * 
+     * <p>
+     * 시험 ID를 기반으로 해당 시험에 응시한 학생들의 정보를
+     * 페이징 처리하여 조회합니다. 학생 정보와 제출 시간 정보를 포함합니다.
+     * </p>
+     * 
+     * @param examId   시험 ID
+     * @param pageable 페이징 정보 (페이지 번호, 크기, 정렬)
+     * @return 응시자 정보 페이지
+     * @throws RuntimeException 시험을 찾을 수 없을 때
+     */
+    @Transactional(readOnly = true)
+    public Page<ExamAttendeeDto> getExamAttendees(UUID examId, Pageable pageable) {
+        log.info("시험 응시자 조회 시작: examId={}, page={}, size={}",
+                examId, pageable.getPageNumber(), pageable.getPageSize());
+
+        // 1. 시험 존재 여부 확인
+        boolean examExists = examRepository.existsById(examId);
+        if (!examExists) {
+            log.error("시험을 찾을 수 없습니다: examId={}", examId);
+            throw new RuntimeException("시험을 찾을 수 없습니다: " + examId);
+        }
+
+        // 2. 응시자 정보 페이징 조회
+        Page<ExamSubmission> submissions = examSubmissionRepository.findAttendeesByExamId(examId, pageable);
+
+        // 3. DTO 변환
+        Page<ExamAttendeeDto> attendeePage = submissions.map(submission -> {
+            // 시험 정보는 별도로 조회 (N+1 문제 방지를 위해 필요시 최적화)
+            Exam exam = examRepository.findById(examId).orElse(null);
+            if (exam != null) {
+                // 시험 정보를 포함한 DTO 생성
+                return new ExamAttendeeDto(
+                        submission.getId(),
+                        submission.getStudent().getId(),
+                        submission.getStudent().getName(),
+                        submission.getStudent().getPhone(),
+                        submission.getStudent().getBirthDate(),
+                        submission.getSubmittedAt(),
+                        exam.getId(),
+                        exam.getExamName());
+            } else {
+                // 시험 정보 없이 DTO 생성
+                return ExamAttendeeDto.fromWithoutExam(submission);
+            }
+        });
+
+        log.info("시험 응시자 조회 완료: examId={}, 총 {}명 중 {}명 조회 (페이지 {})",
+                examId, attendeePage.getTotalElements(),
+                attendeePage.getContent().size(),
+                pageable.getPageNumber());
+
+        return attendeePage;
+    }
+
+    /**
+     * 특정 시험의 응시자 목록을 페이징하여 조회 (최적화 버전)
+     * 
+     * <p>
+     * 시험 정보를 한 번만 조회하여 N+1 문제를 방지합니다.
+     * 대량의 응시자가 있는 경우 이 메서드를 사용하는 것이 효율적입니다.
+     * </p>
+     * 
+     * @param examId   시험 ID
+     * @param pageable 페이징 정보
+     * @return 응시자 정보 페이지
+     * @throws RuntimeException 시험을 찾을 수 없을 때
+     */
+    @Transactional(readOnly = true)
+    public Page<ExamAttendeeDto> getExamAttendeesOptimized(UUID examId, Pageable pageable) {
+        log.info("시험 응시자 최적화 조회 시작: examId={}, page={}, size={}",
+                examId, pageable.getPageNumber(), pageable.getPageSize());
+
+        // 1. 시험 정보 미리 조회
+        Exam exam = examRepository.findById(examId)
+                .orElseThrow(() -> new RuntimeException("시험을 찾을 수 없습니다: " + examId));
+
+        // 2. 응시자 정보 페이징 조회
+        Page<ExamSubmission> submissions = examSubmissionRepository.findAttendeesByExamId(examId, pageable);
+
+        // 3. DTO 변환 (시험 정보 재사용)
+        Page<ExamAttendeeDto> attendeePage = submissions.map(submission -> new ExamAttendeeDto(
+                submission.getId(),
+                submission.getStudent().getId(),
+                submission.getStudent().getName(),
+                submission.getStudent().getPhone(),
+                submission.getStudent().getBirthDate(),
+                submission.getSubmittedAt(),
+                exam.getId(),
+                exam.getExamName()));
+
+        log.info("시험 응시자 최적화 조회 완료: examId={}, 총 {}명 중 {}명 조회",
+                examId, attendeePage.getTotalElements(), attendeePage.getContent().size());
+
+        return attendeePage;
     }
 }

@@ -3,6 +3,7 @@ package com.iroomclass.springbackend.domain.exam.controller;
 import com.iroomclass.springbackend.common.ApiResponse;
 import com.iroomclass.springbackend.domain.exam.dto.CreateExamRequest;
 import com.iroomclass.springbackend.domain.exam.dto.CreateExamResponse;
+import com.iroomclass.springbackend.domain.exam.dto.ExamAttendeeDto;
 import com.iroomclass.springbackend.domain.exam.dto.ExamDto;
 import com.iroomclass.springbackend.domain.exam.dto.ExamFilterRequest;
 import com.iroomclass.springbackend.domain.exam.dto.ExamSubmissionStatusDto;
@@ -10,17 +11,19 @@ import com.iroomclass.springbackend.domain.exam.dto.ExamWithUnitsDto;
 import com.iroomclass.springbackend.domain.exam.dto.UnitSummaryDto;
 import com.iroomclass.springbackend.domain.exam.dto.UnitNameDto;
 import com.iroomclass.springbackend.domain.exam.dto.ExamQuestionsResponseDto;
-import com.iroomclass.springbackend.domain.exam.dto.QuestionDetailDto;
 import com.iroomclass.springbackend.domain.exam.repository.ExamRepository;
 import com.iroomclass.springbackend.domain.exam.service.ExamService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.Parameters;
 import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
@@ -28,6 +31,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 
 import java.util.List;
 import java.util.Map;
@@ -84,53 +89,36 @@ public class ExamController {
             - 총 문제 수와 총점이 시험지에서 자동 계산됩니다
             - 시험 상태는 CREATED로 초기화됩니다
             """, responses = {
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(
-                responseCode = "201", 
-                description = "시험 생성 성공", 
-                content = @Content(schema = @Schema(implementation = CreateExamResponse.class))
-            ),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(
-                responseCode = "400", 
-                description = "필수 필드 누락 또는 유효하지 않은 형식"
-            ),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(
-                responseCode = "401", 
-                description = "인증되지 않은 사용자"
-            ),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(
-                responseCode = "404", 
-                description = "시험지를 찾을 수 없음"
-            ),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(
-                responseCode = "409", 
-                description = "동일한 이름의 시험이 이미 존재"
-            )
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "201", description = "시험 생성 성공", content = @Content(schema = @Schema(implementation = CreateExamResponse.class))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "필수 필드 누락 또는 유효하지 않은 형식"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "인증되지 않은 사용자"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "시험지를 찾을 수 없음"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "409", description = "동일한 이름의 시험이 이미 존재")
     })
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public ResponseEntity<ApiResponse<?>> createExam(
-            @Parameter(description = "시험 생성 요청 정보", required = true)
-            @Valid @RequestBody CreateExamRequest request) {
-        
-        log.info("시험 생성 요청: examName={}, examSheetId={}", 
+            @Parameter(description = "시험 생성 요청 정보", required = true) @Valid @RequestBody CreateExamRequest request) {
+
+        log.info("시험 생성 요청: examName={}, examSheetId={}",
                 request.examName(), request.examSheetId());
-        
+
         try {
             CreateExamResponse response = examService.createExam(request);
             log.info("시험 생성 성공: examId={}, examName={}", response.examId(), response.examName());
-            
+
             return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.success("시험이 성공적으로 생성되었습니다", response));
-                
+                    .body(ApiResponse.success("시험이 성공적으로 생성되었습니다", response));
+
         } catch (IllegalArgumentException e) {
             log.warn("시험 생성 실패 - 중복된 시험명: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.CONFLICT)
-                .body(ApiResponse.error(e.getMessage()));
-                
+                    .body(ApiResponse.error(e.getMessage()));
+
         } catch (RuntimeException e) {
             log.error("시험 생성 실패: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(ApiResponse.error(e.getMessage()));
+                    .body(ApiResponse.error(e.getMessage()));
         }
     }
 
@@ -159,12 +147,10 @@ public class ExamController {
     })
     @GetMapping("/{examId}")
     public ResponseEntity<ApiResponse<?>> getExam(
-            @Parameter(description = "시험 고유 식별자", required = true) 
-            @PathVariable UUID examId,
-            
-            @Parameter(description = "단원 정보 포함 여부", example = "false") 
-            @RequestParam(required = false, defaultValue = "false") Boolean includeUnits) {
-        
+            @Parameter(description = "시험 고유 식별자", required = true) @PathVariable UUID examId,
+
+            @Parameter(description = "단원 정보 포함 여부", example = "false") @RequestParam(required = false, defaultValue = "false") Boolean includeUnits) {
+
         log.info("시험 상세 조회 요청: examId={}, includeUnits={}", examId, includeUnits);
 
         try {
@@ -270,7 +256,7 @@ public class ExamController {
             @Parameter(description = "시험명 검색어 (부분 일치)", example = "중간고사") @RequestParam(required = false) String search,
 
             @Parameter(description = "최근 생성된 시험만 조회", example = "true") @RequestParam(required = false) Boolean recent,
-            
+
             @Parameter(description = "단원 정보 포함 여부", example = "false") @RequestParam(required = false, defaultValue = "false") Boolean includeUnits,
 
             @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) @Parameter(hidden = true) Pageable pageable) {
@@ -296,10 +282,10 @@ public class ExamController {
             if (includeUnits != null && includeUnits) {
                 // 단원 정보 포함 조회
                 Page<ExamWithUnitsDto> examPage = examService.findExamsWithFilterAndUnits(filter, pageable);
-                
+
                 log.info("단원 정보 포함 시험 목록 조회 완료: {}, totalElements={}, totalPages={}",
                         filter.getFilterDescription(), examPage.getTotalElements(), examPage.getTotalPages());
-                
+
                 return ResponseEntity.ok(ApiResponse.success("단원 정보 포함 시험 목록 조회 성공", examPage));
             } else {
                 // 기본 시험 정보만 조회
@@ -402,32 +388,29 @@ public class ExamController {
             - JOIN FETCH를 사용하여 N+1 쿼리 방지
             - 필요한 정보만 선택적 로딩
             """, responses = {
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "조회 성공", 
-                content = @Content(schema = @Schema(implementation = ExamQuestionsResponseDto.class))),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "시험을 찾을 수 없음", 
-                content = @Content(schema = @Schema(implementation = ApiResponse.class)))
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "조회 성공", content = @Content(schema = @Schema(implementation = ExamQuestionsResponseDto.class))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "시험을 찾을 수 없음", content = @Content(schema = @Schema(implementation = ApiResponse.class)))
     })
     @GetMapping("/{examId}/questions")
     public ResponseEntity<ApiResponse<ExamQuestionsResponseDto>> getExamQuestions(
-            @Parameter(description = "시험 고유 식별자", required = true) 
-            @PathVariable UUID examId) {
-        
+            @Parameter(description = "시험 고유 식별자", required = true) @PathVariable UUID examId) {
+
         log.info("시험 문제 조회 요청: examId={}", examId);
 
         try {
             ExamQuestionsResponseDto examQuestions = examService.findExamQuestions(examId);
-            
-            log.info("시험 문제 조회 완료: examId={}, totalQuestions={}, multipleChoice={}, subjective={}", 
-                    examId, examQuestions.totalQuestions(), examQuestions.multipleChoiceCount(), 
+
+            log.info("시험 문제 조회 완료: examId={}, totalQuestions={}, multipleChoice={}, subjective={}",
+                    examId, examQuestions.totalQuestions(), examQuestions.multipleChoiceCount(),
                     examQuestions.subjectiveCount());
-            
+
             return ResponseEntity.ok(ApiResponse.success("시험 문제 조회 성공", examQuestions));
-            
+
         } catch (RuntimeException e) {
             log.warn("시험 문제 조회 실패: examId={}, error={}", examId, e.getMessage());
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(ApiResponse.errorWithType("시험을 찾을 수 없습니다"));
-                    
+
         } catch (Exception e) {
             log.error("시험 문제 조회 중 예상치 못한 오류: examId={}, error={}", examId, e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -465,22 +448,21 @@ public class ExamController {
     })
     @GetMapping("/{examId}/units")
     public ResponseEntity<ApiResponse<List<UnitNameDto>>> getExamUnits(
-            @Parameter(description = "시험 고유 식별자", required = true) 
-            @PathVariable UUID examId) {
-        
+            @Parameter(description = "시험 고유 식별자", required = true) @PathVariable UUID examId) {
+
         log.info("시험별 단원 이름 조회 요청: examId={}", examId);
 
         try {
             // 시험 존재 여부 확인을 위해 기본 정보 조회
             examService.findById(examId);
-            
+
             // 단원 이름 정보 조회 (간소화된 버전)
             List<UnitNameDto> units = examService.findUnitNamesByExamId(examId);
-            
+
             log.info("시험별 단원 이름 조회 완료: examId={}, unitCount={}", examId, units.size());
-            
+
             return ResponseEntity.ok(ApiResponse.success("시험별 단원 이름 조회 성공", units));
-            
+
         } catch (RuntimeException e) {
             log.warn("시험별 단원 정보 조회 실패: examId={}, error={}", examId, e.getMessage());
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
@@ -512,18 +494,17 @@ public class ExamController {
     })
     @GetMapping("/{examId}/unit-stats")
     public ResponseEntity<ApiResponse<List<ExamWithUnitsDto.UnitQuestionCount>>> getExamUnitStats(
-            @Parameter(description = "시험 고유 식별자", required = true) 
-            @PathVariable UUID examId) {
-        
+            @Parameter(description = "시험 고유 식별자", required = true) @PathVariable UUID examId) {
+
         log.info("시험별 단원 통계 조회 요청: examId={}", examId);
 
         try {
             List<ExamWithUnitsDto.UnitQuestionCount> unitStats = examService.getUnitQuestionCounts(examId);
-            
+
             log.info("시험별 단원 통계 조회 완료: examId={}, statCount={}", examId, unitStats.size());
-            
+
             return ResponseEntity.ok(ApiResponse.success("시험별 단원 통계 조회 성공", unitStats));
-            
+
         } catch (Exception e) {
             log.error("시험별 단원 통계 조회 실패: examId={}, error={}", examId, e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -566,10 +547,9 @@ public class ExamController {
     })
     @PostMapping("/batch/units")
     public ResponseEntity<ApiResponse<List<ExamWithUnitsDto>>> getExamsBatchWithUnits(
-            @Parameter(description = "조회할 시험 ID 목록", required = true)
-            @RequestBody BatchExamRequest request) {
-        
-        log.info("다중 시험 단원 정보 배치 조회 요청: examCount={}", 
+            @Parameter(description = "조회할 시험 ID 목록", required = true) @RequestBody BatchExamRequest request) {
+
+        log.info("다중 시험 단원 정보 배치 조회 요청: examCount={}",
                 request != null ? request.examIds().size() : 0);
 
         // 입력 검증
@@ -585,15 +565,15 @@ public class ExamController {
 
         try {
             List<ExamWithUnitsDto> results = examService.findByIdsWithUnits(request.examIds());
-            
-            log.info("다중 시험 단원 정보 배치 조회 완료: requestCount={}, resultCount={}", 
+
+            log.info("다중 시험 단원 정보 배치 조회 완료: requestCount={}, resultCount={}",
                     request.examIds().size(), results.size());
-            
+
             return ResponseEntity.ok(ApiResponse.success(
-                "다중 시험 단원 정보 배치 조회 성공", results));
-            
+                    "다중 시험 단원 정보 배치 조회 성공", results));
+
         } catch (Exception e) {
-            log.error("다중 시험 단원 정보 배치 조회 실패: examCount={}, error={}", 
+            log.error("다중 시험 단원 정보 배치 조회 실패: examCount={}, error={}",
                     request.examIds().size(), e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(ApiResponse.errorWithType("배치 조회 중 오류가 발생했습니다"));
@@ -625,9 +605,8 @@ public class ExamController {
     })
     @GetMapping("/units/by-grade")
     public ResponseEntity<ApiResponse<List<UnitSummaryDto>>> getUnitsByGrade(
-            @Parameter(description = "학년 (1, 2, 3)", required = true, example = "1") 
-            @RequestParam Integer grade) {
-        
+            @Parameter(description = "학년 (1, 2, 3)", required = true, example = "1") @RequestParam Integer grade) {
+
         log.info("학년별 사용된 단원 목록 조회 요청: grade={}", grade);
 
         // 입력 검증
@@ -638,12 +617,12 @@ public class ExamController {
 
         try {
             List<UnitSummaryDto> units = examService.getDistinctUnitsByGrade(grade);
-            
+
             log.info("학년별 사용된 단원 목록 조회 완료: grade={}, unitCount={}", grade, units.size());
-            
+
             return ResponseEntity.ok(ApiResponse.success(
-                grade + "학년 사용 단원 목록 조회 성공", units));
-            
+                    grade + "학년 사용 단원 목록 조회 성공", units));
+
         } catch (Exception e) {
             log.error("학년별 사용된 단원 목록 조회 실패: grade={}, error={}", grade, e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -660,11 +639,7 @@ public class ExamController {
      */
     @Schema(description = "배치 시험 조회 요청 DTO")
     public record BatchExamRequest(
-            @Parameter(description = "조회할 시험 ID 목록", required = true)
-            @Schema(description = "시험 ID 목록 (최대 50개)", 
-                    example = "[\"550e8400-e29b-41d4-a716-446655440000\", \"550e8400-e29b-41d4-a716-446655440001\"]")
-            List<UUID> examIds
-    ) {
+            @Parameter(description = "조회할 시험 ID 목록", required = true) @Schema(description = "시험 ID 목록 (최대 50개)", example = "[\"550e8400-e29b-41d4-a716-446655440000\", \"550e8400-e29b-41d4-a716-446655440001\"]") List<UUID> examIds) {
         /**
          * Compact Constructor - 입력 검증
          */
@@ -672,6 +647,119 @@ public class ExamController {
             if (examIds != null && examIds.size() > 50) {
                 throw new IllegalArgumentException("시험 ID는 최대 50개까지 지원합니다");
             }
+        }
+    }
+
+    /**
+     * 특정 시험의 응시자 목록 조회 (페이징)
+     * 
+     * <p>
+     * 시험 ID를 기반으로 해당 시험에 응시한 학생들의 정보를
+     * 페이징 처리하여 조회합니다.
+     * </p>
+     * 
+     * @param examId 시험 ID
+     * @param page   페이지 번호 (0부터 시작)
+     * @param size   페이지당 항목 수
+     * @param sort   정렬 기준 (기본값: submittedAt,desc)
+     * @return 응시자 목록 페이지
+     */
+    @GetMapping("/{examId}/attendees")
+    @Operation(summary = "시험 응시자 목록 조회", description = """
+            특정 시험에 응시한 학생들의 정보를 페이징하여 조회합니다.
+
+            **페이징 파라미터:**
+            - page: 페이지 번호 (0부터 시작, 기본값: 0)
+            - size: 페이지당 항목 수 (기본값: 20, 최대: 100)
+            - sort: 정렬 기준 (기본값: submittedAt,desc)
+
+            **정렬 옵션:**
+            - submittedAt,desc: 제출 시간 내림차순 (최신순)
+            - submittedAt,asc: 제출 시간 오름차순
+            - studentName,asc: 학생 이름 오름차순
+            - studentName,desc: 학생 이름 내림차순
+            """, responses = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "응시자 목록 조회 성공", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiResponse.class), examples = @ExampleObject(value = """
+                    {
+                        "result": "SUCCESS",
+                        "message": "시험 응시자 목록 조회 성공",
+                        "data": {
+                            "content": [
+                                {
+                                    "submissionId": "550e8400-e29b-41d4-a716-446655440000",
+                                    "studentId": 1,
+                                    "studentName": "홍길동",
+                                    "studentPhone": "010-1234-5678",
+                                    "studentBirthDate": "2008-03-15",
+                                    "submittedAt": "2025-01-20T14:30:00",
+                                    "examId": "550e8400-e29b-41d4-a716-446655440001",
+                                    "examName": "2학년 중간고사"
+                                }
+                            ],
+                            "pageable": {
+                                "sort": {
+                                    "sorted": true,
+                                    "ascending": false
+                                },
+                                "pageNumber": 0,
+                                "pageSize": 20
+                            },
+                            "totalElements": 45,
+                            "totalPages": 3,
+                            "last": false,
+                            "first": true,
+                            "numberOfElements": 20
+                        }
+                    }
+                    """))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "시험을 찾을 수 없음", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiResponse.class), examples = @ExampleObject(value = """
+                    {
+                        "result": "ERROR",
+                        "message": "시험을 찾을 수 없습니다",
+                        "data": null
+                    }
+                    """)))
+    })
+    @Parameters({
+            @Parameter(name = "examId", description = "시험 ID", required = true, example = "550e8400-e29b-41d4-a716-446655440000"),
+            @Parameter(name = "page", description = "페이지 번호 (0부터 시작)", example = "0"),
+            @Parameter(name = "size", description = "페이지당 항목 수", example = "20"),
+            @Parameter(name = "sort", description = "정렬 기준", example = "submittedAt,desc")
+    })
+    public ApiResponse<Page<ExamAttendeeDto>> getExamAttendees(
+            @PathVariable UUID examId,
+            @RequestParam(defaultValue = "0") @Min(value = 0, message = "페이지 번호는 0 이상이어야 합니다") int page,
+            @RequestParam(defaultValue = "20") @Min(value = 1, message = "페이지 크기는 1 이상이어야 합니다") @Max(value = 100, message = "페이지 크기는 100 이하여야 합니다") int size,
+            @RequestParam(defaultValue = "submittedAt,desc") String sort) {
+
+        log.info("시험 응시자 목록 조회 요청: examId={}, page={}, size={}, sort={}",
+                examId, page, size, sort);
+
+        try {
+            // 정렬 정보 파싱
+            String[] sortParams = sort.split(",");
+            String sortField = sortParams[0];
+            Sort.Direction direction = sortParams.length > 1 && "asc".equalsIgnoreCase(sortParams[1])
+                    ? Sort.Direction.ASC
+                    : Sort.Direction.DESC;
+
+            // 페이징 정보 생성
+            Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortField));
+
+            // 서비스 호출 (최적화 버전 사용)
+            Page<ExamAttendeeDto> attendees = examService.getExamAttendeesOptimized(examId, pageable);
+
+            log.info("시험 응시자 목록 조회 성공: examId={}, 총 {}명 중 {}명 반환",
+                    examId, attendees.getTotalElements(), attendees.getContent().size());
+
+            return ApiResponse.success("시험 응시자 목록 조회 성공", attendees);
+
+        } catch (RuntimeException e) {
+            log.error("시험 응시자 목록 조회 실패: examId={}, error={}", examId, e.getMessage());
+            throw e;
+        } catch (Exception e) {
+            log.error("시험 응시자 목록 조회 중 예상치 못한 오류: examId={}", examId, e);
+            throw new RuntimeException("시험 응시자 목록 조회 중 오류가 발생했습니다", e);
         }
     }
 }

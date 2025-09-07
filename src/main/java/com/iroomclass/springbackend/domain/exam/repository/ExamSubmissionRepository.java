@@ -2,6 +2,8 @@ package com.iroomclass.springbackend.domain.exam.repository;
 
 import com.iroomclass.springbackend.domain.exam.entity.ExamSubmission;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -178,6 +180,33 @@ public interface ExamSubmissionRepository extends JpaRepository<ExamSubmission, 
            "FROM Exam e " +
            "WHERE e.id IN :examIds")
     List<ExamDetailStats> findExamDetailStats(@Param("examIds") List<UUID> examIds);
+    
+    /**
+     * 특정 시험의 응시자 목록을 페이징하여 조회
+     * 
+     * @param examId 시험 ID
+     * @param pageable 페이징 정보
+     * @return 응시자 페이지
+     */
+    @Query("SELECT es FROM ExamSubmission es " +
+           "LEFT JOIN FETCH es.student s " +
+           "LEFT JOIN FETCH es.exam e " +
+           "WHERE es.exam.id = :examId " +
+           "ORDER BY es.submittedAt DESC")
+    Page<ExamSubmission> findByExamIdWithStudentAndExam(@Param("examId") UUID examId, Pageable pageable);
+    
+    /**
+     * 특정 시험의 응시자 목록을 페이징하여 조회 (최적화 버전)
+     * 
+     * @param examId 시험 ID
+     * @param pageable 페이징 정보
+     * @return 응시자 페이지
+     */
+    @Query(value = "SELECT es FROM ExamSubmission es " +
+                   "LEFT JOIN FETCH es.student " +
+                   "WHERE es.exam.id = :examId",
+           countQuery = "SELECT COUNT(es) FROM ExamSubmission es WHERE es.exam.id = :examId")
+    Page<ExamSubmission> findAttendeesByExamId(@Param("examId") UUID examId, Pageable pageable);
     
     /**
      * 시험별 상세 통계를 위한 Projection 인터페이스
