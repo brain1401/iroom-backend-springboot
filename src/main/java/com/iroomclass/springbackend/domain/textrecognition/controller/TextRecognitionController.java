@@ -1,9 +1,7 @@
 package com.iroomclass.springbackend.domain.textrecognition.controller;
 
 import com.iroomclass.springbackend.common.ApiResponse;
-import com.iroomclass.springbackend.domain.textrecognition.dto.TextRecognitionSubmitRequest;
-import com.iroomclass.springbackend.domain.textrecognition.dto.TextRecognitionJobResponse;
-import com.iroomclass.springbackend.domain.textrecognition.dto.AIServerCallbackRequest;
+import com.iroomclass.springbackend.domain.textrecognition.dto.*;
 import com.iroomclass.springbackend.domain.textrecognition.service.TextRecognitionService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -11,6 +9,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -18,175 +17,209 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import jakarta.validation.Valid;
+import java.util.List;
 
 /**
- * 텍스트 인식 비동기 처리 API 컨트롤러
+ * 텍스트 인식 API 컨트롤러
  * 
- * <p>이 컨트롤러는 다음 기능을 제공합니다:</p>
+ * <p>
+ * AI 서버와 연동하여 다음 기능을 제공합니다:
+ * </p>
  * <ul>
- *   <li>이미지 파일 업로드 및 텍스트 인식 작업 제출</li>
- *   <li>Server-Sent Events(SSE)를 통한 실시간 작업 상태 업데이트</li>
- *   <li>AI 서버로부터의 콜백 처리</li>
+ * <li>동기식 답안지 인식</li>
+ * <li>배치 글자인식 처리</li>
+ * <li>비동기 작업 제출 및 상태 조회</li>
+ * <li>SSE를 통한 실시간 진행률 스트리밍</li>
  * </ul>
  */
-@Tag(name = "텍스트 인식 API", description = "비동기 텍스트 인식 처리 API")
+@Tag(name = "텍스트 인식 API", description = "AI 기반 텍스트 인식 처리 API")
 @RestController
 @RequestMapping("/text-recognition")
 @RequiredArgsConstructor
 @Slf4j
 public class TextRecognitionController {
-    
+
     private final TextRecognitionService textRecognitionService;
-    
+
+    // ==================== 1. 동기식 엔드포인트 ====================
+
     /**
-     * 텍스트 인식 작업 제출
-     * 
-     * @param file 텍스트 인식을 수행할 이미지 파일
-     * @param pageNumber 페이지 번호 (기본값: 1)
-     * @param questionType 질문 유형 (기본값: "단답형")
-     * @param gradeLevel 학년 수준 (기본값: "중학교")
-     * @return 작업 ID와 SSE URL이 포함된 응답
+     * 답안지 글자인식 (동기식 - 즉시 응답)
      */
-    @Operation(
-        summary = "텍스트 인식 작업 제출",
-        description = """
-            이미지 파일을 업로드하여 텍스트 인식 작업을 시작합니다.
-            
-            작업은 즉시 AI 서버로 전송되며, 클라이언트는 반환된 jobId를 사용하여
-            SSE 연결을 통해 실시간으로 작업 진행 상황을 받을 수 있습니다.
-            
-            지원되는 파일 형식:
-            - JPEG (.jpg, .jpeg)
-            - PNG (.png)
-            - WEBP (.webp)
-            - GIF (.gif)
-            
-            최대 파일 크기: 20MB
-            """,
-        responses = {
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "작업 제출 성공"),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "잘못된 요청 (파일 형식, 크기 등)"),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "서버 내부 오류")
-        }
-    )
-    @PostMapping(value = "/submit", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<ApiResponse<TextRecognitionJobResponse>> submitTextRecognition(
-        @Parameter(description = "텍스트 인식할 이미지 파일", required = true)
-        @RequestParam("file") MultipartFile file,
-        
-        @Parameter(description = "페이지 번호", example = "1")
-        @RequestParam(value = "pageNumber", defaultValue = "1") Integer pageNumber,
-        
-        @Parameter(description = "질문 유형", example = "단답형")
-        @RequestParam(value = "questionType", defaultValue = "단답형") String questionType,
-        
-        @Parameter(description = "학년 수준", example = "중학교")
-        @RequestParam(value = "gradeLevel", defaultValue = "중학교") String gradeLevel
-    ) {
-        
-        log.info("텍스트 인식 작업 제출 요청: 파일명={}, 크기={}bytes, 페이지={}, 질문유형={}, 학년={}", 
-                file.getOriginalFilename(), file.getSize(), pageNumber, questionType, gradeLevel);
-        
-        // DTO 객체 생성
-        TextRecognitionSubmitRequest request = TextRecognitionSubmitRequest.builder()
-            .file(file)
-            .pageNumber(pageNumber)
-            .questionType(questionType)
-            .gradeLevel(gradeLevel)
-            .build();
-        
-        // 작업 제출
-        TextRecognitionJobResponse response = textRecognitionService.submitTextRecognition(request);
-        
-        log.info("텍스트 인식 작업 제출 완료: jobId={}", response.jobId());
-        
+    @Operation(summary = "답안지 글자인식 (동기식)", description = "이미지를 업로드하여 즉시 글자인식 결과를 받습니다. 최대 처리 시간 60초.", responses = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "글자인식 성공"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "잘못된 요청"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "413", description = "파일 크기 초과"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "서버 오류")
+    })
+    @PostMapping(value = "/answer-sheet", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ApiResponse<TextRecognitionAnswerResponse>> recognizeAnswerSheet(
+            @Parameter(description = "이미지 파일 (JPEG, PNG, WEBP, GIF)", required = true) @RequestParam("file") MultipartFile file,
+
+            @Parameter(description = "캐시 사용 여부", example = "true") @RequestParam(value = "use_cache", defaultValue = "true") Boolean useCache,
+
+            @Parameter(description = "컨텐츠 해시 사용 여부", example = "false") @RequestParam(value = "use_content_hash", defaultValue = "false") Boolean useContentHash) {
+        log.info("답안지 글자인식 요청: 파일명={}, 크기={}bytes, 캐시={}, 해시={}",
+                file.getOriginalFilename(), file.getSize(), useCache, useContentHash);
+
+        TextRecognitionAnswerResponse response = textRecognitionService.recognizeAnswerSheetSync(
+                file, useCache, useContentHash);
+
         return ResponseEntity.ok(
-            ApiResponse.success("텍스트 인식 작업이 성공적으로 제출되었습니다", response)
-        );
+                ApiResponse.success("답안지 글자인식이 완료되었습니다", response));
     }
-    
+
     /**
-     * SSE 연결을 통한 실시간 작업 상태 업데이트
-     * 
-     * @param jobId 작업 ID
-     * @return SSE 스트림
+     * 배치 글자인식
      */
-    @Operation(
-        summary = "실시간 작업 상태 업데이트 스트림",
-        description = """
-            Server-Sent Events(SSE)를 통해 텍스트 인식 작업의 실시간 상태 업데이트를 받습니다.
-            
-            연결 후 다음과 같은 이벤트를 수신할 수 있습니다:
-            - JOB_STATUS: 작업 상태 변경 (SUBMITTED, PROCESSING, COMPLETED, FAILED)
-            - JOB_RESULT: 최종 텍스트 인식 결과 (완료 시)
-            - JOB_ERROR: 오류 정보 (실패 시)
-            
-            연결 타임아웃: 30분
-            재연결 간격: 3초
-            """,
-        responses = {
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "SSE 스트림 연결 성공"),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "존재하지 않는 작업 ID"),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "410", description = "이미 완료된 작업")
-        }
-    )
-    @GetMapping(value = "/jobs/{jobId}/events", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public SseEmitter subscribeToJobUpdates(
-        @Parameter(description = "작업 ID", required = true, example = "job_20240817_143052_abc123")
-        @PathVariable String jobId
-    ) {
-        
-        log.info("SSE 연결 요청: jobId={}", jobId);
-        
-        SseEmitter emitter = textRecognitionService.subscribeToJob(jobId);
-        
-        log.info("SSE 연결 생성 완료: jobId={}", jobId);
-        
-        return emitter;
+    @Operation(summary = "배치 글자인식", description = "여러 이미지를 한번에 업로드하여 배치 처리합니다. 최대 20개 파일.", responses = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "배치 작업 시작"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "파일 개수 초과 또는 잘못된 요청")
+    })
+    @PostMapping(value = "/batch", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ApiResponse<BatchTextRecognitionResponse>> submitBatchRecognition(
+            @Parameter(description = "이미지 파일 배열 (최대 20개)", required = true) @RequestParam("files") List<MultipartFile> files,
+
+            @Parameter(description = "우선순위 (1-5)", example = "1") @RequestParam(value = "priority", defaultValue = "1") Integer priority,
+
+            @Parameter(description = "캐시 사용 여부", example = "true") @RequestParam(value = "use_cache", defaultValue = "true") Boolean useCache) {
+        log.info("배치 글자인식 요청: 파일 개수={}, 우선순위={}", files.size(), priority);
+
+        BatchTextRecognitionRequest request = BatchTextRecognitionRequest.builder()
+                .files(files)
+                .priority(priority)
+                .useCache(useCache)
+                .build();
+
+        BatchTextRecognitionResponse response = textRecognitionService.submitBatchRecognition(request);
+
+        return ResponseEntity.ok(
+                ApiResponse.success("배치 작업이 시작되었습니다", response));
     }
-    
+
+    // ==================== 2. 비동기 엔드포인트 ====================
+
+    /**
+     * 비동기 작업 제출
+     */
+    @Operation(summary = "비동기 작업 제출", description = "이미지를 업로드하여 비동기 처리를 시작합니다. 완료 시 콜백 URL로 결과 전송.", responses = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "202", description = "작업 접수됨"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "잘못된 요청")
+    })
+    @PostMapping(value = "/async/submit", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ApiResponse<AsyncTextRecognitionSubmitResponse>> submitAsyncRecognition(
+            @Parameter(description = "이미지 파일", required = true) @RequestParam("file") MultipartFile file,
+
+            @Parameter(description = "완료 시 결과를 받을 URL", required = true) @RequestParam("callback_url") String callbackUrl,
+
+            @Parameter(description = "우선순위 (1-10)", example = "5") @RequestParam(value = "priority", defaultValue = "5") Integer priority,
+
+            @Parameter(description = "캐시 사용 여부", example = "true") @RequestParam(value = "use_cache", defaultValue = "true") Boolean useCache) {
+        log.info("비동기 작업 제출: 파일명={}, 콜백={}", file.getOriginalFilename(), callbackUrl);
+
+        AsyncTextRecognitionSubmitRequest request = AsyncTextRecognitionSubmitRequest.builder()
+                .callbackUrl(callbackUrl)
+                .priority(priority)
+                .useCache(useCache)
+                .build();
+
+        AsyncTextRecognitionSubmitResponse response = textRecognitionService.submitAsyncRecognition(
+                file, request);
+
+        return ResponseEntity.status(HttpStatus.ACCEPTED).body(
+                ApiResponse.success("작업이 접수되었습니다", response));
+    }
+
+    /**
+     * 작업 상태 조회
+     */
+    @Operation(summary = "작업 상태 조회", description = "비동기 작업의 현재 상태를 조회합니다.", responses = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "상태 조회 성공"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "작업을 찾을 수 없음")
+    })
+    @GetMapping("/async/status/{jobId}")
+    public ResponseEntity<ApiResponse<JobStatusResponse>> getJobStatus(
+            @Parameter(description = "작업 ID", required = true) @PathVariable String jobId) {
+        log.info("작업 상태 조회: jobId={}", jobId);
+
+        JobStatusResponse status = textRecognitionService.getJobStatus(jobId);
+
+        return ResponseEntity.ok(
+                ApiResponse.success("작업 상태 조회 성공", status));
+    }
+
+    /**
+     * 작업 결과 조회
+     */
+    @Operation(summary = "작업 결과 조회", description = "완료된 비동기 작업의 결과를 조회합니다.", responses = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "결과 조회 성공"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "작업을 찾을 수 없음"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "425", description = "작업이 아직 완료되지 않음")
+    })
+    @GetMapping("/async/result/{jobId}")
+    public ResponseEntity<ApiResponse<TextRecognitionAnswerResponse>> getJobResult(
+            @Parameter(description = "작업 ID", required = true) @PathVariable String jobId) {
+        log.info("작업 결과 조회: jobId={}", jobId);
+
+        TextRecognitionAnswerResponse result = textRecognitionService.getJobResult(jobId);
+
+        return ResponseEntity.ok(
+                ApiResponse.success("작업 결과 조회 성공", result));
+    }
+
+    /**
+     * AI 서버 직접 상태 조회 (폴링용)
+     */
+    @Operation(summary = "AI 서버 직접 상태 조회", description = "콜백이 안 올 때 Spring Boot에서 직접 AI 서버 상태를 확인합니다.", responses = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "상태 조회 성공")
+    })
+    @GetMapping("/async/ai-server-status/{jobId}")
+    public ResponseEntity<ApiResponse<JobStatusResponse>> checkAIServerStatus(
+            @Parameter(description = "작업 ID", required = true) @PathVariable String jobId) {
+        log.info("AI 서버 상태 직접 조회: jobId={}", jobId);
+
+        JobStatusResponse status = textRecognitionService.checkAIServerStatus(jobId);
+
+        return ResponseEntity.ok(
+                ApiResponse.success("AI 서버 상태 조회 성공", status));
+    }
+
+    // ==================== 3. SSE 스트리밍 ====================
+
+    /**
+     * 배치 진행률 스트리밍
+     */
+    @Operation(summary = "배치 진행률 스트리밍", description = "Server-Sent Events를 통해 배치 처리 진행률을 실시간으로 받습니다.", responses = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "SSE 스트림 연결 성공"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "배치 작업을 찾을 수 없음")
+    })
+    @GetMapping(value = "/batch/{batchId}/progress", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public SseEmitter streamBatchProgress(
+            @Parameter(description = "배치 ID", required = true) @PathVariable String batchId) {
+        log.info("배치 진행률 스트리밍 요청: batchId={}", batchId);
+
+        return textRecognitionService.streamBatchProgress(batchId);
+    }
+
+    // ==================== 4. 콜백 엔드포인트 ====================
+
     /**
      * AI 서버로부터의 콜백 처리
-     * 
-     * <p>이 엔드포인트는 AI 서버가 텍스트 인식 작업 완료 후 결과를 전송하기 위해 사용합니다.</p>
-     * 
-     * @param callbackRequest AI 서버로부터의 콜백 요청 데이터
-     * @return 콜백 처리 결과
      */
-    @Operation(
-        summary = "AI 서버 콜백 처리",
-        description = """
-            AI 서버가 텍스트 인식 작업 완료 후 결과를 전송하기 위한 내부 API입니다.
-            
-            이 엔드포인트는 AI 서버만 호출해야 하며, 일반 클라이언트는 사용하지 않습니다.
-            
-            콜백 처리 후 다음 작업이 수행됩니다:
-            1. 작업 상태를 COMPLETED 또는 FAILED로 업데이트
-            2. 연결된 모든 SSE 클라이언트에게 결과 전송
-            3. 메모리에서 작업 정보 정리
-            """,
-        responses = {
+    @Operation(summary = "AI 서버 콜백 처리", description = "AI 서버가 작업 완료 후 결과를 전송하기 위한 내부 API입니다.", responses = {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "콜백 처리 성공"),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "잘못된 콜백 데이터"),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "존재하지 않는 작업 ID")
-        }
-    )
-    @PostMapping("/callback")
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "잘못된 콜백 데이터")
+    })
+    @PostMapping("/callback/{jobId}")
     public ResponseEntity<ApiResponse<Void>> handleCallback(
-        @Parameter(description = "AI 서버로부터의 콜백 요청 데이터", required = true)
-        @Valid @RequestBody AIServerCallbackRequest callbackRequest
-    ) {
-        
-        log.info("AI 서버 콜백 수신: jobId={}, status={}", 
-                callbackRequest.jobId(), callbackRequest.status());
-        
-        // 콜백 처리
-        textRecognitionService.handleCallback(callbackRequest);
-        
-        log.info("AI 서버 콜백 처리 완료: jobId={}", callbackRequest.jobId());
-        
+            @Parameter(description = "작업 ID", required = true) @PathVariable String jobId,
+
+            @Parameter(description = "콜백 데이터", required = true) @Valid @RequestBody AsyncTextRecognitionCallbackData callbackData) {
+        log.info("AI 서버 콜백 수신: jobId={}, status={}", jobId, callbackData.status());
+
+        textRecognitionService.handleCallback(jobId, callbackData);
+
         return ResponseEntity.ok(
-            ApiResponse.success("콜백이 성공적으로 처리되었습니다")
-        );
+                ApiResponse.success("콜백이 성공적으로 처리되었습니다"));
     }
 }

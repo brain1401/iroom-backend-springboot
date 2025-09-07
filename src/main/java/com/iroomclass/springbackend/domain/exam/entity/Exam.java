@@ -24,7 +24,7 @@ import java.util.UUID;
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Builder
 public class Exam {
-    
+
     /**
      * 시험 고유 ID
      * UUIDv7 기본키
@@ -32,7 +32,7 @@ public class Exam {
     @Id
     @Column(columnDefinition = "BINARY(16)")
     private UUID id;
-    
+
     /**
      * 시험지와의 관계
      * ManyToOne: 여러 시험이 하나의 시험지에서 발행될 수 있음
@@ -41,7 +41,7 @@ public class Exam {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "exam_sheet_id", nullable = false)
     private ExamSheet examSheet;
-    
+
     /**
      * 시험명
      * 시험지명과 동일하게 설정
@@ -49,7 +49,7 @@ public class Exam {
      */
     @Column(nullable = false, length = 100)
     private String examName;
-    
+
     /**
      * 학년
      * 해당 시험이 몇 학년용인지 (1, 2, 3학년)
@@ -57,7 +57,7 @@ public class Exam {
      */
     @Column(nullable = false)
     private Integer grade;
-    
+
     /**
      * 시험 내용
      * 시험 관련 메모나 설명
@@ -65,9 +65,14 @@ public class Exam {
      */
     @Column(columnDefinition = "TEXT")
     private String content;
-    
 
-    
+    /**
+     * 해당 시험을 볼 수 있는 최대 학생 수
+     * 필수 입력
+     */
+    @Column(nullable = false)
+    private Integer maxStudent;
+
     /**
      * QR 코드 URL
      * 학생 접속용 QR 코드 URL
@@ -75,7 +80,7 @@ public class Exam {
      */
     @Column(columnDefinition = "LONGTEXT")
     private String qrCodeUrl;
-    
+
     /**
      * 등록일시
      * 시험이 등록된 날짜와 시간
@@ -83,7 +88,7 @@ public class Exam {
      */
     @Column(nullable = false)
     private LocalDateTime createdAt;
-    
+
     /**
      * Entity 저장 전 실행되는 메서드
      * UUID 및 등록일시를 자동으로 설정합니다.
@@ -95,15 +100,17 @@ public class Exam {
         }
         createdAt = LocalDateTime.now();
     }
-    
+
     /**
      * 시험 정보 수정
      * 
-     * @param examName 수정할 시험명
-     * @param content 수정할 시험 내용
+     * @param examName   수정할 시험명
+     * @param content    수정할 시험 내용
+     * @param maxStudent 수정할 학생 수
      */
-    public void updateExamInfo(String examName, String content) {
+    public void updateExamInfo(String examName, String content, Integer maxStudent) {
         this.examName = examName;
         this.content = content;
+        this.maxStudent = maxStudent;
     }
 }

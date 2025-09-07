@@ -28,6 +28,12 @@ public record ExamWithUnitsDto(
     @Schema(description = "시험 설명", example = "1학년 수학 중간고사")
     String content,
     
+    @Schema(description = "최대 학생 수", example = "30")
+    Integer maxStudent,
+    
+    @Schema(description = "실제 응시 학생 수", example = "25")
+    Integer actualStudentCount,
+    
     @Schema(description = "QR 코드 URL", example = "https://example.com/qr/exam123")
     String qrCodeUrl,
     
@@ -141,6 +147,8 @@ public record ExamWithUnitsDto(
             examDto.examName(),
             examDto.grade(),
             examDto.content(),
+            examDto.maxStudent(),
+            examDto.actualStudentCount(),
             examDto.qrCodeUrl(),
             examDto.createdAt(),
             examSheetInfo,

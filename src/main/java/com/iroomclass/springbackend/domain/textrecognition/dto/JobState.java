@@ -9,9 +9,11 @@ import java.util.List;
  */
 public record JobState(
     String jobId,
+    String aiJobId,  // AI 서버에서 생성한 작업 ID
     JobStatus status,
     LocalDateTime createdAt,
     LocalDateTime updatedAt,
+    LocalDateTime completedAt,
     String originalFilename,
     Long fileSize,
     String callbackUrl,
@@ -27,9 +29,11 @@ public record JobState(
         LocalDateTime now = LocalDateTime.now();
         return new JobState(
             jobId,
+            null,  // AI jobId는 나중에 설정
             JobStatus.SUBMITTED,
             now,
             now,
+            null,
             originalFilename,
             fileSize,
             callbackUrl,
@@ -40,14 +44,16 @@ public record JobState(
     }
     
     /**
-     * 상태 업데이트
+     * AI 작업 ID 설정
      */
-    public JobState updateStatus(JobStatus newStatus) {
+    public JobState withAiJobId(String aiJobId) {
         return new JobState(
             jobId,
-            newStatus,
+            aiJobId,
+            status,
             createdAt,
             LocalDateTime.now(),
+            completedAt,
             originalFilename,
             fileSize,
             callbackUrl,
@@ -58,13 +64,55 @@ public record JobState(
     }
     
     /**
-     * 완료 처리
+     * 상태 업데이트
+     */
+    public JobState updateStatus(JobStatus newStatus) {
+        return new JobState(
+            jobId,
+            aiJobId,
+            newStatus,
+            createdAt,
+            LocalDateTime.now(),
+            completedAt,
+            originalFilename,
+            fileSize,
+            callbackUrl,
+            answers,
+            metadata,
+            errorMessage
+        );
+    }
+    
+    /**
+     * 완료 처리 (결과 포함)
      */
     public JobState complete(List<AnswerDto> answers, MetadataDto metadata) {
         return new JobState(
             jobId,
+            aiJobId,
             JobStatus.COMPLETED,
             createdAt,
+            LocalDateTime.now(),
+            LocalDateTime.now(),
+            originalFilename,
+            fileSize,
+            callbackUrl,
+            answers,
+            metadata,
+            null
+        );
+    }
+    
+    /**
+     * 완료 처리 (결과 없이)
+     */
+    public JobState complete() {
+        return new JobState(
+            jobId,
+            aiJobId,
+            JobStatus.COMPLETED,
+            createdAt,
+            LocalDateTime.now(),
             LocalDateTime.now(),
             originalFilename,
             fileSize,
@@ -81,8 +129,10 @@ public record JobState(
     public JobState fail(String errorMessage) {
         return new JobState(
             jobId,
+            aiJobId,
             JobStatus.FAILED,
             createdAt,
+            LocalDateTime.now(),
             LocalDateTime.now(),
             originalFilename,
             fileSize,
@@ -105,5 +155,22 @@ public record JobState(
      */
     public boolean isCompleted() {
         return status.isCompleted();
+    }
+    
+    // Getter 메서드들 (Service에서 사용)
+    public JobStatus getStatus() {
+        return status;
+    }
+    
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+    
+    public LocalDateTime getCompletedAt() {
+        return completedAt;
+    }
+    
+    public String getAiJobId() {
+        return aiJobId;
     }
 }

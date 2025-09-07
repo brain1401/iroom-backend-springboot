@@ -86,4 +86,38 @@ public record TextRecognitionSseEvent(
             errorMessage
         );
     }
+    
+    /**
+     * 완료 이벤트 생성 (TextRecognitionAnswerResponse 사용)
+     */
+    public static TextRecognitionSseEvent complete(String jobId, TextRecognitionAnswerResponse result) {
+        // TextRecognitionAnswerResponse를 AnswerDto 리스트로 변환
+        List<AnswerDto> answers = result != null && result.answers() != null ?
+            result.answers().stream()
+                .map(item -> new AnswerDto(
+                    item.questionNumber(),
+                    item.questionLabel(),
+                    item.solutionProcess() != null ? item.solutionProcess().extractedText() : null,
+                    item.finalAnswer() != null ? item.finalAnswer().extractedText() : null,
+                    item.confidence()
+                ))
+                .toList() : null;
+                
+        MetadataDto metadata = result != null && result.metadata() != null ?
+            new MetadataDto(
+                result.metadata().imageQuality(),
+                result.metadata().processingTimeMs(),
+                result.metadata().totalQuestionsDetected(),
+                result.metadata().modelVersion()
+            ) : null;
+            
+        return completed(jobId, answers, metadata);
+    }
+    
+    /**
+     * 오류 이벤트 생성 (alias)
+     */
+    public static TextRecognitionSseEvent error(String jobId, String errorMessage) {
+        return failed(jobId, errorMessage);
+    }
 }

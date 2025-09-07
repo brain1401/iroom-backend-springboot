@@ -149,4 +149,56 @@ public class SseConnectionManager {
             removeConnection(jobId);
         }
     }
+    
+    /**
+     * SSE 연결 추가 (createConnection의 별칭)
+     */
+    public void addConnection(String id, SseEmitter emitter) {
+        log.info("SSE 연결 추가: id={}", id);
+        
+        // 연결 종료 시 정리
+        emitter.onCompletion(() -> {
+            log.info("SSE 연결 완료: id={}", id);
+            removeConnection(id);
+        });
+        
+        // 연결 타임아웃 시 정리
+        emitter.onTimeout(() -> {
+            log.warn("SSE 연결 타임아웃: id={}", id);
+            removeConnection(id);
+        });
+        
+        // 연결 오류 시 정리
+        emitter.onError((ex) -> {
+            log.error("SSE 연결 오류: id={}, error={}", id, ex.getMessage());
+            removeConnection(id);
+        });
+        
+        // 연결을 맵에 저장
+        connections.put(id, emitter);
+    }
+    
+    /**
+     * 모든 연결에 이벤트 전송
+     */
+    public void sendEventToAll(String batchId, Object event) {
+        SseEmitter emitter = connections.get(batchId);
+        if (emitter == null) {
+            log.warn("SSE 연결을 찾을 수 없음: batchId={}", batchId);
+            return;
+        }
+        
+        try {
+            String eventData = objectMapper.writeValueAsString(event);
+            emitter.send(SseEmitter.event()
+                .name("progress")
+                .data(eventData));
+                
+            log.debug("SSE 배치 진행률 전송 성공: batchId={}", batchId);
+            
+        } catch (IOException e) {
+            log.error("SSE 이벤트 전송 실패: batchId={}, error={}", batchId, e.getMessage());
+            removeConnection(batchId);
+        }
+    }
 }

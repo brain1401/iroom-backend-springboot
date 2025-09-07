@@ -1,6 +1,8 @@
 package com.iroomclass.springbackend.domain.exam.controller;
 
 import com.iroomclass.springbackend.common.ApiResponse;
+import com.iroomclass.springbackend.domain.exam.dto.CreateExamRequest;
+import com.iroomclass.springbackend.domain.exam.dto.CreateExamResponse;
 import com.iroomclass.springbackend.domain.exam.dto.ExamDto;
 import com.iroomclass.springbackend.domain.exam.dto.ExamFilterRequest;
 import com.iroomclass.springbackend.domain.exam.dto.ExamSubmissionStatusDto;
@@ -25,6 +27,7 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import jakarta.validation.Valid;
 
 import java.util.List;
 import java.util.Map;
@@ -56,6 +59,80 @@ public class ExamController {
 
     private final ExamService examService;
     private final ExamRepository examRepository;
+
+    /**
+     * 시험 생성
+     */
+    @Operation(summary = "시험 생성", description = """
+            선택한 시험지를 기반으로 새로운 시험을 생성합니다.
+
+            **필수 정보:**
+            - examName: 시험명 (100자 이하)
+            - examSheetId: 기존에 생성된 시험지 ID
+
+            **선택 정보:**
+            - description: 시험 설명 (500자 이하)
+            - startDate: 시험 시작일시
+            - endDate: 시험 종료일시
+            - duration: 시험 제한시간 (분 단위)
+
+            **인증:**
+            - httpOnly 쿠키를 통한 선생님 인증 필요
+
+            **자동 처리:**
+            - 시험지의 학년 정보가 자동으로 복사됩니다
+            - 총 문제 수와 총점이 시험지에서 자동 계산됩니다
+            - 시험 상태는 CREATED로 초기화됩니다
+            """, responses = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                responseCode = "201", 
+                description = "시험 생성 성공", 
+                content = @Content(schema = @Schema(implementation = CreateExamResponse.class))
+            ),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                responseCode = "400", 
+                description = "필수 필드 누락 또는 유효하지 않은 형식"
+            ),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                responseCode = "401", 
+                description = "인증되지 않은 사용자"
+            ),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                responseCode = "404", 
+                description = "시험지를 찾을 수 없음"
+            ),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                responseCode = "409", 
+                description = "동일한 이름의 시험이 이미 존재"
+            )
+    })
+    @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
+    public ResponseEntity<ApiResponse<?>> createExam(
+            @Parameter(description = "시험 생성 요청 정보", required = true)
+            @Valid @RequestBody CreateExamRequest request) {
+        
+        log.info("시험 생성 요청: examName={}, examSheetId={}", 
+                request.examName(), request.examSheetId());
+        
+        try {
+            CreateExamResponse response = examService.createExam(request);
+            log.info("시험 생성 성공: examId={}, examName={}", response.examId(), response.examName());
+            
+            return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.success("시험이 성공적으로 생성되었습니다", response));
+                
+        } catch (IllegalArgumentException e) {
+            log.warn("시험 생성 실패 - 중복된 시험명: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(ApiResponse.error(e.getMessage()));
+                
+        } catch (RuntimeException e) {
+            log.error("시험 생성 실패: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(ApiResponse.error(e.getMessage()));
+        }
+    }
 
     /**
      * 시험 상세 정보 조회
